@@ -88,8 +88,6 @@ python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*", "*Tests"]
 python_functions = ["test_*"]
 
-[tool.setuptools.package-dir]
-qp2 = "."
-
 [tool.setuptools.packages.find]
+where = [".."]
 include = ["qp2*"]
