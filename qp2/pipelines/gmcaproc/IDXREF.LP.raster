@@ -1,0 +1,811 @@
+
+ ***** IDXREF ***** (VERSION Jan 19, 2024  BUILT=20240119)   9-Jun-2025
+
+ INPUT PARAMETER VALUES
+ ----------------------
+ MAXIMUM_NUMBER_OF_PROCESSORS=  32  (0: automatic choice of OpenMP threads)
+ number of OpenMP threads used   5
+ MAXIMUM_NUMBER_OF_JOBS=   6  (0:automatic choice of forked main tasks)
+ number of forked IDXREF tasks   1
+ CLUSTER_NODES=
+ IMAGE_DIRECTORY=/mnt/beegfs/DATA/user2/ASBMB_2025/Q10/raster/Q10_ras_run10_R9_??????.h5
+ NUMBER OF IMAGES=       5
+ NX=  4150  NY=  4371    QX=  0.075000  QY=  0.075000
+ SPACE_GROUP_NUMBER=    0
+ UNIT_CELL_CONSTANTS=     0.00     0.00     0.00   0.000   0.000   0.000
+ X-RAY_WAVELENGTH=       1.033202
+ INCIDENT_BEAM_DIRECTION=  0.000000  0.000000  1.000000
+ ROTATION_AXIS=  0.000000  0.000000  0.000000
+ OSCILLATION_RANGE=    0.0000
+ MAXIMUM_NUMBER_OF_DIFFERENCE_VECTOR_CLUSTERS=   30
+ RGRID=-1.000E+00 (rec. Angstrom; -1: automatic choice)
+ SEPMIN=    4.0  CLUSTER_RADIUS=   2.0
+ NUMBER_OF_TESTED_BASIS_ORIENTATIONS=   1000000  INTEGER_ERROR=   0.150
+ INDEX_MAGNITUDE=   8    INDEX_ERROR=   0.100    INDEX_QUALITY=  0.70
+ MERGE_TREE=  0.20
+ MAXIMUM_ERROR_OF_SPOT_POSITION=   3.0
+ MINIMUM_FRACTION_OF_INDEXED_SPOTS=  0.30
+ TRUSTED_REGION=  0.00  1.20
+ INCLUDE_RESOLUTION_RANGE=     50.000     0.500
+
+ DIRECTION_OF_DETECTOR_X-AXIS=   1.00000   0.00000   0.00000
+ DIRECTION_OF_DETECTOR_Y-AXIS=   0.00000   1.00000   0.00000
+ DETECTOR_DISTANCE=   200.000
+ ORGX=   2128.00  ORGY=   2165.00
+ POWDER_CENTER_CORRECTION=     0.0     0.0   0.00100
+ corrected  ORGX=   2128.00  ORGY=   2165.00
+ NUMBER OF DETECTOR SEGMENTS   1
+ SEGMENT=    1 4150    1 4371  ! x1,x2,y1,y2 (pixel units)
+    SEGMENT_ORGX=      0.00   SEGMENT_ORGY=      0.00
+    SEGMENT_DISTANCE=     0.00
+    DIRECTION_OF_SEGMENT_X-AXIS=  1.000000  0.000000  0.000000
+    DIRECTION_OF_SEGMENT_Y-AXIS=  0.000000  1.000000  0.000000
+
+ ************************************************************************
+ SPOT INDEXING FOR IMAGE  3
+ ************************************************************************
+
+ ***** DETERMINATION OF DIFFERENCE VECTOR CLUSTERS FROM    95 SPOTS ******
+ histogram step size (1/A): given RGRID= -1.0000E+00 used   5.1944E-04
+ CLUSTER_RADIUS=  2.00 (pixel) ==   7.2590E-04 (1/A) ==  1.3975E+00 (histogram steps)
+ SEPMIN=  4.00 (pixel) ==   1.4518E-03 (1/A) ==  2.7949E+00 (histogram steps)
+ NUMBER OF DIFFERENCE VECTOR CLUSTERS DETERMINED                27
+
+ ***** RESULTS FROM LOCAL INDEXING OF     27 DIFFERENCE VECTOR CLUSTERS *****
+ MAXIMUM MAGNITUDE OF INDEX DIFFERENCES ALLOWED    8
+ MAXIMUM ALLOWED DEVIATION FROM INTEGRAL INDICES     0.100
+ MIMINUM QUALITY OF INDICES FOR EACH CLUSTER IN A SUBTREE    0.70
+ NUMBER OF CLUSTER SUBTREES      1
+ MERGE_TREE=     0.20
+ merged subtrees are marked by *
+ NODES              number of nodes belonging to subtree
+ DIFF_VEC           number of difference vectors in subtree
+ ORIGIN_INDICES     fractional indices of tree origin
+ ORIGIN_COORDINATES reciprocal space coordinates of tree origin
+ LENGTH             length of tree origin vector (1/A)
+
+ SUBTREE  NODES   DIFF_VEC   ORIGIN_INDICES        ORIGIN_COORDINATES         LENGTH
+  *  1       27         88  0.00  0.00  0.00   0.000000  0.000000  0.000000  0.000000
+ Fraction explained difference vectors  0.98845 (<0 :: error)
+ Volume of reciprocal reduced cell    4.013E-06
+ REDUCED CELL     41.59    77.63    77.28    89.90    89.40    92.83
+
+      a             7.21      0.39    -40.96
+      b            75.59     -4.11     17.16
+      c            -3.57    -77.17     -2.18
+
+   #  REC. DIFFERENCE VECTOR CLUSTER   FREQUENCY      CLUSTER INDICES
+    1  -0.000913 -0.012834  0.001840        7.    -0.09     0.02     0.99
+    2   0.012611 -0.000660  0.002094        5.     0.00     0.99     0.00
+    3  -0.073325 -0.087423  0.011726        4.    -1.04    -4.98     6.98
+    4   0.025500 -0.001310  0.003570        4.     0.04     1.99     0.00
+    5  -0.060726 -0.088375  0.012569        4.    -0.99    -4.01     7.01
+    6   0.011872 -0.013559  0.003565        4.    -0.07     1.01     1.00
+    7  -0.110852 -0.072650  0.005091        3.    -1.04    -7.99     5.99
+    8  -0.098058 -0.073246  0.006684        3.    -1.01    -7.00     5.99
+    9   0.012942 -0.000233  0.000458        3.     0.07     0.99    -0.03
+   10   0.037399 -0.014810  0.006591        3.    -0.01     3.00     1.00
+   11   0.060753 -0.054824  0.010716        3.    -0.02     5.00     3.99
+   12  -0.109395 -0.047121  0.004559        3.    -0.99    -8.00     4.02
+   13   0.010555 -0.039370  0.001810        3.    -0.01     0.99     3.00
+   14  -0.072558 -0.074606  0.009517        3.    -0.94    -5.01     6.00
+   15   0.081101 -0.159939  0.011396        3.     0.06     6.98    12.03
+   16   0.011146 -0.026572  0.002382        3.    -0.03     0.99     2.01
+   17   0.168773 -0.033859  0.006171        3.     0.95    13.00     2.00
+   18   0.012504 -0.013550  0.000236        3.     0.08     1.01     1.00
+   19   0.024570 -0.014129  0.005475        3.    -0.05     2.01     0.99
+   20   0.023887 -0.027001  0.007053        3.    -0.13     2.04     1.98
+   21   0.024063 -0.040166  0.001356        3.     0.10     2.01     3.01
+   22   0.013170  0.011886  0.004280        3.    -0.08     1.02    -0.97
+   23   0.012193 -0.013369  0.001904        3.     0.00     1.01     0.98
+   24  -0.107558 -0.008380  0.005385        3.    -1.00    -8.00     1.02
+   25  -0.120366 -0.007569  0.004018        2.    -1.03    -9.00     1.00
+   26   0.000755  0.012859  0.001009        2.    -0.03     0.02    -1.00
+   27  -0.000372 -0.012973  0.000255        2.    -0.02     0.03     1.00
+
+ ***** RESULTS FROM LOCAL INDEXING OF     95 OBSERVED SPOTS *****
+ MAXIMUM MAGNITUDE OF INDEX DIFFERENCES ALLOWED    8
+ MAXIMUM ALLOWED DEVIATION FROM INTEGRAL INDICES     0.100
+ MIMINUM QUALITY OF INDICES FOR EACH SPOT IN A SUBTREE    0.70
+ NUMBER OF SUBTREES      1
+
+ SUBTREE    POPULATION
+     1           96
+
+ ***** DETERMINATION OF THE INDEX ORIGIN OF REFLECTIONS *****
+ The index origin is derived from      95 observed reflections.
+ The chosen indexing alternative is marked by * and minimizes
+ RMSZ     r.m.s. angular deviation (degrees) of observed spots
+           from Ewald sphere
+ TAU      deviation (degrees) of alternative from Ewald sphere
+ X,Y,Z    alternative incident beam wave vector
+
+    INDEX_      RMSZ    TAU       X        Y        Z
+    ORIGIN
+ *  0  0  0     0.58    0.00   0.0000   0.0000   0.9679
+    0  0  1     4.43    1.54  -0.0007  -0.0129   0.9678
+    0  0 -1     5.00    2.31   0.0007   0.0129   0.9678
+    0  0  2    10.08    1.16  -0.0013  -0.0259   0.9675
+    0 -1 -2    11.15    2.22  -0.0114   0.0265   0.9674
+
+ ***** INDEXING OF     95 STRONG SPOTS *****
+ NUMBER OF INDEXED SPOTS                  77
+ NUMBER OF OVERLAPPING SPOTS               0
+ NUMBER OF SPOTS TOO FAR FROM LATTICE     18
+
+ ***** REFINED DIFFRACTION PARAMETERS *****
+
+ NUMBER OF INDEXED  SPOTS      76
+ NUMBER OF OBSERVED SPOTS      95
+ REFINED PARAMETERS:   BEAM ORIENTATION CELL
+ E.S.D. OF SPOT POSITION (PIXELS)                              0.73
+ E.S.D. OF ANGULAR DISTANCE FROM EWALD SPHERE (degrees)       0.400
+ SPACE GROUP NUMBER      1
+ UNIT CELL PARAMETERS     37.997    77.201    77.277  89.629  89.998  90.418
+ REC. CELL PARAMETERS   0.026319  0.012954  0.012941  90.371  90.005  89.582
+ COORDINATES OF UNIT CELL A-AXIS     7.239     0.948   -37.289
+ COORDINATES OF UNIT CELL B-AXIS    75.574    -4.435    15.132
+ COORDINATES OF UNIT CELL C-AXIS    -3.487   -77.153    -2.642
+ LAB COORDINATES OF ROTATION AXIS  0.000000  0.000000  0.000000
+ DIRECT BEAM COORDINATES (REC. ANGSTROEM)   0.000010  0.000948  0.967865
+ DETECTOR COORDINATES (PIXELS) OF DIRECT BEAM    2128.03   2167.61
+ DETECTOR ORIGIN (PIXELS) AT                     2128.00   2165.00
+ CRYSTAL TO DETECTOR DISTANCE (mm)       200.00
+ LAB COORDINATES OF DETECTOR X-AXIS  1.000000  0.000000  0.000000
+ LAB COORDINATES OF DETECTOR Y-AXIS  0.000000  1.000000  0.000000
+
+
+ ***** DETERMINATION OF LATTICE CHARACTER AND BRAVAIS LATTICE *****
+
+ A lattice character is consistent with the observed diffraction pattern
+ for low values for the QUALITY OF FIT and if their implicated
+ UNIT CELL CONSTANTS do not violate the ideal values by more than
+ MAX_CELL_AXIS_ERROR=      0.03 (relative error)
+ MAX_CELL_ANGLE_ERROR=      2.0 (Degrees)
+
+  LATTICE-  BRAVAIS-   QUALITY  UNIT CELL CONSTANTS (ANGSTROEM & DEGREES)
+ CHARACTER  LATTICE     OF FIT      a      b      c   alpha  beta gamma
+
+    44        aP          0.0      39.0   77.2   77.2  90.4  90.2  90.8
+    31        aP          2.8      39.0   77.2   77.2  89.6  90.2  89.2
+    25        mC         14.0     108.8  109.6   39.0  89.5  90.7  90.0
+    34        mP         15.6      39.0   77.2   77.2  90.4  90.8  90.2
+    35        mP         17.0      77.2   39.0   77.2  90.2  90.4  90.8
+    33        mP         18.1      39.0   77.2   77.2  90.4  90.8  90.2
+    23        oC         19.5     108.8  109.6   39.0  89.5  90.7  90.0
+    20        mC         22.3     109.6  108.8   39.0  90.7  90.5  90.0
+    32        oP         29.8      39.0   77.2   77.2  90.4  90.2  90.8
+    21        tP         32.3      77.2   77.2   39.0  90.2  90.8  90.4
+
+ NUMBER OF OBSERVED SPOTS                        95
+ NUMBER OF SPOTS IN TRUSTED DETECTOR REGIONS     95
+ NUMBER OF INDEXED SPOTS                         76
+
+ ACCEPTING IMAGE  3
+
+ ************************************************************************
+ SPOT INDEXING FOR IMAGE  4
+ ************************************************************************
+
+ ***** DETERMINATION OF DIFFERENCE VECTOR CLUSTERS FROM   155 SPOTS ******
+ histogram step size (1/A): given RGRID= -1.0000E+00 used   5.4699E-04
+ CLUSTER_RADIUS=  2.00 (pixel) ==   7.2590E-04 (1/A) ==  1.3271E+00 (histogram steps)
+ SEPMIN=  4.00 (pixel) ==   1.4518E-03 (1/A) ==  2.6542E+00 (histogram steps)
+ NUMBER OF DIFFERENCE VECTOR CLUSTERS DETERMINED                29
+
+ ***** RESULTS FROM LOCAL INDEXING OF     29 DIFFERENCE VECTOR CLUSTERS *****
+ MAXIMUM MAGNITUDE OF INDEX DIFFERENCES ALLOWED    8
+ MAXIMUM ALLOWED DEVIATION FROM INTEGRAL INDICES     0.100
+ MIMINUM QUALITY OF INDICES FOR EACH CLUSTER IN A SUBTREE    0.70
+ NUMBER OF CLUSTER SUBTREES      1
+ MERGE_TREE=     0.20
+ merged subtrees are marked by *
+ NODES              number of nodes belonging to subtree
+ DIFF_VEC           number of difference vectors in subtree
+ ORIGIN_INDICES     fractional indices of tree origin
+ ORIGIN_COORDINATES reciprocal space coordinates of tree origin
+ LENGTH             length of tree origin vector (1/A)
+
+ SUBTREE  NODES   DIFF_VEC   ORIGIN_INDICES        ORIGIN_COORDINATES         LENGTH
+  *  1       29        151  0.00  0.00  0.00   0.000000  0.000000  0.000000  0.000000
+ Fraction explained difference vectors  0.99527 (<0 :: error)
+ Volume of reciprocal reduced cell    4.088E-06
+ REDUCED CELL     40.76    77.27    77.74    90.28    90.36    92.15
+
+      a            -6.60     -0.76     40.21
+      b           -75.63      4.31    -15.27
+      c            -3.52    -77.62     -2.53
+
+   #  REC. DIFFERENCE VECTOR CLUSTER   FREQUENCY      CLUSTER INDICES
+    1   0.012724 -0.000708  0.001563       12.    -0.02    -0.99     0.01
+    2   0.012042 -0.013332  0.003838       10.     0.08    -1.03     0.98
+    3  -0.000674 -0.012725  0.001300        9.     0.07    -0.02     0.99
+    4   0.001020  0.012662  0.001215        7.     0.03    -0.04    -0.99
+    5  -0.000724 -0.012542  0.003118        6.     0.14    -0.05     0.97
+    6  -0.060584 -0.087831  0.012030        6.     0.95     4.02     7.00
+    7  -0.071630 -0.048617  0.013488        5.     1.05     5.00     3.99
+    8   0.000848  0.012478  0.002678        5.     0.09    -0.05    -0.98
+    9  -0.080431  0.016222  0.013431        5.     1.06     5.95    -1.01
+   10   0.050307 -0.015639  0.008772        5.     0.03    -4.01     1.01
+   11   0.012612  0.000378  0.000126        5.    -0.08    -0.95    -0.07
+   12   0.024770 -0.014208  0.004663        5.     0.03    -2.01     1.00
+   13   0.012044 -0.013256  0.001583        5.    -0.01    -0.99     0.98
+   14  -0.073237 -0.087167  0.011161        5.     1.00     4.99     7.00
+   15  -0.048398 -0.101211  0.016250        5.     1.05     2.98     7.99
+   16  -0.012575  0.013763  0.000069        5.     0.08     1.01    -1.02
+   17  -0.072547 -0.074530  0.009427        4.     0.91     5.02     6.02
+   18   0.011710 -0.026386  0.001260        4.    -0.01    -1.02     2.00
+   19  -0.058636 -0.049426  0.014130        4.     0.99     4.01     4.01
+   20   0.024133 -0.026853  0.003145        4.    -0.01    -1.99     1.99
+   21  -0.085429 -0.073925  0.009751        4.     1.01     5.99     6.01
+   22  -0.047646 -0.088558  0.013383        4.     0.92     3.02     7.01
+   23  -0.119980  0.005319  0.004097        4.     0.95     9.03    -0.00
+   24   0.013103  0.012532  0.001502        4.    -0.04    -0.96    -1.02
+   25  -0.081560  0.003604  0.011558        4.     1.00     6.01    -0.02
+   26  -0.085962 -0.086425  0.010452        4.     1.05     5.97     6.98
+   27  -0.144316 -0.123364  0.024165        4.     2.02    10.01    10.02
+   28   0.025624 -0.001596  0.003398        4.    -0.03    -2.00     0.02
+   29  -0.060613 -0.087755  0.013294        3.     1.00     4.00     6.99
+
+ ***** RESULTS FROM LOCAL INDEXING OF    155 OBSERVED SPOTS *****
+ MAXIMUM MAGNITUDE OF INDEX DIFFERENCES ALLOWED    8
+ MAXIMUM ALLOWED DEVIATION FROM INTEGRAL INDICES     0.100
+ MIMINUM QUALITY OF INDICES FOR EACH SPOT IN A SUBTREE    0.70
+ NUMBER OF SUBTREES      1
+
+ SUBTREE    POPULATION
+     1          156
+
+ ***** DETERMINATION OF THE INDEX ORIGIN OF REFLECTIONS *****
+ The index origin is derived from     155 observed reflections.
+ The chosen indexing alternative is marked by * and minimizes
+ RMSZ     r.m.s. angular deviation (degrees) of observed spots
+           from Ewald sphere
+ TAU      deviation (degrees) of alternative from Ewald sphere
+ X,Y,Z    alternative incident beam wave vector
+
+    INDEX_      RMSZ    TAU       X        Y        Z
+    ORIGIN
+ *  0  0  0     0.64    0.00   0.0000   0.0000   0.9679
+    0  0  1     4.33    1.58  -0.0007  -0.0129   0.9678
+    0  0 -1     5.30    2.34   0.0007   0.0129   0.9678
+    0  0  2     9.54    1.20  -0.0013  -0.0258   0.9675
+    0  1 -2    15.31    2.11  -0.0115   0.0265   0.9674
+
+ ***** INDEXING OF    155 STRONG SPOTS *****
+ NUMBER OF INDEXED SPOTS                 129
+ NUMBER OF OVERLAPPING SPOTS               0
+ NUMBER OF SPOTS TOO FAR FROM LATTICE     26
+
+ ***** REFINED DIFFRACTION PARAMETERS *****
+
+ NUMBER OF INDEXED  SPOTS     121
+ NUMBER OF OBSERVED SPOTS     155
+ REFINED PARAMETERS:   BEAM ORIENTATION CELL
+ E.S.D. OF SPOT POSITION (PIXELS)                              1.15
+ E.S.D. OF ANGULAR DISTANCE FROM EWALD SPHERE (degrees)       0.426
+ SPACE GROUP NUMBER      1
+ UNIT CELL PARAMETERS     38.175    77.091    77.388  90.291  89.722  90.684
+ REC. CELL PARAMETERS   0.026197  0.012973  0.012922  89.713  90.275  89.317
+ COORDINATES OF UNIT CELL A-AXIS    -6.983    -0.930    37.519
+ COORDINATES OF UNIT CELL B-AXIS   -75.515     4.354   -14.885
+ COORDINATES OF UNIT CELL C-AXIS    -3.619   -77.272    -2.207
+ LAB COORDINATES OF ROTATION AXIS  0.000000  0.000000  0.000000
+ DIRECT BEAM COORDINATES (REC. ANGSTROEM)  -0.000049  0.000991  0.967865
+ DETECTOR COORDINATES (PIXELS) OF DIRECT BEAM    2127.87   2167.73
+ DETECTOR ORIGIN (PIXELS) AT                     2128.00   2165.00
+ CRYSTAL TO DETECTOR DISTANCE (mm)       200.00
+ LAB COORDINATES OF DETECTOR X-AXIS  1.000000  0.000000  0.000000
+ LAB COORDINATES OF DETECTOR Y-AXIS  0.000000  1.000000  0.000000
+
+
+ ***** DETERMINATION OF LATTICE CHARACTER AND BRAVAIS LATTICE *****
+
+ A lattice character is consistent with the observed diffraction pattern
+ for low values for the QUALITY OF FIT and if their implicated
+ UNIT CELL CONSTANTS do not violate the ideal values by more than
+ MAX_CELL_AXIS_ERROR=      0.03 (relative error)
+ MAX_CELL_ANGLE_ERROR=      2.0 (Degrees)
+
+  LATTICE-  BRAVAIS-   QUALITY  UNIT CELL CONSTANTS (ANGSTROEM & DEGREES)
+ CHARACTER  LATTICE     OF FIT      a      b      c   alpha  beta gamma
+
+    44        aP          0.0      38.1   77.0   77.4  90.2  90.1  90.4
+    31        aP          2.3      38.1   77.0   77.4  89.8  90.1  89.6
+    35        mP          9.0      77.0   38.1   77.4  90.1  90.2  90.4
+    34        mP          9.5      38.1   77.4   77.0  90.2  90.4  90.1
+    33        mP         13.9      38.1   77.0   77.4  90.2  90.1  90.4
+    32        oP         16.2      38.1   77.0   77.4  90.2  90.1  90.4
+    25        mC         23.7     109.0  109.4   38.1  89.8  90.4  89.7
+    23        oC         28.3     109.0  109.4   38.1  89.8  90.4  89.7
+    20        mC         30.6     109.4  109.0   38.1  90.4  90.2  90.3
+    21        tP         35.5      77.0   77.4   38.1  90.1  90.4  90.2
+
+ NUMBER OF OBSERVED SPOTS                       155
+ NUMBER OF SPOTS IN TRUSTED DETECTOR REGIONS    155
+ NUMBER OF INDEXED SPOTS                        131
+
+ ACCEPTING IMAGE  4
+
+ ************************************************************************
+ SPOT INDEXING FOR IMAGE  5
+ ************************************************************************
+
+ ***** DETERMINATION OF DIFFERENCE VECTOR CLUSTERS FROM   184 SPOTS ******
+ histogram step size (1/A): given RGRID= -1.0000E+00 used   5.4926E-04
+ CLUSTER_RADIUS=  2.00 (pixel) ==   7.2590E-04 (1/A) ==  1.3216E+00 (histogram steps)
+ SEPMIN=  4.00 (pixel) ==   1.4518E-03 (1/A) ==  2.6432E+00 (histogram steps)
+ NUMBER OF DIFFERENCE VECTOR CLUSTERS DETERMINED                27
+
+ ***** RESULTS FROM LOCAL INDEXING OF     27 DIFFERENCE VECTOR CLUSTERS *****
+ MAXIMUM MAGNITUDE OF INDEX DIFFERENCES ALLOWED    8
+ MAXIMUM ALLOWED DEVIATION FROM INTEGRAL INDICES     0.100
+ MIMINUM QUALITY OF INDICES FOR EACH CLUSTER IN A SUBTREE    0.70
+ NUMBER OF CLUSTER SUBTREES      1
+ MERGE_TREE=     0.20
+ merged subtrees are marked by *
+ NODES              number of nodes belonging to subtree
+ DIFF_VEC           number of difference vectors in subtree
+ ORIGIN_INDICES     fractional indices of tree origin
+ ORIGIN_COORDINATES reciprocal space coordinates of tree origin
+ LENGTH             length of tree origin vector (1/A)
+
+ SUBTREE  NODES   DIFF_VEC   ORIGIN_INDICES        ORIGIN_COORDINATES         LENGTH
+  *  1       27        158  0.00  0.00  0.00   0.000000  0.000000  0.000000  0.000000
+ Fraction explained difference vectors  0.98293 (<0 :: error)
+ Volume of reciprocal reduced cell    3.730E-06
+ REDUCED CELL     44.42    77.78    77.91    90.37    94.93    88.43
+
+      a            -6.40      0.33     43.96
+      b             3.74     77.66      2.11
+      c           -75.75      3.63    -17.83
+
+   #  REC. DIFFERENCE VECTOR CLUSTER   FREQUENCY      CLUSTER INDICES
+    1   0.012619 -0.000623  0.000509       15.    -0.06    -0.00    -0.97
+    2   0.012153 -0.013280  0.003722       11.     0.08    -0.98    -1.04
+    3   0.012064 -0.013569  0.001848       10.    -0.00    -1.00    -1.00
+    4  -0.000618 -0.012728  0.003305        9.     0.15    -0.98    -0.06
+    5  -0.000776 -0.012687  0.001179        8.     0.05    -0.99    -0.01
+    6   0.012651 -0.000649  0.001899        8.     0.00     0.00    -0.99
+    7   0.000977  0.012750  0.000649        6.     0.03     1.00    -0.04
+    8   0.024176 -0.027028  0.004475        6.     0.03    -2.00    -2.01
+    9  -0.070406 -0.035679  0.012748        6.     1.00    -3.01     4.98
+   10  -0.060508 -0.087739  0.012324        5.     0.90    -7.01     4.05
+   11  -0.012079  0.014082  0.001231        5.     0.14     1.05     0.94
+   12  -0.073043 -0.087252  0.011483        5.     0.94    -7.02     5.01
+   13  -0.133879 -0.019163  0.005826        5.     1.11    -1.98     9.97
+   14  -0.119647 -0.149750  0.028875        5.     1.99   -12.02     8.00
+   15   0.025467 -0.001490  0.003953        5.     0.01    -0.01    -2.01
+   16   0.024857 -0.014196  0.001590        5.    -0.09    -1.01    -1.96
+   17  -0.010787 -0.115764  0.022681        5.     1.03    -8.98    -0.01
+   18  -0.046432 -0.062502  0.016445        5.     1.00    -4.99     3.00
+   19   0.013394  0.012237  0.002628        4.     0.03     1.01    -1.02
+   20  -0.120675 -0.006914  0.005040        4.     0.99    -0.98     9.03
+   21   0.063529 -0.003334  0.010994        4.     0.08     0.00    -5.02
+   22   0.036982 -0.027448  0.008655        4.     0.13    -1.98    -3.06
+   23   0.024930 -0.014002  0.005409        4.     0.07    -0.98    -2.04
+   24  -0.082326 -0.009086  0.012574        4.     1.08    -0.99     5.98
+   25   0.037359 -0.014478  0.005738        4.     0.01    -0.97    -2.98
+   26  -0.001191 -0.025118  0.003422        4.     0.15    -1.95    -0.06
+   27   0.024154 -0.026773  0.003034        2.    -0.03    -1.98    -1.98
+
+ ***** RESULTS FROM LOCAL INDEXING OF    184 OBSERVED SPOTS *****
+ MAXIMUM MAGNITUDE OF INDEX DIFFERENCES ALLOWED    8
+ MAXIMUM ALLOWED DEVIATION FROM INTEGRAL INDICES     0.100
+ MIMINUM QUALITY OF INDICES FOR EACH SPOT IN A SUBTREE    0.70
+ NUMBER OF SUBTREES      1
+
+ SUBTREE    POPULATION
+     1          185
+
+ ***** DETERMINATION OF THE INDEX ORIGIN OF REFLECTIONS *****
+ The index origin is derived from     184 observed reflections.
+ The chosen indexing alternative is marked by * and minimizes
+ RMSZ     r.m.s. angular deviation (degrees) of observed spots
+           from Ewald sphere
+ TAU      deviation (degrees) of alternative from Ewald sphere
+ X,Y,Z    alternative incident beam wave vector
+
+    INDEX_      RMSZ    TAU       X        Y        Z
+    ORIGIN
+ *  0  0  0     0.74    0.00   0.0000   0.0000   0.9679
+    0 -1  0     4.35    1.53  -0.0007  -0.0129   0.9678
+    0  1  0     5.29    2.29   0.0007   0.0129   0.9678
+    0 -2  0     9.61    1.15  -0.0013  -0.0258   0.9675
+    0  2  1    15.01    2.02  -0.0115   0.0265   0.9674
+
+ ***** INDEXING OF    184 STRONG SPOTS *****
+ NUMBER OF INDEXED SPOTS                 166
+ NUMBER OF OVERLAPPING SPOTS               0
+ NUMBER OF SPOTS TOO FAR FROM LATTICE     18
+
+ ***** REFINED DIFFRACTION PARAMETERS *****
+
+ NUMBER OF INDEXED  SPOTS     150
+ NUMBER OF OBSERVED SPOTS     184
+ REFINED PARAMETERS:   BEAM ORIENTATION CELL
+ E.S.D. OF SPOT POSITION (PIXELS)                              1.30
+ E.S.D. OF ANGULAR DISTANCE FROM EWALD SPHERE (degrees)       0.581
+ SPACE GROUP NUMBER      1
+ UNIT CELL PARAMETERS     38.014    77.547    77.078  89.874  90.657  90.195
+ REC. CELL PARAMETERS   0.026308  0.012896  0.012975  90.124  89.343  89.806
+ COORDINATES OF UNIT CELL A-AXIS    -6.633    -0.932    37.419
+ COORDINATES OF UNIT CELL B-AXIS     3.848    77.416     2.342
+ COORDINATES OF UNIT CELL C-AXIS   -75.634     4.359   -14.197
+ LAB COORDINATES OF ROTATION AXIS  0.000000  0.000000  0.000000
+ DIRECT BEAM COORDINATES (REC. ANGSTROEM)  -0.000092  0.000922  0.967865
+ DETECTOR COORDINATES (PIXELS) OF DIRECT BEAM    2127.75   2167.54
+ DETECTOR ORIGIN (PIXELS) AT                     2128.00   2165.00
+ CRYSTAL TO DETECTOR DISTANCE (mm)       200.00
+ LAB COORDINATES OF DETECTOR X-AXIS  1.000000  0.000000  0.000000
+ LAB COORDINATES OF DETECTOR Y-AXIS  0.000000  1.000000  0.000000
+
+
+ ***** DETERMINATION OF LATTICE CHARACTER AND BRAVAIS LATTICE *****
+
+ A lattice character is consistent with the observed diffraction pattern
+ for low values for the QUALITY OF FIT and if their implicated
+ UNIT CELL CONSTANTS do not violate the ideal values by more than
+ MAX_CELL_AXIS_ERROR=      0.03 (relative error)
+ MAX_CELL_ANGLE_ERROR=      2.0 (Degrees)
+
+  LATTICE-  BRAVAIS-   QUALITY  UNIT CELL CONSTANTS (ANGSTROEM & DEGREES)
+ CHARACTER  LATTICE     OF FIT      a      b      c   alpha  beta gamma
+
+    31        aP          0.0      37.5   77.0   77.5  89.9  89.9  89.7
+    44        aP          1.6      37.5   77.0   77.5  90.1  89.9  90.3
+    34        mP          6.4      37.5   77.5   77.0  90.1  90.3  89.9
+    35        mP          8.7      77.0   37.5   77.5  89.9  90.1  90.3
+    33        mP         10.3      37.5   77.0   77.5  90.1  89.9  90.3
+    32        oP         11.9      37.5   77.0   77.5  90.1  89.9  90.3
+    20        mC         35.6     109.3  109.2   37.5  90.2  90.3  90.4
+    25        mC         38.8     109.3  109.2   37.5  89.8  90.3  89.6
+    23        oC         40.4     109.2  109.3   37.5  89.7  90.2  89.6
+    21        tP         43.6      77.0   77.5   37.5  89.9  90.3  90.1
+
+ NUMBER OF OBSERVED SPOTS                       184
+ NUMBER OF SPOTS IN TRUSTED DETECTOR REGIONS    184
+ NUMBER OF INDEXED SPOTS                        165
+
+ ACCEPTING IMAGE  5
+
+ ************************************************************************
+ SPOT INDEXING FOR IMAGE  6
+ ************************************************************************
+
+ ***** DETERMINATION OF DIFFERENCE VECTOR CLUSTERS FROM   170 SPOTS ******
+ histogram step size (1/A): given RGRID= -1.0000E+00 used   5.5089E-04
+ CLUSTER_RADIUS=  2.00 (pixel) ==   7.2590E-04 (1/A) ==  1.3177E+00 (histogram steps)
+ SEPMIN=  4.00 (pixel) ==   1.4518E-03 (1/A) ==  2.6354E+00 (histogram steps)
+ NUMBER OF DIFFERENCE VECTOR CLUSTERS DETERMINED                27
+
+ ***** RESULTS FROM LOCAL INDEXING OF     27 DIFFERENCE VECTOR CLUSTERS *****
+ MAXIMUM MAGNITUDE OF INDEX DIFFERENCES ALLOWED    8
+ MAXIMUM ALLOWED DEVIATION FROM INTEGRAL INDICES     0.100
+ MIMINUM QUALITY OF INDICES FOR EACH CLUSTER IN A SUBTREE    0.70
+ NUMBER OF CLUSTER SUBTREES      1
+ MERGE_TREE=     0.20
+ merged subtrees are marked by *
+ NODES              number of nodes belonging to subtree
+ DIFF_VEC           number of difference vectors in subtree
+ ORIGIN_INDICES     fractional indices of tree origin
+ ORIGIN_COORDINATES reciprocal space coordinates of tree origin
+ LENGTH             length of tree origin vector (1/A)
+
+ SUBTREE  NODES   DIFF_VEC   ORIGIN_INDICES        ORIGIN_COORDINATES         LENGTH
+  *  1       27        147  0.00  0.00  0.00   0.000000  0.000000  0.000000  0.000000
+ Fraction explained difference vectors  0.98386 (<0 :: error)
+ Volume of reciprocal reduced cell    3.420E-06
+ REDUCED CELL     48.44    77.96    77.93    90.69    87.11    95.95
+
+      a             5.48     -0.39    -48.13
+      b            76.02     -4.01     16.81
+      c            -4.22    -77.72     -3.81
+
+   #  REC. DIFFERENCE VECTOR CLUSTER   FREQUENCY      CLUSTER INDICES
+    1  -0.012693  0.000455 -0.000037       15.    -0.07    -0.97     0.02
+    2  -0.000815 -0.012747  0.001321        8.    -0.06     0.01     0.99
+    3   0.012088 -0.013735  0.002598        8.    -0.05     1.02     1.01
+    4  -0.012371  0.013764  0.000017        7.    -0.07    -1.00    -1.02
+    5   0.024881 -0.014292  0.001327        6.     0.08     1.97     1.00
+    6  -0.046346 -0.062765  0.016033        6.    -1.00    -3.00     5.01
+    7  -0.012993  0.000869  0.001102        6.    -0.12    -0.97    -0.02
+    8  -0.033688 -0.063135  0.016443        6.    -0.95    -2.03     4.99
+    9   0.012839 -0.000656  0.002144        6.    -0.03     1.01    -0.01
+   10   0.010768 -0.039340  0.001004        5.     0.03     0.99     3.01
+   11   0.036911 -0.028156  0.003770        5.     0.03     2.98     2.02
+   12  -0.070276 -0.035488  0.012548        5.    -0.98    -4.99     3.01
+   13   0.010860 -0.039280  0.003355        5.    -0.09     1.04     2.99
+   14  -0.120234 -0.006646  0.006523        5.    -0.97    -9.00     1.00
+   15  -0.000930 -0.012774  0.003291        5.    -0.16     0.04     0.98
+   16  -0.081886 -0.008823  0.012763        5.    -1.06    -5.98     0.98
+   17  -0.012274  0.014272  0.001059        5.    -0.12    -0.97    -1.06
+   18  -0.073793 -0.099591  0.012301        4.    -0.96    -5.00     8.00
+   19   0.049198 -0.041632  0.008225        4.    -0.11     4.05     3.00
+   20   0.013507  0.012325  0.003073        4.    -0.08     1.03    -1.03
+   21  -0.021534 -0.077145  0.020486        4.    -1.07    -0.98     6.01
+   22   0.024821 -0.013863  0.003949        4.    -0.05     2.01     0.96
+   23  -0.090780  0.068592  0.011561        4.    -1.08    -6.98    -4.99
+   24  -0.069433 -0.022733  0.011787        4.    -0.94    -4.99     2.01
+   25   0.024897 -0.169656  0.025776        4.    -1.04     3.01    12.98
+   26  -0.121360 -0.019411  0.006737        4.    -0.98    -9.03     1.99
+   27  -0.013208  0.001766  0.001771        3.    -0.16    -0.98    -0.09
+
+ ***** RESULTS FROM LOCAL INDEXING OF    170 OBSERVED SPOTS *****
+ MAXIMUM MAGNITUDE OF INDEX DIFFERENCES ALLOWED    8
+ MAXIMUM ALLOWED DEVIATION FROM INTEGRAL INDICES     0.100
+ MIMINUM QUALITY OF INDICES FOR EACH SPOT IN A SUBTREE    0.70
+ NUMBER OF SUBTREES      4
+
+ SUBTREE    POPULATION
+     1          168
+     2            1
+     3            1
+     4            1
+
+ ***** DETERMINATION OF THE INDEX ORIGIN OF REFLECTIONS *****
+ The index origin is derived from     167 observed reflections.
+ The chosen indexing alternative is marked by * and minimizes
+ RMSZ     r.m.s. angular deviation (degrees) of observed spots
+           from Ewald sphere
+ TAU      deviation (degrees) of alternative from Ewald sphere
+ X,Y,Z    alternative incident beam wave vector
+
+    INDEX_      RMSZ    TAU       X        Y        Z
+    ORIGIN
+ *  0  0  0     0.82    0.00   0.0000   0.0000   0.9679
+    0  0  1     4.43    1.67  -0.0007  -0.0129   0.9678
+    0  0 -1     5.57    2.43   0.0007   0.0129   0.9678
+    0  0  2     9.52    1.29  -0.0013  -0.0258   0.9675
+    0 -1 -2    16.45    1.51  -0.0114   0.0265   0.9674
+
+ ***** INDEXING OF    170 STRONG SPOTS *****
+ NUMBER OF INDEXED SPOTS                 148
+ NUMBER OF OVERLAPPING SPOTS               0
+ NUMBER OF SPOTS TOO FAR FROM LATTICE     22
+
+ ***** REFINED DIFFRACTION PARAMETERS *****
+
+ NUMBER OF INDEXED  SPOTS     128
+ NUMBER OF OBSERVED SPOTS     170
+ REFINED PARAMETERS:   BEAM ORIENTATION CELL
+ E.S.D. OF SPOT POSITION (PIXELS)                              1.43
+ E.S.D. OF ANGULAR DISTANCE FROM EWALD SPHERE (degrees)       0.676
+ SPACE GROUP NUMBER      1
+ UNIT CELL PARAMETERS     38.174    77.226    77.518  90.002  90.472  90.975
+ REC. CELL PARAMETERS   0.026201  0.012951  0.012901  89.990  89.528  89.025
+ COORDINATES OF UNIT CELL A-AXIS     6.209     1.101   -37.649
+ COORDINATES OF UNIT CELL B-AXIS    75.866    -4.497    13.712
+ COORDINATES OF UNIT CELL C-AXIS    -4.173   -77.371    -2.302
+ LAB COORDINATES OF ROTATION AXIS  0.000000  0.000000  0.000000
+ DIRECT BEAM COORDINATES (REC. ANGSTROEM)  -0.000126  0.000864  0.967865
+ DETECTOR COORDINATES (PIXELS) OF DIRECT BEAM    2127.65   2167.38
+ DETECTOR ORIGIN (PIXELS) AT                     2128.00   2165.00
+ CRYSTAL TO DETECTOR DISTANCE (mm)       200.00
+ LAB COORDINATES OF DETECTOR X-AXIS  1.000000  0.000000  0.000000
+ LAB COORDINATES OF DETECTOR Y-AXIS  0.000000  1.000000  0.000000
+
+
+ ***** DETERMINATION OF LATTICE CHARACTER AND BRAVAIS LATTICE *****
+
+ A lattice character is consistent with the observed diffraction pattern
+ for low values for the QUALITY OF FIT and if their implicated
+ UNIT CELL CONSTANTS do not violate the ideal values by more than
+ MAX_CELL_AXIS_ERROR=      0.03 (relative error)
+ MAX_CELL_ANGLE_ERROR=      2.0 (Degrees)
+
+  LATTICE-  BRAVAIS-   QUALITY  UNIT CELL CONSTANTS (ANGSTROEM & DEGREES)
+ CHARACTER  LATTICE     OF FIT      a      b      c   alpha  beta gamma
+
+    31        aP          0.0      38.5   77.1   77.5  89.9  90.0  89.2
+    44        aP          0.7      38.5   77.1   77.5  90.1  90.0  90.8
+    34        mP          4.2      38.5   77.5   77.1  90.1  90.8  90.0
+    35        mP         15.2      77.1   38.5   77.5  90.0  90.1  90.8
+    33        mP         17.5      38.5   77.1   77.5  90.1  90.0  90.8
+    32        oP         18.2      38.5   77.1   77.5  90.1  90.0  90.8
+    20        mC         35.8     109.4  109.3   38.5  90.5  90.6  90.3
+    23        oC         37.8     109.3  109.4   38.5  89.4  90.5  89.7
+    25        mC         37.8     109.3  109.4   38.5  89.4  90.5  89.7
+    21        tP         40.7      77.1   77.5   38.5  90.0  90.8  90.1
+
+ NUMBER OF OBSERVED SPOTS                       170
+ NUMBER OF SPOTS IN TRUSTED DETECTOR REGIONS    170
+ NUMBER OF INDEXED SPOTS                        146
+
+ ACCEPTING IMAGE  6
+
+ ************************************************************************
+ SPOT INDEXING FOR IMAGE  7
+ ************************************************************************
+
+ ***** DETERMINATION OF DIFFERENCE VECTOR CLUSTERS FROM    83 SPOTS ******
+ histogram step size (1/A): given RGRID= -1.0000E+00 used   4.8280E-04
+ CLUSTER_RADIUS=  2.00 (pixel) ==   7.2590E-04 (1/A) ==  1.5035E+00 (histogram steps)
+ SEPMIN=  4.00 (pixel) ==   1.4518E-03 (1/A) ==  3.0070E+00 (histogram steps)
+ NUMBER OF DIFFERENCE VECTOR CLUSTERS DETERMINED                30
+
+ ***** RESULTS FROM LOCAL INDEXING OF     30 DIFFERENCE VECTOR CLUSTERS *****
+ MAXIMUM MAGNITUDE OF INDEX DIFFERENCES ALLOWED    8
+ MAXIMUM ALLOWED DEVIATION FROM INTEGRAL INDICES     0.100
+ MIMINUM QUALITY OF INDICES FOR EACH CLUSTER IN A SUBTREE    0.70
+ NUMBER OF CLUSTER SUBTREES      3
+ MERGE_TREE=     0.20
+ merged subtrees are marked by *
+ NODES              number of nodes belonging to subtree
+ DIFF_VEC           number of difference vectors in subtree
+ ORIGIN_INDICES     fractional indices of tree origin
+ ORIGIN_COORDINATES reciprocal space coordinates of tree origin
+ LENGTH             length of tree origin vector (1/A)
+
+ SUBTREE  NODES   DIFF_VEC   ORIGIN_INDICES        ORIGIN_COORDINATES         LENGTH
+  *  1       28        106  0.00  0.00  0.00   0.000000  0.000000  0.000000  0.000000
+ Fraction explained difference vectors  0.87537 (<0 :: error)
+ Volume of reciprocal reduced cell    2.855E-06
+ REDUCED CELL     57.97    77.01    80.69    88.62    76.59    88.71
+
+      a             5.68     -2.17    -57.65
+      b            -4.54    -76.87      0.71
+      c           -76.21      2.31    -26.41
+
+   #  REC. DIFFERENCE VECTOR CLUSTER   FREQUENCY      CLUSTER INDICES
+    1  -0.012390  0.013673  0.000200        8.    -0.11    -0.99     0.97
+    2   0.012711 -0.000874  0.000808        6.     0.03     0.01    -0.99
+    3   0.001046 -0.001351  0.000273        5.    -0.01     0.10    -0.09
+    4  -0.000872 -0.012660  0.000967        5.    -0.03     0.98     0.01
+    5   0.011439 -0.026736  0.002034        5.     0.01     2.00    -0.99
+    6   0.025082 -0.001323  0.001664        4.     0.05    -0.01    -1.96
+    7   0.050394 -0.016194  0.006578        4.    -0.06     1.02    -4.05
+    8  -0.000293 -0.013328  0.003220        4.    -0.16     1.03    -0.09
+    9   0.013850 -0.143997  0.026274        4.    -1.12    11.02    -2.08
+   10  -0.119895 -0.005716  0.004280        4.    -0.92     0.99     9.01
+   11  -0.073551 -0.099876  0.013529        4.    -0.98     8.02     5.02
+   12   0.012946 -0.014228  0.003918        4.    -0.12     1.04    -1.12
+   13  -0.013371  0.001293  0.001603        4.    -0.17    -0.04     0.98
+   14   0.038035 -0.002115  0.002480        4.     0.08    -0.01    -2.97
+   15  -0.158020  0.009506  0.002387        3.    -1.06    -0.01    12.00
+   16  -0.144764  0.021935  0.003888        3.    -1.09    -1.03    10.98
+   17   0.000619 -0.128883  0.021764        3.    -0.97     9.92    -0.92
+   18   0.010534 -0.039273  0.003148        3.    -0.04     2.97    -0.98
+   19  -0.108643 -0.032260  0.006382        3.    -0.91     2.98     8.04
+   20  -0.119921 -0.006335  0.006487        3.    -1.04     1.04     8.95
+   21   0.001218  0.025852  0.000940        3.    -0.10    -1.99    -0.06
+   22   0.012035 -0.013678  0.001798        3.    -0.01     1.00    -1.00
+   23  -0.024742  0.027629  0.000508        3.    -0.23    -2.01     1.94
+   24  -0.121721 -0.044895  0.006492        3.    -0.97     4.01     9.00
+   25   0.024518 -0.014149  0.001914        3.     0.06     0.98    -1.95
+   26  -0.120887 -0.018923  0.006138        3.    -1.00     2.01     9.01
+   27  -0.047927 -0.101574  0.015653        3.    -0.95     8.04     3.00
+   28   0.037373 -0.014781  0.005418        2.    -0.07     0.97    -3.03
+   29   0.113959  0.213905  0.023475        2.    -1.17   -16.94    -8.81
+   30   0.091533  0.057340  0.022586        2.    -0.91    -4.81    -7.44
+
+ ***** RESULTS FROM LOCAL INDEXING OF     83 OBSERVED SPOTS *****
+ MAXIMUM MAGNITUDE OF INDEX DIFFERENCES ALLOWED    8
+ MAXIMUM ALLOWED DEVIATION FROM INTEGRAL INDICES     0.100
+ MIMINUM QUALITY OF INDICES FOR EACH SPOT IN A SUBTREE    0.70
+ NUMBER OF SUBTREES      5
+
+ SUBTREE    POPULATION
+     1           56
+     2           25
+     3            1
+     4            1
+     5            1
+
+ ***** DETERMINATION OF THE INDEX ORIGIN OF REFLECTIONS *****
+ The index origin is derived from      55 observed reflections.
+ The chosen indexing alternative is marked by * and minimizes
+ RMSZ     r.m.s. angular deviation (degrees) of observed spots
+           from Ewald sphere
+ TAU      deviation (degrees) of alternative from Ewald sphere
+ X,Y,Z    alternative incident beam wave vector
+
+    INDEX_      RMSZ    TAU       X        Y        Z
+    ORIGIN
+ *  0  0  0     0.94    0.00   0.0000   0.0000   0.9679
+    0  1  0     5.70    1.08  -0.0006  -0.0129   0.9678
+    0 -1  0     7.57    1.85   0.0006   0.0129   0.9678
+    0  2  0    12.67    0.70  -0.0013  -0.0259   0.9675
+    0 -2  1    24.13    1.73  -0.0115   0.0267   0.9674
+
+ ***** INDEXING OF     83 STRONG SPOTS *****
+ NUMBER OF INDEXED SPOTS                  53
+ NUMBER OF OVERLAPPING SPOTS               0
+ NUMBER OF SPOTS TOO FAR FROM LATTICE     30
+
+ ***** REFINED DIFFRACTION PARAMETERS *****
+
+ NUMBER OF INDEXED  SPOTS      49
+ NUMBER OF OBSERVED SPOTS      83
+ REFINED PARAMETERS:   BEAM ORIENTATION CELL
+ E.S.D. OF SPOT POSITION (PIXELS)                              1.15
+ E.S.D. OF ANGULAR DISTANCE FROM EWALD SPHERE (degrees)       0.499
+ SPACE GROUP NUMBER      1
+ UNIT CELL PARAMETERS     39.685    77.207    77.494  90.089  88.197  91.876
+ REC. CELL PARAMETERS   0.025225  0.012959  0.012911  89.970  91.801  88.126
+ COORDINATES OF UNIT CELL A-AXIS     5.962     0.947   -39.223
+ COORDINATES OF UNIT CELL B-AXIS    -4.404   -77.081     0.027
+ COORDINATES OF UNIT CELL C-AXIS   -76.102     4.464   -13.926
+ LAB COORDINATES OF ROTATION AXIS  0.000000  0.000000  0.000000
+ DIRECT BEAM COORDINATES (REC. ANGSTROEM)  -0.000086  0.000957  0.967865
+ DETECTOR COORDINATES (PIXELS) OF DIRECT BEAM    2127.76   2167.64
+ DETECTOR ORIGIN (PIXELS) AT                     2128.00   2165.00
+ CRYSTAL TO DETECTOR DISTANCE (mm)       200.00
+ LAB COORDINATES OF DETECTOR X-AXIS  1.000000  0.000000  0.000000
+ LAB COORDINATES OF DETECTOR Y-AXIS  0.000000  1.000000  0.000000
+
+
+ ***** DETERMINATION OF LATTICE CHARACTER AND BRAVAIS LATTICE *****
+
+ A lattice character is consistent with the observed diffraction pattern
+ for low values for the QUALITY OF FIT and if their implicated
+ UNIT CELL CONSTANTS do not violate the ideal values by more than
+ MAX_CELL_AXIS_ERROR=      0.03 (relative error)
+ MAX_CELL_ANGLE_ERROR=      2.0 (Degrees)
+
+  LATTICE-  BRAVAIS-   QUALITY  UNIT CELL CONSTANTS (ANGSTROEM & DEGREES)
+ CHARACTER  LATTICE     OF FIT      a      b      c   alpha  beta gamma
+
+    44        aP          0.0      40.2   77.2   77.6  90.2  92.5  91.1
+    31        aP          7.7      40.2   77.2   77.6  90.2  87.5  88.9
+    33        mP         26.3      40.2   77.2   77.6  90.2  92.5  91.1
+    25        mC         44.5     109.2  109.6   40.2  91.0  92.6  89.7
+    34        mP         46.4      40.2   77.2   77.6  90.2  92.5  91.1
+    20        mC         52.2     109.2  109.6   40.2  89.0  92.6  90.3
+
+ NUMBER OF OBSERVED SPOTS                        83
+ NUMBER OF SPOTS IN TRUSTED DETECTOR REGIONS     83
+ NUMBER OF INDEXED SPOTS                         57
+
+ ACCEPTING IMAGE  7
+
+ ************************************************************************
+ MEAN VALUES OF CRYSTAL AND DETECTOR PARAMETERS FROM      5 IMAGES
+ ************************************************************************
+ MEAN CELL PARAMETERS     38.409    77.254    77.351  89.977  89.809  90.830
+ MEAN INCIDENT BEAM VECTOR  -0.000069  0.000936  0.967865
+ Mean and e.s.d. of DETECTOR ORIGIN
+      ORGX=   2128.00  ORGY=   2165.00  DETECTOR_DISTANCE=   200.000
+                 0.00             0.00                         0.000
+
+ ************************************************************************
+ ****** LATTICE SYMMETRY IMPLICATED BY SPACE GROUP SYMMETRY ******
+ ************************************************************************
+ For protein crystals the possible space group numbers corresponding  to
+ each Bravais-type are given below for your convenience. Note, that
+ reflection integration is based only on orientation and metric of the
+ lattice. It does not require knowledge of the correct space group!
+ Thus, if no such information is provided by the user in nXDS.INP,
+ reflections are integrated assuming a triclinic reduced cell lattice;
+ the space group is assigned by the user in the last step (CORRECT)
+ when integrated intensities are available.
+
+BRAVAIS-            POSSIBLE SPACE-GROUPS FOR PROTEIN CRYSTALS
+  TYPE                     [SPACE GROUP NUMBER,SYMBOL]
+  aP      [1,P1]
+  mP      [3,P2] [4,P2(1)]
+ mC,mI    [5,C2]
+  oP      [16,P222] [17,P222(1)] [18,P2(1)2(1)2] [19,P2(1)2(1)2(1)]
+  oC      [21,C222] [20,C222(1)]
+  oF      [22,F222]
+  oI      [23,I222] [24,I2(1)2(1)2(1)]
+  tP      [75,P4] [76,P4(1)] [77,P4(2)] [78,P4(3)] [89,P422] [90,P42(1)2]
+          [91,P4(1)22] [92,P4(1)2(1)2] [93,P4(2)22] [94,P4(2)2(1)2]
+          [95,P4(3)22] [96,P4(3)2(1)2]
+  tI      [79,I4] [80,I4(1)] [97,I422] [98,I4(1)22]
+  hP      [143,P3] [144,P3(1)] [145,P3(2)] [149,P312] [150,P321] [151,P3(1)12]
+          [152,P3(1)21] [153,P3(2)12] [154,P3(2)21] [168,P6] [169,P6(1)]
+          [170,P6(5)] [171,P6(2)] [172,P6(4)] [173,P6(3)] [177,P622]
+          [178,P6(1)22] [179,P6(5)22] [180,P6(2)22] [181,P6(4)22] [182,P6(3)22]
+  hR      [146,R3] [155,R32]
+  cP      [195,P23] [198,P2(1)3] [207,P432] [208,P4(2)32] [212,P4(3)32]
+          [213,P4(1)32]
+  cF      [196,F23] [209,F432] [210,F4(1)32]
+  cI      [197,I23] [199,I2(1)3] [211,I432] [214,I4(1)32]
+
+ ************************************************************************
+
+ elapsed wall-clock time for this step       0.9 sec
+
+ TASK     cpu time (sec)    elapsed wall-clock time (sec)
+   1           1.8                     0.8

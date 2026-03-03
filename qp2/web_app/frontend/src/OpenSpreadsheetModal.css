@@ -1,0 +1,68 @@
+.large-modal {
+    width: 800px;
+    max-width: 90%;
+}
+
+.spreadsheet-list {
+    max-height: 400px;
+    overflow-y: auto;
+    margin: 1rem 0;
+    border: 1px solid #eee;
+    border-radius: 4px;
+}
+
+.spreadsheet-list table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.spreadsheet-list th, .spreadsheet-list td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.spreadsheet-list th {
+    background-color: #f8f9fa;
+    position: sticky;
+    top: 0;
+    font-weight: 600;
+    color: #555;
+}
+
+.clickable-row {
+    cursor: pointer;
+    transition: background-color 0.1s;
+}
+
+.clickable-row:hover {
+    background-color: #f0f7ff;
+}
+
+.sheet-name-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.delete-btn {
+    color: #95a5a6;
+}
+
+.delete-btn:hover {
+    color: #e74c3c;
+    background-color: #fadbd8;
+}

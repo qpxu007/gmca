@@ -1,0 +1,56 @@
+---
+config:
+  look: classic
+  theme: redux
+---
+sequenceDiagram
+  participant Detector as Detector
+  participant Redis_Server as Redis_Server
+  participant RedisManager as RedisManager
+  participant ProcessingServer as ProcessingServer
+  participant HDF5Manager as HDF5Manager
+  participant AnalysisManager as AnalysisManager
+  participant FileSystem as FileSystem
+  participant WorkerPool as WorkerPool
+  autonumber
+  Detector ->>+ Redis_Server: Publishes Frame 0 Message
+  Redis_Server -->>- RedisManager: Receives Message
+  RedisManager ->> RedisManager: Parses, detects new run
+  RedisManager ->>+ ProcessingServer: emit run_started(run_prefix, master_files)
+  ProcessingServer ->> ProcessingServer: setup_hdf5_watchers_for_run()
+  ProcessingServer ->>+ HDF5Manager: new HDF5Reader(master_file)
+  HDF5Manager ->>+ FileSystem: Reads ONLY master file
+  FileSystem -->>- HDF5Manager: Returns metadata
+  HDF5Manager ->> HDF5Manager: Builds speculative file map
+  HDF5Manager ->> HDF5Manager: Starts internal timer for polling
+  ProcessingServer -->>- RedisManager: Acknowledges start (implicit)
+  loop Data Collection
+    Detector ->>+ FileSystem: Writes data_00000X.h5
+    FileSystem -->>- Detector: 
+  end
+  loop HDF5 Polling
+    HDF5Manager ->>+ FileSystem: os.path.exists(expected_path)?
+    FileSystem -->>- HDF5Manager: Yes, new file found
+  end
+  HDF5Manager ->>+ AnalysisManager: emit data_files_ready_batch(file_info)
+  AnalysisManager ->> AnalysisManager: Creates Dozor/Spotfinder Worker
+  AnalysisManager ->>+ WorkerPool: Submits Worker
+  WorkerPool ->> WorkerPool: Runs analysis in background
+  WorkerPool -->>- AnalysisManager: Worker finished (implicit)
+  Detector ->>+ Redis_Server: Publishes more frames...
+  Redis_Server -->>- RedisManager: Receives messages
+  RedisManager ->> RedisManager: Tracks frame count
+  alt 25% Progress Reached
+    RedisManager ->>+ ProcessingServer: emit run_progress_25(...)
+    ProcessingServer ->>+ WorkerPool: Submits 'gmca_quick' job
+    WorkerPool -->>- ProcessingServer: 
+  end
+  alt 100% Progress Reached
+    RedisManager ->>+ ProcessingServer: emit run_completed(...)
+    ProcessingServer ->> ProcessingServer: process_completion()
+    ProcessingServer ->>+ WorkerPool: Submits final full processing jobs
+    WorkerPool -->>- ProcessingServer: 
+    ProcessingServer ->> HDF5Manager: cleanup_hdf5_watchers_for_run()
+    HDF5Manager ->> HDF5Manager: reader.close()
+    ProcessingServer -->>- RedisManager: Run is complete (implicit)
+  end

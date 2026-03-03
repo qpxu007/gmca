@@ -1,0 +1,231 @@
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: light;
+  color: #213547;
+  background-color: #ffffff;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: flex-start; /* Align to top */
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+#root {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Toolbar */
+.toolbar {
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.toolbar button {
+  padding: 8px 16px;
+  border: 1px solid #ced4da;
+  background-color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.toolbar button:hover {
+  background-color: #e9ecef;
+}
+
+.toolbar button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.filename-label {
+  margin-left: auto;
+  font-style: italic;
+  color: #6c757d;
+  font-weight: bold;
+}
+
+/* Main Content (Scrollable) */
+.main-content {
+  flex: 1;
+  padding: 20px;
+  overflow: auto;
+  background-color: #f1f3f5;
+}
+
+/* Grid */
+.puck-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr); /* 6 columns like desktop */
+  gap: 15px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Slot */
+.slot {
+  background-color: #e9ecef;
+  border: 2px solid #dee2e6;
+  border-radius: 8px;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  padding: 5px;
+  position: relative;
+}
+
+.slot-label {
+  font-size: 12px;
+  color: #adb5bd;
+  text-align: center;
+  margin-bottom: 5px;
+}
+
+/* Puck */
+.puck {
+  background-color: #d4e6f1; /* Light blue match */
+  border: 2px solid #a9cce3;
+  border-radius: 6px;
+  padding: 10px;
+  cursor: grab;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.puck:active {
+  cursor: grabbing;
+}
+
+.puck-title {
+  font-weight: bold;
+  font-size: 16px;
+  margin-bottom: 5px;
+}
+
+.puck-info {
+  font-size: 12px;
+  text-align: center;
+  white-space: pre-wrap;
+}
+
+/* Modal */
+.ReactModal__Overlay {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+  z-index: 1000;
+}
+
+.ReactModal__Content {
+  inset: 40px; /* Removed !important to allow overrides */
+  border: 1px solid #ccc;
+  background: #fff;
+  overflow: auto;
+  border-radius: 8px;
+  outline: none;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Helper for small centered modals */
+.small-modal {
+  inset: auto !important; /* Reset inset so top/left centering works */
+  border: 1px solid #ccc;
+  overflow: visible;
+}
+
+/* Custom Modal Classes for complete control */
+.custom-overlay {
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 2000;
+  position: fixed;
+  inset: 0;
+}
+
+.custom-small-modal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  right: auto;
+  bottom: auto;
+  margin-right: -50%;
+  transform: translate(-50%, -50%);
+  border: 1px solid #ccc;
+  background: #fff;
+  overflow: auto;
+  border-radius: 8px;
+  outline: none;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  width: 400px;
+  height: 300px; /* Default height */
+  z-index: 2001;
+}
+
+.custom-save-modal {
+  height: 250px !important;
+}
+
+.modal-header {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-bottom: 20px;
+}
+
+.data-table th, .data-table td {
+  border: 1px solid #dee2e6;
+  padding: 8px;
+  text-align: left;
+}
+
+.data-table th {
+  background-color: #f8f9fa;
+  position: sticky;
+  top: 0;
+}
+
+.data-table input {
+  width: 100%;
+  border: none;
+  padding: 4px;
+  box-sizing: border-box;
+}
+
+.data-table input:focus {
+  outline: 2px solid #3498db;
+}
+
+.read-only {
+  background-color: #f0f0f0;
+  color: #666;
+}
+
+.modal-footer {
+  margin-top: auto;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}

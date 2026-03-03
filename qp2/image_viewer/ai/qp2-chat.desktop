@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=QP2 AI Chat Widget
+Comment=AI Assistant Chat for QP2
+Exec=/home/qxu/data-analysis/qp2/bin/chat --widget
+Icon=/home/qxu/data-analysis/qp2_chat_icon.svg
+Type=Application
+Categories=Utility;Science;
+Terminal=false
+StartupNotify=true

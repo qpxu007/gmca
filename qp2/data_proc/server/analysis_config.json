@@ -1,0 +1,91 @@
+{
+    "enabled_pipelines": [
+        "xds",
+        "xia2",
+        "autoproc",
+        "dozor",
+        "nxds"
+    ],
+    "enable_legacy_pipelines": true,
+    "only_run_legacy_strategy": true,
+    "minimum_frames_for_pipelines": 5,
+    "run_for_each_series_upon_run_completion": true,
+    "spotfinder": {
+        "peak_finding_min_resolution_A": 20.0,
+        "peak_finding_max_resolution_A": 2.0,
+        "peak_finding_num_peaks": 200,
+        "peak_finding_min_distance": 7,
+        "peak_finding_min_intensity": 10,
+        "peak_finding_median_filter_size": null,
+        "peak_finding_zscore_cutoff": 3.0
+    },
+    "xds": {
+        "nproc": 32,
+        "njobs": 4,
+        "anomalous": true
+    },
+    "nxds": {
+        "nproc": 16,
+        "njobs": 4,
+        "auto_merge": false
+    },
+    "xia2": {
+        "pipeline": "xia2_dials",
+        "nproc": 32,
+        "njobs": 1,
+        "fast": false,
+        "trust_beam_centre": true
+    },
+    "xia2_ssx": {
+        "nproc": 16,
+        "njobs": 2
+    },
+    "autoproc": {
+        "nproc": 16,
+        "njobs": 4,
+        "fast": true
+    },
+    "crystfel": {
+        "nproc": 32,
+        "peak_method": "peakfinder8",
+        "min_snr": 4.5,
+        "min_snr_biggest_pix": 3.5,
+        "min_snr_peak_pix": 2.0,
+        "min_sig": 6.0,
+        "local_bg_radius": 3,
+        "pdb_file": null,
+        "refl_min_resolution_A": 20.0,
+        "refl_max_resolution_A": 2.0,
+        "min_peaks": 15,
+        "no_non_hits": true,
+        "indexing_methods": "xgandalf",
+        "xgandalf_fast": true,
+        "no_refine": false,
+        "no_check_peaks": false,
+        "peakfinder8_fast": true,
+        "asdf_fast": true,
+        "no_retry": true,
+        "no_multi": true,
+        "push_res": 0.0,
+        "integration_mode": "Standard",
+        "extra_options": "",
+        "peakfinder8_threshold": 20.0,
+        "peakfinder8_auto_threshold": true,
+        "peakfinder8_min_pix_count": 2,
+        "peakfinder8_max_pix_count": 200
+    },
+    "dozor": {
+        "batch_size": 5,
+        "beamstop_size": 100,
+        "spot_size": 3,
+        "spot_level": 6,
+        "dist_cutoff": 20.0,
+        "res_cutoff_low": 20.0,
+        "res_cutoff_high": 2.5,
+        "check_ice_rings": "T",
+        "exclude_resolution_ranges": [],
+        "min_spot_range_low": 15.0,
+        "min_spot_range_high": 4.0,
+        "min_spot_count": 2
+    }
+}

@@ -1,0 +1,86 @@
+.dataset-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
+    background-color: #f8f9fa;
+}
+
+.dataset-toolbar {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 15px;
+}
+
+.dataset-toolbar input {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    min-width: 300px;
+}
+
+.dataset-table-container {
+    flex: 1;
+    overflow: auto;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.dataset-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.dataset-table th, .dataset-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.dataset-table th {
+    background-color: #f1f3f5;
+    position: sticky;
+    top: 0;
+    font-weight: 600;
+}
+
+.dataset-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+.metadata-btn {
+    background: none;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: #555;
+}
+
+.metadata-btn:hover {
+    background-color: #eee;
+}
+
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    margin-top: 15px;
+    gap: 10px;
+}
+
+.pagination-btn {
+    padding: 6px 12px;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

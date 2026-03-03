@@ -1,0 +1,5 @@
+#!/bin/bash
+SCRIPT_DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
+source "$SCRIPT_DIR/qp2_env.sh"
+
+$MYPYTHON -m qp2.spreadsheet_editor.main "$@"

@@ -1,0 +1,140 @@
+.scheduler-grid-container {
+    display: grid;
+    /* grid-template-columns is set via inline style */
+    gap: 1px;
+    background-color: #e0e0e0; /* Grid line color */
+    border: 1px solid #e0e0e0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow: auto;
+    max-height: 100%; /* Important for scrolling within the container */
+    position: relative;
+}
+
+.grid-header, .grid-body {
+    display: contents;
+}
+
+.header-cell {
+    background-color: #f8f9fa;
+    padding: 12px 8px;
+    text-align: center;
+    font-weight: 600;
+    color: #444;
+    border-bottom: 1px solid #ccc;
+    border-right: 1px solid #e0e0e0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1); /* Subtle shadow for header */
+}
+
+.date-header {
+    left: 0;
+    z-index: 20; /* Above regular headers */
+    min-width: 120px;
+    background-color: #f8f9fa;
+}
+
+.date-cell {
+    background-color: #ffffff;
+    padding: 10px 8px;
+    text-align: center;
+    font-weight: 500;
+    color: #555;
+    border-right: 1px solid #e0e0e0;
+    border-bottom: 1px solid #e0e0e0;
+    position: sticky;
+    left: 0;
+    z-index: 5; /* Above schedule cells */
+    box-shadow: 2px 0 2px -1px rgba(0, 0, 0, 0.05); /* Subtle shadow for date col */
+}
+
+.schedule-cell {
+    background-color: #FFFFFF;
+    padding: 4px; /* Reduced padding */
+    text-align: center;
+    min-height: 50px; /* Reduced height */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.9em;
+    border-bottom: 1px solid #e0e0e0;
+    border-right: 1px solid #e0e0e0;
+    position: relative;
+}
+
+.schedule-cell.clickable {
+    cursor: pointer;
+}
+
+.schedule-cell.clickable:hover {
+    box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.1); /* Inner border on hover */
+    z-index: 1; /* Bring above neighbors */
+}
+
+.cell-day-type {
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: #222;
+    text-transform: uppercase;
+    font-size: 0.85em;
+    letter-spacing: 0.5px;
+}
+
+.cell-staff {
+    font-style: italic;
+    color: #555;
+    margin-bottom: 6px;
+    font-size: 0.95em;
+    width: 100%;
+}
+
+.cell-shifts {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+    width: 100%;
+}
+
+.shift-tag {
+    background-color: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    color: #333;
+    padding: 2px 6px;
+    border-radius: 12px;
+    font-size: 0.75em;
+    white-space: nowrap;
+    max-width: 90%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Stealth Select Styling */
+.stealth-select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background: transparent;
+    border: none;
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    width: 100%;
+    text-align: center;
+    text-align-last: center; /* For centering selected text */
+    cursor: pointer;
+    padding: 4px;
+    font-style: italic;
+}
+
+.stealth-select:hover, .stealth-select:focus {
+    background-color: rgba(0,0,0,0.05);
+    border-radius: 4px;
+    outline: none;
+}
+
+.stealth-select option {
+    font-style: normal;
+}

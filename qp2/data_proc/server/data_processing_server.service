@@ -1,0 +1,44 @@
+
+[Unit]
+Description=Data Processing Server (image_viewer module)
+Requires=mnt-beegfs.mount
+After=network.target mnt-beegfs.mount mnt-nvme.mount
+
+
+[Service]
+Type=simple
+
+# IMPORTANT: Replace with the actual user and group for the service
+User=root
+Group=root
+
+# save to /etc/systemd/system/data_processing_server.service 
+#
+# IMPORTANT: Set this to the directory *containing* your 'image_viewer' package.
+# For example, if your package is at /opt/my_application/image_viewer,
+# then WorkingDirectory should be /opt/my_application/
+# This allows 'python3 -m qp2.data_proc.server.data_processing_server' to work.
+WorkingDirectory=/mnt/software/data-analysis/qp2
+
+# Command to start the server as a module.
+# Add or modify command-line arguments as needed (e.g., --log-level, --max-workers).
+# ExecStart=/usr/bin/python3 -m image_viewer.data_proc.server.data_processing_server --enable-http-server --http-port 8080
+# ExecStart=/path/to/your/run_server_with_module.sh --enable-http-server --http-port 8080 --log-level INFO
+# ExecStart=/bin/bash -c ". /etc/profile.d/modules.sh; module load data-analysis; exec python -m image_viewer.data_proc.server.data_processing_server --enable-http-server --http-port 8080"
+ExecStart=/mnt/software/data-analysis/qp2/data_proc/server/run_server_with_module.sh
+
+# Restart policy
+Restart=on-failure
+RestartSec=5
+
+# Redirect stdout and stderr to separate files in /var/log/
+# The User/Group running the service must have permissions to create/write to these files.
+# 'append:' will create the file if it doesn't exist and open it in append mode.
+# This requires systemd version 240 or newer for the 'append:' prefix to create files.
+# For older systemd versions, create these files manually first and set permissions.
+StandardOutput=append:/var/log/data_processing_server.log
+StandardError=inherit
+
+[Install]
+WantedBy=multi-user.target
+

@@ -1,0 +1,95 @@
+[build-system]
+requires = ["setuptools>=65", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qp2"
+version = "2.0.0"
+description = "Crystallographic data processing and visualization platform"
+authors = [{ name = "QP2 Team" }]
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+keywords = ["crystallography", "xray", "xds", "hdf5", "redis", "slurm", "qt"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: POSIX :: Linux",
+]
+dependencies = [
+  "PyQt5",
+  "pyqtgraph>=0.12",
+  "numpy>=1.22",
+  "scipy>=1.8",
+  "h5py>=3.7",
+  "hdf5plugin",
+  "pymysql",
+  "sqlalchemy>=1.4",
+  "psycopg2-binary",
+  "redis",
+  "requests>=2.28",
+  "fastapi>=0.110",
+  "uvicorn>=0.23",
+  "pillow>=10.0",
+  "h5grove>=1.3",
+  "pandas",
+  "flask",
+  "fabio",
+  "openai",
+  "matplotlib",
+  "pyyaml",
+  "gemmi",
+  "scikit-learn",
+  "scikit-image",
+  "networkx",
+  "markdown",
+  "pyepics",
+  "lxml",
+  "websockets",
+  "pydantic",
+  "PyJWT",
+  "filelock",
+  "rcsb-api",
+  "opencv-python",
+  "PyOpenGL", 
+  "PyOpenGL_accelerate",
+  "PyQtWebEngine",
+  "xlrd>=2.0.1",
+  "openpyxl"
+]
+
+[project.optional-dependencies]
+server = [
+  "mysql-connector-python>=8.0",
+]
+dev = [
+  "pytest",
+  "pytest-qt",
+  "pytest-mock",
+  "pytest-cov",
+  "flake8",
+  "black",
+  "mypy",
+]
+
+[project.scripts]
+qp2-image-viewer = "qp2.image_viewer.ui.main:main"
+qp2-data-viewer = "qp2.data_viewer.main:main"
+qp2-dp-server = "qp2.data_proc.server.data_processing_server:main"
+qp2-web-server = "qp2.web.server:main"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*", "*Tests"]
+python_functions = ["test_*"]
+
+[tool.setuptools.package-dir]
+qp2 = "."
+
+[tool.setuptools.packages.find]
+include = ["qp2*"]

@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# Determine the directory where the script resides (e.g. .../qp2/bin)
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+# Resolve package root (qp2)
+QP2_ROOT="$(dirname "$DIR")"
+
+# Resolve project base (parent of qp2)
+PROJECT_BASE="$(dirname "$QP2_ROOT")"
+
+# Set PYTHONPATH to include the project base so 'import qp2...' works
+export PYTHONPATH="$PROJECT_BASE:$PYTHONPATH"
+
+# Run the GUI
+python3 "$QP2_ROOT/simulated_collection/mock_streamer_gui.py" "$@"

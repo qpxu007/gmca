@@ -1,0 +1,103 @@
+.avail-calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    margin-top: 10px;
+}
+
+.avail-day-header {
+    text-align: center;
+    font-weight: bold;
+    color: #666;
+    padding: 5px;
+    font-size: 0.8em;
+}
+
+.avail-day-cell {
+    height: 40px; /* Reduced height for multi-month view */
+    background-color: #f9f9f9;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+    position: relative;
+    user-select: none;
+    font-size: 0.9em;
+}
+
+.avail-day-cell.clickable {
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.avail-day-cell.clickable:hover {
+    filter: brightness(0.95);
+}
+
+.avail-day-cell.unavailable {
+    background-color: #ffccc7;
+    color: #cf1322;
+    border-color: #ffa39e;
+}
+
+.avail-day-cell.preferred {
+    background-color: #d9f7be;
+    color: #389e0d;
+    border-color: #b7eb8f;
+}
+
+.avail-day-cell.empty {
+    background-color: transparent;
+    border: none;
+}
+
+/* New styles for multi-month view */
+.months-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+}
+
+.month-container {
+    width: 300px; /* Fixed width for consistency */
+    border: 1px solid #eee;
+    padding: 10px;
+    border-radius: 8px;
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.month-title {
+    text-align: center;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #333;
+    font-size: 1.1em;
+}
+
+.legend {
+    display: flex;
+    gap: 15px;
+    margin-left: 20px;
+    font-size: 0.9em;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.dot.red { background-color: #cf1322; }
+.dot.green { background-color: #389e0d; }
+.dot.gray { background-color: #ccc; }

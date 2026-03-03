@@ -1,0 +1,19 @@
+{
+    "_comment": "Configuration for external program setup commands and library paths. Keys are case-insensitive.",
+    "dials": "dials",
+    "crystfel": "crystfel",
+    "nxds": "module load ccp4 && module load nxds",
+    "xds": "module load ccp4 && module load xds",
+    "xia2": "dials",
+    "autoproc": "autoproc",
+    "dozor": "module load dozor",
+    "ccp4": "ccp4",
+    "shelx": "ccp4",
+    "lib_xds-zcbf": "/mnt/software/px/XDS/xds-zcbf.so",
+    "lib_dectris-neggia": "/mnt/software/px/XDS/dectris-neggia.so",
+    "lib_raddose3d": "/mnt/software/px/bin/raddose3d.jar",
+    "prog_dozor": "dozor2q",
+    "prog_dials_python": "/mnt/software/px/dials/build/bin/dials.python",
+    "prog_caget": "/mnt/software/epics/base/bin/linux-x86_64/caget",
+    "prog_python": "/mnt/software/px/miniconda3/envs/opencv/bin/python"
+}

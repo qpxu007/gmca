@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# Source the standardized environment configuration
+SCRIPT_DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
+source "$SCRIPT_DIR/qp2_env.sh"
+
+# Permission Check for Live Mode
+USER_GROUPS=$(id -nG "$USER")
+AUTHORIZED=false
+
+for group in $USER_GROUPS; do
+  if [[ "$group" == "staffGroup" || "$group" == "bl1-first-day" || "$group" == "bl2-first-day" ]]; then
+    AUTHORIZED=true
+    break
+  fi
+done
+
+# If not authorized, force disable live mode
+if [ "$AUTHORIZED" = false ]; then
+  # check if --nolive is already present to avoid duplication
+  if [[ ! "$*" == *"--nolive"* ]]; then
+      echo "User '$USER' is not authorized for live mode (requires membership in: staffGroup, bl1-first-day, or bl2-first-day). Disabling live mode."
+      set -- "$@" "--nolive"
+  fi
+fi
+
+# Execute the Python script
+$MYPYTHON -Xfrozen_modules=off -m qp2.image_viewer.ui.main "$@"

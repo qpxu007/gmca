@@ -1,0 +1,3602 @@
+[
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 2.4813,
+        "total_collection_time_s": 4466.38,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 2.4813,
+        "total_collection_time_s": 4466.38,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 2.4813,
+        "total_collection_time_s": 4466.38,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 2.4813,
+        "total_collection_time_s": 4466.38,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 2.4813,
+        "total_collection_time_s": 4466.38,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 2.4813,
+        "total_collection_time_s": 4466.38,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 2.4813,
+        "total_collection_time_s": 4466.38,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 2.4813,
+        "total_collection_time_s": 4466.38,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 2.4813,
+        "total_collection_time_s": 4466.38,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 2.4813,
+        "total_collection_time_s": 4466.38,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 2.1871,
+        "total_collection_time_s": 3936.69,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 2.1871,
+        "total_collection_time_s": 3936.69,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 2.1871,
+        "total_collection_time_s": 3936.69,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 2.1871,
+        "total_collection_time_s": 3936.69,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 2.1871,
+        "total_collection_time_s": 3936.69,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 2.1871,
+        "total_collection_time_s": 3936.69,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 2.1871,
+        "total_collection_time_s": 3936.69,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 2.1871,
+        "total_collection_time_s": 3936.69,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 2.1871,
+        "total_collection_time_s": 3936.69,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 2.1871,
+        "total_collection_time_s": 3936.69,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 2.0833,
+        "total_collection_time_s": 3750.0,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 2.0833,
+        "total_collection_time_s": 3750.0,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 2.0833,
+        "total_collection_time_s": 3750.0,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 2.0833,
+        "total_collection_time_s": 3750.0,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 2.0833,
+        "total_collection_time_s": 3750.0,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 2.0833,
+        "total_collection_time_s": 3750.0,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 2.0833,
+        "total_collection_time_s": 3750.0,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 2.0833,
+        "total_collection_time_s": 3750.0,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 2.0833,
+        "total_collection_time_s": 3750.0,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 2.0833,
+        "total_collection_time_s": 3750.0,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 1.6403,
+        "total_collection_time_s": 2952.46,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 1.6403,
+        "total_collection_time_s": 2952.46,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 1.6403,
+        "total_collection_time_s": 2952.46,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 1.6403,
+        "total_collection_time_s": 2952.46,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 1.6403,
+        "total_collection_time_s": 2952.46,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 1.6403,
+        "total_collection_time_s": 2952.46,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 1.6403,
+        "total_collection_time_s": 2952.46,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 1.6403,
+        "total_collection_time_s": 2952.46,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 1.6403,
+        "total_collection_time_s": 2952.46,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 1.6403,
+        "total_collection_time_s": 2952.46,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 1.2716,
+        "total_collection_time_s": 2288.82,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 1.2716,
+        "total_collection_time_s": 2288.82,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 1.2716,
+        "total_collection_time_s": 2288.82,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 1.2716,
+        "total_collection_time_s": 2288.82,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 1.2716,
+        "total_collection_time_s": 2288.82,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 1.2716,
+        "total_collection_time_s": 2288.82,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 1.2716,
+        "total_collection_time_s": 2288.82,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 1.2716,
+        "total_collection_time_s": 2288.82,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 1.2716,
+        "total_collection_time_s": 2288.82,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 1.2716,
+        "total_collection_time_s": 2288.82,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 0.8785,
+        "total_collection_time_s": 1581.21,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 0.8785,
+        "total_collection_time_s": 1581.21,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 0.8785,
+        "total_collection_time_s": 1581.21,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 0.8785,
+        "total_collection_time_s": 1581.21,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 0.8785,
+        "total_collection_time_s": 1581.21,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 0.8785,
+        "total_collection_time_s": 1581.21,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 0.8785,
+        "total_collection_time_s": 1581.21,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 0.8785,
+        "total_collection_time_s": 1581.21,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 0.8785,
+        "total_collection_time_s": 1581.21,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            50,
+            50
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 0.8785,
+        "total_collection_time_s": 1581.21,
+        "mismatch_score": 0.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 20.0,
+        "required_exposure_time_s": 2.4813,
+        "total_collection_time_s": 4466.38,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 17.78,
+        "required_exposure_time_s": 2.371,
+        "total_collection_time_s": 4267.88,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 15.56,
+        "required_exposure_time_s": 2.2608,
+        "total_collection_time_s": 4069.37,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 20.0,
+        "required_exposure_time_s": 2.1871,
+        "total_collection_time_s": 3936.69,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 13.33,
+        "required_exposure_time_s": 2.1505,
+        "total_collection_time_s": 3870.86,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 17.78,
+        "required_exposure_time_s": 2.0898,
+        "total_collection_time_s": 3761.73,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 20.0,
+        "required_exposure_time_s": 2.0833,
+        "total_collection_time_s": 3750.0,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 11.11,
+        "required_exposure_time_s": 2.0402,
+        "total_collection_time_s": 3672.36,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 15.56,
+        "required_exposure_time_s": 1.9926,
+        "total_collection_time_s": 3586.77,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 17.78,
+        "required_exposure_time_s": 1.9907,
+        "total_collection_time_s": 3583.33,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 8.89,
+        "required_exposure_time_s": 1.9299,
+        "total_collection_time_s": 3473.85,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 15.56,
+        "required_exposure_time_s": 1.8981,
+        "total_collection_time_s": 3416.67,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 13.33,
+        "required_exposure_time_s": 1.8954,
+        "total_collection_time_s": 3411.8,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 6.67,
+        "required_exposure_time_s": 1.8196,
+        "total_collection_time_s": 3275.35,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 13.33,
+        "required_exposure_time_s": 1.8056,
+        "total_collection_time_s": 3250.0,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 11.11,
+        "required_exposure_time_s": 1.7982,
+        "total_collection_time_s": 3236.84,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 11.11,
+        "required_exposure_time_s": 1.713,
+        "total_collection_time_s": 3083.33,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 4.44,
+        "required_exposure_time_s": 1.7094,
+        "total_collection_time_s": 3076.84,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 8.89,
+        "required_exposure_time_s": 1.701,
+        "total_collection_time_s": 3061.87,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 20.0,
+        "required_exposure_time_s": 1.6403,
+        "total_collection_time_s": 2952.46,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 8.89,
+        "required_exposure_time_s": 1.6204,
+        "total_collection_time_s": 2916.67,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 6.67,
+        "required_exposure_time_s": 1.6038,
+        "total_collection_time_s": 2886.91,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 2.22,
+        "required_exposure_time_s": 1.5991,
+        "total_collection_time_s": 2878.34,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 17.78,
+        "required_exposure_time_s": 1.5674,
+        "total_collection_time_s": 2821.24,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 6.67,
+        "required_exposure_time_s": 1.5278,
+        "total_collection_time_s": 2750.0,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 4.44,
+        "required_exposure_time_s": 1.5066,
+        "total_collection_time_s": 2711.94,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 15.56,
+        "required_exposure_time_s": 1.4945,
+        "total_collection_time_s": 2690.02,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 1.4888,
+        "total_collection_time_s": 2679.83,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 4.44,
+        "required_exposure_time_s": 1.4352,
+        "total_collection_time_s": 2583.33,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 13.33,
+        "required_exposure_time_s": 1.4216,
+        "total_collection_time_s": 2558.8,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 2.22,
+        "required_exposure_time_s": 1.4094,
+        "total_collection_time_s": 2536.98,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 11.11,
+        "required_exposure_time_s": 1.3487,
+        "total_collection_time_s": 2427.57,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 2.22,
+        "required_exposure_time_s": 1.3426,
+        "total_collection_time_s": 2416.67,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 1.3122,
+        "total_collection_time_s": 2362.02,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 8.89,
+        "required_exposure_time_s": 1.2758,
+        "total_collection_time_s": 2296.35,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 20.0,
+        "required_exposure_time_s": 1.2716,
+        "total_collection_time_s": 2288.82,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 1.25,
+        "total_collection_time_s": 2250.0,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 17.78,
+        "required_exposure_time_s": 1.2151,
+        "total_collection_time_s": 2187.09,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 6.67,
+        "required_exposure_time_s": 1.2029,
+        "total_collection_time_s": 2165.13,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 15.56,
+        "required_exposure_time_s": 1.1585,
+        "total_collection_time_s": 2085.37,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 4.44,
+        "required_exposure_time_s": 1.13,
+        "total_collection_time_s": 2033.91,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 13.33,
+        "required_exposure_time_s": 1.102,
+        "total_collection_time_s": 1983.64,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 2.22,
+        "required_exposure_time_s": 1.0571,
+        "total_collection_time_s": 1902.69,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 11.11,
+        "required_exposure_time_s": 1.0455,
+        "total_collection_time_s": 1881.92,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 8.89,
+        "required_exposure_time_s": 0.989,
+        "total_collection_time_s": 1780.19,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 0.9842,
+        "total_collection_time_s": 1771.47,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 6.67,
+        "required_exposure_time_s": 0.9325,
+        "total_collection_time_s": 1678.47,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 20.0,
+        "required_exposure_time_s": 0.8785,
+        "total_collection_time_s": 1581.21,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 4.44,
+        "required_exposure_time_s": 0.876,
+        "total_collection_time_s": 1576.74,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 17.78,
+        "required_exposure_time_s": 0.8394,
+        "total_collection_time_s": 1510.93,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 2.22,
+        "required_exposure_time_s": 0.8195,
+        "total_collection_time_s": 1475.02,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 15.56,
+        "required_exposure_time_s": 0.8004,
+        "total_collection_time_s": 1440.66,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 0.7629,
+        "total_collection_time_s": 1373.29,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 13.33,
+        "required_exposure_time_s": 0.7613,
+        "total_collection_time_s": 1370.38,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 11.11,
+        "required_exposure_time_s": 0.7223,
+        "total_collection_time_s": 1300.11,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 8.89,
+        "required_exposure_time_s": 0.6832,
+        "total_collection_time_s": 1229.83,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 6.67,
+        "required_exposure_time_s": 0.6442,
+        "total_collection_time_s": 1159.55,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 4.44,
+        "required_exposure_time_s": 0.6052,
+        "total_collection_time_s": 1089.28,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 2.22,
+        "required_exposure_time_s": 0.5661,
+        "total_collection_time_s": 1019.0,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            30,
+            30
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 0.5271,
+        "total_collection_time_s": 948.73,
+        "mismatch_score": 40.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 30.0,
+        "required_exposure_time_s": 2.4813,
+        "total_collection_time_s": 4466.38,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 26.67,
+        "required_exposure_time_s": 2.3159,
+        "total_collection_time_s": 4168.62,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 30.0,
+        "required_exposure_time_s": 2.1871,
+        "total_collection_time_s": 3936.69,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 23.33,
+        "required_exposure_time_s": 2.1505,
+        "total_collection_time_s": 3870.86,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 30.0,
+        "required_exposure_time_s": 2.0833,
+        "total_collection_time_s": 3750.0,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 26.67,
+        "required_exposure_time_s": 2.0412,
+        "total_collection_time_s": 3674.25,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 20.0,
+        "required_exposure_time_s": 1.9851,
+        "total_collection_time_s": 3573.11,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 26.67,
+        "required_exposure_time_s": 1.9444,
+        "total_collection_time_s": 3500.0,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 23.33,
+        "required_exposure_time_s": 1.8954,
+        "total_collection_time_s": 3411.8,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 16.67,
+        "required_exposure_time_s": 1.8196,
+        "total_collection_time_s": 3275.35,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 23.33,
+        "required_exposure_time_s": 1.8056,
+        "total_collection_time_s": 3250.0,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 20.0,
+        "required_exposure_time_s": 1.7496,
+        "total_collection_time_s": 3149.36,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 20.0,
+        "required_exposure_time_s": 1.6667,
+        "total_collection_time_s": 3000.0,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 13.33,
+        "required_exposure_time_s": 1.6542,
+        "total_collection_time_s": 2977.59,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 30.0,
+        "required_exposure_time_s": 1.6403,
+        "total_collection_time_s": 2952.46,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 16.67,
+        "required_exposure_time_s": 1.6038,
+        "total_collection_time_s": 2886.91,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 26.67,
+        "required_exposure_time_s": 1.5309,
+        "total_collection_time_s": 2755.63,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 16.67,
+        "required_exposure_time_s": 1.5278,
+        "total_collection_time_s": 2750.0,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 10.0,
+        "required_exposure_time_s": 1.4888,
+        "total_collection_time_s": 2679.83,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 13.33,
+        "required_exposure_time_s": 1.458,
+        "total_collection_time_s": 2624.46,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 23.33,
+        "required_exposure_time_s": 1.4216,
+        "total_collection_time_s": 2558.8,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 13.33,
+        "required_exposure_time_s": 1.3889,
+        "total_collection_time_s": 2500.0,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 6.67,
+        "required_exposure_time_s": 1.3234,
+        "total_collection_time_s": 2382.07,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 10.0,
+        "required_exposure_time_s": 1.3122,
+        "total_collection_time_s": 2362.02,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 20.0,
+        "required_exposure_time_s": 1.3122,
+        "total_collection_time_s": 2361.96,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 30.0,
+        "required_exposure_time_s": 1.2716,
+        "total_collection_time_s": 2288.82,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 10.0,
+        "required_exposure_time_s": 1.25,
+        "total_collection_time_s": 2250.0,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 16.67,
+        "required_exposure_time_s": 1.2029,
+        "total_collection_time_s": 2165.13,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 26.67,
+        "required_exposure_time_s": 1.1868,
+        "total_collection_time_s": 2136.23,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 6.67,
+        "required_exposure_time_s": 1.1664,
+        "total_collection_time_s": 2099.57,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 3.33,
+        "required_exposure_time_s": 1.158,
+        "total_collection_time_s": 2084.31,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 6.67,
+        "required_exposure_time_s": 1.1111,
+        "total_collection_time_s": 2000.0,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 23.33,
+        "required_exposure_time_s": 1.102,
+        "total_collection_time_s": 1983.64,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 13.33,
+        "required_exposure_time_s": 1.0935,
+        "total_collection_time_s": 1968.3,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 3.33,
+        "required_exposure_time_s": 1.0206,
+        "total_collection_time_s": 1837.12,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 20.0,
+        "required_exposure_time_s": 1.0173,
+        "total_collection_time_s": 1831.05,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 0.9925,
+        "total_collection_time_s": 1786.55,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 10.0,
+        "required_exposure_time_s": 0.9842,
+        "total_collection_time_s": 1771.47,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 3.33,
+        "required_exposure_time_s": 0.9722,
+        "total_collection_time_s": 1750.0,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 16.67,
+        "required_exposure_time_s": 0.9325,
+        "total_collection_time_s": 1678.47,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 30.0,
+        "required_exposure_time_s": 0.8785,
+        "total_collection_time_s": 1581.21,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 0.8748,
+        "total_collection_time_s": 1574.68,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 6.67,
+        "required_exposure_time_s": 0.8748,
+        "total_collection_time_s": 1574.64,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 13.33,
+        "required_exposure_time_s": 0.8477,
+        "total_collection_time_s": 1525.88,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 0.8333,
+        "total_collection_time_s": 1500.0,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 26.67,
+        "required_exposure_time_s": 0.8199,
+        "total_collection_time_s": 1475.8,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 3.33,
+        "required_exposure_time_s": 0.7655,
+        "total_collection_time_s": 1377.81,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 10.0,
+        "required_exposure_time_s": 0.7629,
+        "total_collection_time_s": 1373.29,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 23.33,
+        "required_exposure_time_s": 0.7613,
+        "total_collection_time_s": 1370.38,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 20.0,
+        "required_exposure_time_s": 0.7028,
+        "total_collection_time_s": 1264.97,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 6.67,
+        "required_exposure_time_s": 0.6782,
+        "total_collection_time_s": 1220.7,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 0.6561,
+        "total_collection_time_s": 1180.98,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 16.67,
+        "required_exposure_time_s": 0.6442,
+        "total_collection_time_s": 1159.55,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 3.33,
+        "required_exposure_time_s": 0.5934,
+        "total_collection_time_s": 1068.12,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 13.33,
+        "required_exposure_time_s": 0.5856,
+        "total_collection_time_s": 1054.14,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 10.0,
+        "required_exposure_time_s": 0.5271,
+        "total_collection_time_s": 948.73,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 0.5086,
+        "total_collection_time_s": 915.53,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 6.67,
+        "required_exposure_time_s": 0.4685,
+        "total_collection_time_s": 843.31,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 3.33,
+        "required_exposure_time_s": 0.4099,
+        "total_collection_time_s": 737.9,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            20,
+            20
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 0.3514,
+        "total_collection_time_s": 632.48,
+        "mismatch_score": 60.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 40.0,
+        "required_exposure_time_s": 2.4813,
+        "total_collection_time_s": 4466.38,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 35.56,
+        "required_exposure_time_s": 2.2608,
+        "total_collection_time_s": 4069.37,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 40.0,
+        "required_exposure_time_s": 2.1871,
+        "total_collection_time_s": 3936.69,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 40.0,
+        "required_exposure_time_s": 2.0833,
+        "total_collection_time_s": 3750.0,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 31.11,
+        "required_exposure_time_s": 2.0402,
+        "total_collection_time_s": 3672.36,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 35.56,
+        "required_exposure_time_s": 1.9926,
+        "total_collection_time_s": 3586.77,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 35.56,
+        "required_exposure_time_s": 1.8981,
+        "total_collection_time_s": 3416.67,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 26.67,
+        "required_exposure_time_s": 1.8196,
+        "total_collection_time_s": 3275.35,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 31.11,
+        "required_exposure_time_s": 1.7982,
+        "total_collection_time_s": 3236.84,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 31.11,
+        "required_exposure_time_s": 1.713,
+        "total_collection_time_s": 3083.33,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 40.0,
+        "required_exposure_time_s": 1.6403,
+        "total_collection_time_s": 2952.46,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 26.67,
+        "required_exposure_time_s": 1.6038,
+        "total_collection_time_s": 2886.91,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 22.22,
+        "required_exposure_time_s": 1.5991,
+        "total_collection_time_s": 2878.34,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 26.67,
+        "required_exposure_time_s": 1.5278,
+        "total_collection_time_s": 2750.0,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 35.56,
+        "required_exposure_time_s": 1.4945,
+        "total_collection_time_s": 2690.02,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 22.22,
+        "required_exposure_time_s": 1.4094,
+        "total_collection_time_s": 2536.98,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 17.78,
+        "required_exposure_time_s": 1.3785,
+        "total_collection_time_s": 2481.32,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 31.11,
+        "required_exposure_time_s": 1.3487,
+        "total_collection_time_s": 2427.57,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 22.22,
+        "required_exposure_time_s": 1.3426,
+        "total_collection_time_s": 2416.67,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 40.0,
+        "required_exposure_time_s": 1.2716,
+        "total_collection_time_s": 2288.82,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 17.78,
+        "required_exposure_time_s": 1.215,
+        "total_collection_time_s": 2187.05,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 26.67,
+        "required_exposure_time_s": 1.2029,
+        "total_collection_time_s": 2165.13,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 35.56,
+        "required_exposure_time_s": 1.1585,
+        "total_collection_time_s": 2085.37,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 13.33,
+        "required_exposure_time_s": 1.158,
+        "total_collection_time_s": 2084.31,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 17.78,
+        "required_exposure_time_s": 1.1574,
+        "total_collection_time_s": 2083.33,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 22.22,
+        "required_exposure_time_s": 1.0571,
+        "total_collection_time_s": 1902.69,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 31.11,
+        "required_exposure_time_s": 1.0455,
+        "total_collection_time_s": 1881.92,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 13.33,
+        "required_exposure_time_s": 1.0206,
+        "total_collection_time_s": 1837.12,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 13.33,
+        "required_exposure_time_s": 0.9722,
+        "total_collection_time_s": 1750.0,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 8.89,
+        "required_exposure_time_s": 0.9374,
+        "total_collection_time_s": 1687.3,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 26.67,
+        "required_exposure_time_s": 0.9325,
+        "total_collection_time_s": 1678.47,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 17.78,
+        "required_exposure_time_s": 0.9113,
+        "total_collection_time_s": 1640.25,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 40.0,
+        "required_exposure_time_s": 0.8785,
+        "total_collection_time_s": 1581.21,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 8.89,
+        "required_exposure_time_s": 0.8262,
+        "total_collection_time_s": 1487.2,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 22.22,
+        "required_exposure_time_s": 0.8195,
+        "total_collection_time_s": 1475.02,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 35.56,
+        "required_exposure_time_s": 0.8004,
+        "total_collection_time_s": 1440.66,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 8.89,
+        "required_exposure_time_s": 0.787,
+        "total_collection_time_s": 1416.67,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 13.33,
+        "required_exposure_time_s": 0.7655,
+        "total_collection_time_s": 1377.81,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 31.11,
+        "required_exposure_time_s": 0.7223,
+        "total_collection_time_s": 1300.11,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 4.44,
+        "required_exposure_time_s": 0.7168,
+        "total_collection_time_s": 1290.29,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 17.78,
+        "required_exposure_time_s": 0.7064,
+        "total_collection_time_s": 1271.57,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 26.67,
+        "required_exposure_time_s": 0.6442,
+        "total_collection_time_s": 1159.55,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 4.44,
+        "required_exposure_time_s": 0.6318,
+        "total_collection_time_s": 1137.27,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 8.89,
+        "required_exposure_time_s": 0.6197,
+        "total_collection_time_s": 1115.37,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 4.44,
+        "required_exposure_time_s": 0.6019,
+        "total_collection_time_s": 1083.33,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 13.33,
+        "required_exposure_time_s": 0.5934,
+        "total_collection_time_s": 1068.12,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 22.22,
+        "required_exposure_time_s": 0.5661,
+        "total_collection_time_s": 1019.0,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 0.4963,
+        "total_collection_time_s": 893.28,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 17.78,
+        "required_exposure_time_s": 0.488,
+        "total_collection_time_s": 878.45,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 8.89,
+        "required_exposure_time_s": 0.4804,
+        "total_collection_time_s": 864.66,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 4.44,
+        "required_exposure_time_s": 0.4739,
+        "total_collection_time_s": 852.93,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 0.4374,
+        "total_collection_time_s": 787.34,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 0.4167,
+        "total_collection_time_s": 750.0,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 13.33,
+        "required_exposure_time_s": 0.4099,
+        "total_collection_time_s": 737.9,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 4.44,
+        "required_exposure_time_s": 0.3673,
+        "total_collection_time_s": 661.21,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 8.89,
+        "required_exposure_time_s": 0.3319,
+        "total_collection_time_s": 597.35,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 0.3281,
+        "total_collection_time_s": 590.49,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 0.2543,
+        "total_collection_time_s": 457.76,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 4.44,
+        "required_exposure_time_s": 0.2538,
+        "total_collection_time_s": 456.79,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            10,
+            10
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 0.1757,
+        "total_collection_time_s": 316.24,
+        "mismatch_score": 80.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 45.0,
+        "required_exposure_time_s": 2.4813,
+        "total_collection_time_s": 4466.38,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 40.0,
+        "required_exposure_time_s": 2.2332,
+        "total_collection_time_s": 4019.74,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 45.0,
+        "required_exposure_time_s": 2.1871,
+        "total_collection_time_s": 3936.69,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 45.0,
+        "required_exposure_time_s": 2.0833,
+        "total_collection_time_s": 3750.0,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 35.0,
+        "required_exposure_time_s": 1.9851,
+        "total_collection_time_s": 3573.11,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 40.0,
+        "required_exposure_time_s": 1.9683,
+        "total_collection_time_s": 3543.02,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 40.0,
+        "required_exposure_time_s": 1.875,
+        "total_collection_time_s": 3375.0,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 35.0,
+        "required_exposure_time_s": 1.7496,
+        "total_collection_time_s": 3149.36,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 30.0,
+        "required_exposure_time_s": 1.7369,
+        "total_collection_time_s": 3126.47,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 35.0,
+        "required_exposure_time_s": 1.6667,
+        "total_collection_time_s": 3000.0,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 45.0,
+        "required_exposure_time_s": 1.6403,
+        "total_collection_time_s": 2952.46,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 30.0,
+        "required_exposure_time_s": 1.5309,
+        "total_collection_time_s": 2755.69,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 25.0,
+        "required_exposure_time_s": 1.4888,
+        "total_collection_time_s": 2679.83,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 40.0,
+        "required_exposure_time_s": 1.4762,
+        "total_collection_time_s": 2657.21,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 30.0,
+        "required_exposure_time_s": 1.4583,
+        "total_collection_time_s": 2625.0,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 25.0,
+        "required_exposure_time_s": 1.3122,
+        "total_collection_time_s": 2362.02,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 35.0,
+        "required_exposure_time_s": 1.3122,
+        "total_collection_time_s": 2361.96,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 45.0,
+        "required_exposure_time_s": 1.2716,
+        "total_collection_time_s": 2288.82,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 25.0,
+        "required_exposure_time_s": 1.25,
+        "total_collection_time_s": 2250.0,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 20.0,
+        "required_exposure_time_s": 1.2407,
+        "total_collection_time_s": 2233.19,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 30.0,
+        "required_exposure_time_s": 1.1482,
+        "total_collection_time_s": 2066.72,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 40.0,
+        "required_exposure_time_s": 1.1444,
+        "total_collection_time_s": 2059.94,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 20.0,
+        "required_exposure_time_s": 1.0935,
+        "total_collection_time_s": 1968.35,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 20.0,
+        "required_exposure_time_s": 1.0417,
+        "total_collection_time_s": 1875.0,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 35.0,
+        "required_exposure_time_s": 1.0173,
+        "total_collection_time_s": 1831.05,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 15.0,
+        "required_exposure_time_s": 0.9925,
+        "total_collection_time_s": 1786.55,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 25.0,
+        "required_exposure_time_s": 0.9842,
+        "total_collection_time_s": 1771.47,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 30.0,
+        "required_exposure_time_s": 0.8901,
+        "total_collection_time_s": 1602.17,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 45.0,
+        "required_exposure_time_s": 0.8785,
+        "total_collection_time_s": 1581.21,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 15.0,
+        "required_exposure_time_s": 0.8748,
+        "total_collection_time_s": 1574.68,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 15.0,
+        "required_exposure_time_s": 0.8333,
+        "total_collection_time_s": 1500.0,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 20.0,
+        "required_exposure_time_s": 0.8201,
+        "total_collection_time_s": 1476.23,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 40.0,
+        "required_exposure_time_s": 0.7906,
+        "total_collection_time_s": 1423.09,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 25.0,
+        "required_exposure_time_s": 0.7629,
+        "total_collection_time_s": 1373.29,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 10.0,
+        "required_exposure_time_s": 0.7444,
+        "total_collection_time_s": 1339.91,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 35.0,
+        "required_exposure_time_s": 0.7028,
+        "total_collection_time_s": 1264.97,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 10.0,
+        "required_exposure_time_s": 0.6561,
+        "total_collection_time_s": 1181.01,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 15.0,
+        "required_exposure_time_s": 0.6561,
+        "total_collection_time_s": 1180.98,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 20.0,
+        "required_exposure_time_s": 0.6358,
+        "total_collection_time_s": 1144.41,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 10.0,
+        "required_exposure_time_s": 0.625,
+        "total_collection_time_s": 1125.0,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 30.0,
+        "required_exposure_time_s": 0.6149,
+        "total_collection_time_s": 1106.85,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 25.0,
+        "required_exposure_time_s": 0.5271,
+        "total_collection_time_s": 948.73,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 15.0,
+        "required_exposure_time_s": 0.5086,
+        "total_collection_time_s": 915.53,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 5.0,
+        "required_exposure_time_s": 0.4963,
+        "total_collection_time_s": 893.28,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 10.0,
+        "required_exposure_time_s": 0.4921,
+        "total_collection_time_s": 885.74,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 20.0,
+        "required_exposure_time_s": 0.4392,
+        "total_collection_time_s": 790.61,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 5.0,
+        "required_exposure_time_s": 0.4374,
+        "total_collection_time_s": 787.34,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 5.0,
+        "required_exposure_time_s": 0.4167,
+        "total_collection_time_s": 750.0,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 10.0,
+        "required_exposure_time_s": 0.3815,
+        "total_collection_time_s": 686.65,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 15.0,
+        "required_exposure_time_s": 0.3514,
+        "total_collection_time_s": 632.48,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 5.0,
+        "required_exposure_time_s": 0.3281,
+        "total_collection_time_s": 590.49,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 10.0,
+        "required_exposure_time_s": 0.2635,
+        "total_collection_time_s": 474.36,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 5.0,
+        "required_exposure_time_s": 0.2543,
+        "total_collection_time_s": 457.76,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 0.9163,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 0.2481,
+        "total_collection_time_s": 446.64,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 0.976,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 0.2187,
+        "total_collection_time_s": 393.67,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.0,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 0.2083,
+        "total_collection_time_s": 375.0,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 5.0,
+        "required_exposure_time_s": 0.1757,
+        "total_collection_time_s": 316.24,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.127,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 0.164,
+        "total_collection_time_s": 295.25,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.28,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 0.1272,
+        "total_collection_time_s": 228.88,
+        "mismatch_score": 90.0
+    },
+    {
+        "beam_size_um": [
+            5,
+            5
+        ],
+        "wavelength_a": 1.54,
+        "attenuation_factor": 500.0,
+        "translation_z_um": 0.0,
+        "required_exposure_time_s": 0.0878,
+        "total_collection_time_s": 158.12,
+        "mismatch_score": 90.0
+    }
+]

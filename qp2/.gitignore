@@ -1,0 +1,33 @@
+# Build artifacts
+build/
+dist/
+*.spec
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+
+# Virtual environments
+qp2_env/
+qp2_environment.tar.gz
+
+# Dependencies
+node_modules/
+
+# Cache
+.pytest_cache/
+
+# Editor
+.vscode/
+.idea/
+
+# AI assistant temp files
+.agent.md
+.gemini/
+.aider*
+
+# Environment / secrets
+.env
+.env.*
+!.env.example

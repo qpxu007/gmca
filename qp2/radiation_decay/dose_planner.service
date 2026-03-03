@@ -1,0 +1,34 @@
+[Unit]
+Description=Dose Planner FastAPI Server
+After=network.target
+
+[Service]
+# User and Group to run the service under.
+User=root
+Group=root
+
+
+IP_ADDRESS=$(ip addr | grep 'inet 10.20.' | awk '{print $2}' | cut -d'/' -f1 | head -n 1)
+if [ -z "$IP_ADDRESS" ]; then
+    # Log an error to stderr (which will be visible in `journalctl`) and exit.
+    echo "Error: Could not find an IP address in the 10.20.x.x range. Aborting." >&2
+    exit 1
+fi
+# The root directory of your project
+WorkingDirectory=/mnt/software/data-analysis
+
+# Set PYTHONPATH so the application can find the qp2 module
+Environment="PYTHONPATH=/mnt/software/data-analysis"
+# Pass the full path to uvicorn to the wrapper script as an environment variable
+Environment="UVICORN_PATH=/mnt/software/px/miniconda3/envs/data-analysis/bin/uvicorn"
+
+# The command is now our wrapper script.
+# Use the full, absolute path to the script.
+ExecStart=/mnt/software/data-analysis/qp2/radiation_decay/start_dose_planner.sh
+
+# Restart the service if it fails
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

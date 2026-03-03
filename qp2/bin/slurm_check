@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PARTITION="${1:-all}"
+MOUNTPOINT="/mnt/beegfs"
+DEBUG="${DEBUG:-0}"   # set DEBUG=1 ./slurm_check for verbose output
+
+########################################
+# 1. Get node list from Slurm
+########################################
+
+if [[ "$PARTITION" == "all" ]]; then
+    # All nodes, no header; %N = node name[web:18]
+    mapfile -t nodes < <(sinfo -N -h -o '%N')
+else
+    # Nodes in a specific partition[web:18]
+    mapfile -t nodes < <(sinfo -N -h -p "$PARTITION" -o '%N')
+fi
+
+if ((${#nodes[@]} == 0)); then
+    echo "No nodes found (partition: $PARTITION)."
+    exit 1
+fi
+
+# Deduplicate node names
+readarray -t nodes < <(printf '%s\n' "${nodes[@]}" | sort -u)
+
+echo "Checking nodes: ${nodes[*]}"
+
+########################################
+# 2. Verify Slurm node states
+########################################
+
+echo "Verifying Slurm node states..."
+bad_nodes=()
+
+for n in "${nodes[@]}"; do
+    state=$(sinfo -N -n "$n" -h -o '%t')   # %t = node state (idle, alloc, mix, down, drain,…)[web:18]
+    if [[ "$DEBUG" == "1" ]]; then
+        echo "  DEBUG: $n state=$state"
+    fi
+    case "$state" in
+        idle|alloc|mix|comp)
+            # Treat these as acceptable; adjust as needed
+            ;;
+        *)
+            bad_nodes+=("$n:$state")
+            ;;
+    esac
+done
+
+if ((${#bad_nodes[@]} > 0)); then
+    echo "Some nodes are not available:"
+    printf '  %s\n' "${bad_nodes[@]}"
+else
+    echo "All nodes are in acceptable Slurm states."
+fi
+
+########################################
+# 3. Verify /mnt/beegfs mount on each node
+########################################
+
+echo "Verifying $MOUNTPOINT is mounted on all nodes..."
+mount_fail=0        # <-- no spaces
+
+for n in "${nodes[@]}"; do
+    # Run a small shell on each node via srun[web:18]
+    if ! srun -N1 -n1 -w "$n" bash -c "
+        mountpoint -q '$MOUNTPOINT' 2>/dev/null ||
+        grep -q ' $MOUNTPOINT ' /proc/mounts
+    " >/dev/null 2>&1; then
+        echo "  $n: $MOUNTPOINT NOT mounted"
+        mount_fail=1
+    else
+        echo "  $n: $MOUNTPOINT OK"
+    fi
+done
+
+if ((mount_fail != 0)); then
+    echo "One or more nodes are missing the $MOUNTPOINT mount."
+    exit 3
+fi
+
+echo "All checks passed: nodes available and $MOUNTPOINT mounted everywhere."
+

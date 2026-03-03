@@ -1,0 +1,16 @@
+#!/bin/bash
+# Script to launch the backup tool
+
+# Find the directory where this script is located
+SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
+
+# Assuming the qp2 project root is two levels up from SCRIPT_DIR
+# e.g., if SCRIPT_DIR is /path/to/qp2/bin, QP2_ROOT becomes /path/to/qp2
+QP2_ROOT=$(readlink -f "$SCRIPT_DIR/../")
+
+# Add the qp2_root to PYTHONPATH
+# This is crucial so that 'python3 -m backup.main' can find the 'backup' package
+export PYTHONPATH="$PYTHONPATH:$QP2_ROOT"
+
+# Execute the python module. "$@" passes all command-line arguments to the Python script.
+python3 -m backup.main "$@"

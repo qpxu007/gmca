@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# Source the standardized environment configuration
+SCRIPT_DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
+source "$SCRIPT_DIR/qp2_env.sh"
+
+# Execute the Python script
+$MYPYTHON -m qp2.pipelines.pipeline_driver "$@"
