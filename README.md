@@ -11,6 +11,41 @@ The code lives in [`data-analysis/qp2/`](data-analysis/qp2/).
 
 ---
 
+## Quick Start
+
+Get the image viewer running in under 5 minutes.
+
+**Prerequisites:** Linux, Python 3.9+, a display (or Xvfb), and an HDF5 master file to open.
+
+```bash
+# 1. Clone and enter the repo
+git clone git@github.com:qpxu007/gmca.git
+cd gmca
+
+# 2. Create virtual environment and install
+python3 -m venv ~/qp2-env
+source ~/qp2-env/bin/activate
+pip install -e data-analysis/qp2
+
+# 3. Set test mode (routes all services to localhost)
+export QP2_ENV=test
+
+# 4. Launch the image viewer
+qp2-image-viewer
+```
+
+Use **File → Open** to open a `*_master.h5` diffraction file.
+The `bin/iv` shortcut works the same way once the venv is active.
+
+**That's it** — no database, no Redis, no external programs needed for offline file viewing.
+
+To re-activate in a new terminal:
+```bash
+source ~/qp2-env/bin/activate && export QP2_ENV=test
+```
+
+---
+
 ## Table of Contents
 
 1. [System requirements](#1-system-requirements)
@@ -20,8 +55,9 @@ The code lives in [`data-analysis/qp2/`](data-analysis/qp2/).
    - [PostgreSQL](#32-postgresql-optional)
    - [MySQL](#33-mysqlmariadb-optional)
 4. [Configure environment variables](#4-configure-environment-variables)
-5. [Minimal test environment](#5-minimal-test-environment)
+5. [Test the installation](#5-test-the-installation)
 6. [Running the applications](#6-running-the-applications)
+7. [External crystallography programs](#7-external-crystallography-programs-optional)
 
 ---
 
@@ -48,6 +84,8 @@ sudo dnf install -y \
     redis
 ```
 
+> **Headless server?** Install `xvfb` and run `Xvfb :99 -screen 0 1920x1080x24 & export DISPLAY=:99` before launching the viewer.
+
 ---
 
 ## 2. Install with venv
@@ -61,18 +99,29 @@ cd gmca
 python3 -m venv ~/qp2-env
 source ~/qp2-env/bin/activate
 
-# Install qp2 and all dependencies (editable mode)
-cd data-analysis/qp2
+# Install qp2 and all Python dependencies
 pip install --upgrade pip
-pip install -e .
+pip install -e data-analysis/qp2
 ```
 
-> **Editable mode** (`-e`) means changes to the source files take effect immediately — no reinstall needed.
+> **Editable mode** (`-e`) means local source changes take effect immediately — no reinstall needed.
 
-To activate the environment in future sessions:
+To activate in future sessions:
 ```bash
 source ~/qp2-env/bin/activate
 ```
+
+### Using the `bin/` scripts
+
+The `data-analysis/qp2/bin/` directory contains shell shortcuts (`iv`, `dv`, `xtallife`, etc.).
+Add it to your PATH so they're available anywhere:
+
+```bash
+echo 'export PATH="$HOME/gmca/data-analysis/qp2/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+The scripts automatically detect the active virtual environment — just make sure to `source ~/qp2-env/bin/activate` before using them. You can also set `QP2_PYTHON` to point to a specific interpreter if needed.
 
 ---
 
@@ -85,17 +134,16 @@ Redis carries the real-time detector data stream to the image viewer. It is **no
 ```bash
 # Install (if not already installed)
 sudo apt install redis-server        # Ubuntu
-# or
 sudo dnf install redis               # RHEL
 
-# Start Redis
+# Start and enable on boot
 sudo systemctl enable --now redis
 
 # Verify
-redis-cli ping                       # should print: PONG
+redis-cli ping                       # must print: PONG
 ```
 
-By default QP2 connects to `127.0.0.1:6379`. Override with environment variables if Redis runs on a different host:
+By default QP2 connects to `127.0.0.1:6379`. Override if Redis runs elsewhere:
 ```bash
 export REDIS_HOST_BL1=192.168.1.10
 export REDIS_HOST_BL2=192.168.1.10
@@ -106,23 +154,19 @@ export REDIS_HOST_ANALYSIS_RESULTS=192.168.1.10
 
 ### 3.2 PostgreSQL (optional)
 
-The data viewer uses PostgreSQL to store dataset history and metadata. If PostgreSQL is unavailable it falls back to a local SQLite file at `~/.data_viewer/user_data.db` — no setup required for basic use.
+The data viewer falls back to a local SQLite file (`~/.data_viewer/user_data.db`) when PostgreSQL is unavailable — no setup needed for basic use.
 
 To use PostgreSQL:
 
 ```bash
-# Install and start
 sudo apt install postgresql
 sudo systemctl enable --now postgresql
 
-# Create database and user
 sudo -u postgres psql <<'SQL'
 CREATE USER qp2user WITH PASSWORD 'choose-a-password';
 CREATE DATABASE user_data OWNER qp2user;
-\q
 SQL
 
-# Set connection variables
 export QP2_PG_HOST=localhost
 export QP2_PG_PORT=5432
 export QP2_PG_USER=qp2user
@@ -134,7 +178,7 @@ export QP2_PG_DB=user_data
 
 ### 3.3 MySQL/MariaDB (optional)
 
-Only needed if your facility uses a MySQL-backed sample tracking system (e.g. for user/ESAF lookup).
+Only needed if your facility uses a MySQL-backed sample tracking system.
 
 ```bash
 sudo apt install mariadb-server
@@ -159,27 +203,24 @@ export MYSQL_PASS=choose-a-password
 Copy the template and edit it:
 
 ```bash
-cd data-analysis/qp2
-cp .env.example .env
+cp data-analysis/qp2/.env.example data-analysis/qp2/.env
 ```
 
-Edit `.env` — the minimum settings for a standalone workstation:
+Minimum settings for a standalone workstation:
 
 ```bash
-# Force all connections to localhost — safest for a non-beamline machine
+# Force all connections to localhost
 QP2_ENV=test
 
-# Required only if you use the web app
-QP2_JWT_SECRET_KEY=<run: python -c "import secrets; print(secrets.token_hex(32))">
+# Required only if using the web app
+QP2_JWT_SECRET_KEY=<generate: python -c "import secrets; print(secrets.token_hex(32))">
 ```
 
-Load the file before starting any QP2 application:
+Load the file in your shell (add to `~/.bashrc` to make it permanent):
 
 ```bash
-set -a; source data-analysis/qp2/.env; set +a
+set -a; source ~/gmca/data-analysis/qp2/.env; set +a
 ```
-
-Add that line to your `~/.bashrc` to load it automatically on login.
 
 ### Full variable reference
 
@@ -198,134 +239,139 @@ Add that line to your `~/.bashrc` to load it automatically on login.
 | `MYSQL_HOST_BL1` | `localhost` | MySQL host |
 | `MYSQL_USER` | `qp2user` | MySQL user |
 | `MYSQL_PASS` | | MySQL password |
-| `DATAPROC_SERVER_URL` | `http://localhost:8025` | Data processing server |
-| `AI_SERVER_URL` | `http://localhost:8888/v1` | AI assistant backend |
+| `DATAPROC_SERVER_URL` | `http://localhost:8025` | Data processing server URL |
+| `AI_SERVER_URL` | `http://localhost:8888/v1` | AI assistant backend URL |
+| `QP2_PYTHON` | *(auto)* | Override Python interpreter for `bin/` scripts |
+| `QP2_LIVE_GROUPS` | *(unset)* | Colon-separated Unix groups allowed live mode; unset = unrestricted |
+| `QP2_BASHRC` | *(unset)* | Path to a facility bashrc to source before launching (e.g. for module system) |
 
 ---
 
-## 5. Minimal test environment
+## 5. Test the installation
 
-This section gets the image viewer running end-to-end **without** a real detector, using simulated data and a local Redis stream.
-
-### Step 1 — confirm prerequisites
+### Offline (no services needed)
 
 ```bash
 source ~/qp2-env/bin/activate
-redis-cli ping                  # must return PONG
-python -c "import qp2; print(qp2.__version__)"   # must print 2.0.0
-```
-
-### Step 2 — set test mode
-
-```bash
 export QP2_ENV=test
+
+# Confirm the package imports correctly
+python -c "import qp2; print(qp2.__version__)"   # → 2.0.0
+
+# Open the image viewer and load any *_master.h5 file via File → Open
+qp2-image-viewer
+# or using the bin/ shortcut:
+iv
 ```
 
-This routes all service connections to localhost and disables production safety checks.
+### Live streaming simulation (requires Redis)
 
-### Step 3 — open a file directly (offline test)
-
-The simplest test — open any HDF5 master file:
-
-```bash
-qp2-image-viewer /path/to/your_data_master.h5
-```
-
-Or launch the viewer and use **File → Open** to browse to a `*_master.h5` file.
-No Redis or database is needed for this.
-
-### Step 4 — simulate live streaming (live mode test)
-
-This tests the full Redis → image viewer pipeline without a real detector.
+Simulates a detector writing frames live — tests the full Redis → image viewer pipeline.
 
 **Terminal 1 — start the mock streamer:**
 ```bash
-source ~/qp2-env/bin/activate
-export QP2_ENV=test
-cd gmca/data-analysis/qp2
-
-# Stream an existing HDF5 file as if it were arriving live from a detector
+source ~/qp2-env/bin/activate && export QP2_ENV=test
+cd ~/gmca/data-analysis/qp2
 bin/mock_streamer --file /path/to/your_data_master.h5 --rate 10
-# --rate N  simulates N frames per second
-# --loop    repeats the file continuously
+# --rate N   frames per second
+# --loop     repeat the file continuously
 ```
 
 **Terminal 2 — launch the image viewer in live mode:**
 ```bash
-source ~/qp2-env/bin/activate
-export QP2_ENV=test
+source ~/qp2-env/bin/activate && export QP2_ENV=test
 qp2-image-viewer --live
+# or: iv --live
 ```
 
-The viewer connects to the local Redis stream. You should see it pick up the simulated series automatically and begin playing frames.
+The viewer should connect automatically and begin playing frames as they arrive.
 
-### Step 5 — run the test suite
+### Run the test suite
 
 ```bash
-cd gmca/data-analysis/qp2
+cd ~/gmca/data-analysis/qp2
 QP2_ENV=test pytest tests/ -q
 ```
 
-### What each `QP2_ENV=test` skips
+### What `QP2_ENV=test` does
 
 | Feature | Behavior in test mode |
 |---------|----------------------|
-| Redis connections | All point to `127.0.0.1:6379` |
-| PostgreSQL | Falls back to SQLite at `~/.data_viewer/user_data.db` |
-| MySQL | Connection errors are suppressed |
+| Redis | All connections → `127.0.0.1:6379` |
+| PostgreSQL | Falls back to SQLite (`~/.data_viewer/user_data.db`) |
+| MySQL | Connection errors suppressed |
 | EPICS / beamline hardware | Not contacted |
-| LDAP / Kerberos login | Bypassed (use `QP2_TEST_USER` / `QP2_TEST_PASS` for web app login) |
+| LDAP / Kerberos | Bypassed; use `QP2_TEST_USER` / `QP2_TEST_PASS` for web app login |
 
 ---
 
 ## 6. Running the applications
 
-### Image viewer
-```bash
-qp2-image-viewer                        # open file browser on launch
-qp2-image-viewer /path/to/master.h5    # open a specific file
-qp2-image-viewer --live                 # connect to Redis stream immediately
-```
+### Entry points (installed by pip)
 
-### Data viewer
-```bash
-qp2-data-viewer
-```
-Uses SQLite automatically if PostgreSQL is not configured.
+| Command | Description |
+|---------|-------------|
+| `qp2-image-viewer` | Qt diffraction image viewer |
+| `qp2-data-viewer` | Database-backed dataset browser |
+| `qp2-dp-server` | Data processing job server (port 8025) |
+| `qp2-web-server` | Web app API backend (port 8000) |
 
-### Data processing server
+### `bin/` shortcuts
+
+| Script | Description |
+|--------|-------------|
+| `bin/iv` | Image viewer (same as `qp2-image-viewer`) |
+| `bin/dv` | Data viewer |
+| `bin/dp` | Data processing client |
+| `bin/xtallife` | Crystal radiation lifetime calculator |
+| `bin/strategy` | Data collection strategy tool |
+| `bin/serial_xds` | Serial crystallography XDS pipeline |
+| `bin/mock_streamer` | Simulate a live Redis detector stream |
+| `bin/mock_collect` | Simulate a data collection with GUI |
+
+All `bin/` scripts use the active venv automatically. Add `data-analysis/qp2/bin` to your `PATH` (see [section 2](#2-install-with-venv)).
+
+### Image viewer flags
+
 ```bash
-qp2-dp-server          # listens on port 8025
+qp2-image-viewer                         # open with file browser
+qp2-image-viewer /path/to/master.h5     # open a specific file
+qp2-image-viewer --live                  # connect to Redis stream on startup
+qp2-image-viewer --nolive               # force offline mode
 ```
-Must be running for the image viewer's processing plugins (XDS, CrystFEL, etc.) to submit jobs.
 
 ### Web app
-```bash
-qp2-web-server         # API backend on port 8000
-```
-Build the frontend once (requires Node.js / npm):
+
+Build the frontend once (requires Node.js):
 ```bash
 cd data-analysis/qp2/web_app/frontend
 npm install && npm run build
 ```
-Then visit `http://localhost:8000` in a browser.
+Then start the backend and visit `http://localhost:8000`:
+```bash
+qp2-web-server
+```
 
 ---
 
-## External crystallography programs (optional)
+## 7. External crystallography programs (optional)
 
-Processing plugins are disabled if the corresponding program is not found — the viewer still works normally for display. To enable them, edit `data-analysis/qp2/config/programs.json` with the setup command for each tool on your system:
+Processing plugins (XDS, CrystFEL, DIALS, autoproc, xia2, DOZOR) are **disabled** if the corresponding program is not found — the viewer works normally for display without them.
+
+Edit `data-analysis/qp2/config/programs.json` to configure each tool:
 
 ```json
 {
     "dials":    "source /opt/dials/setup.sh",
     "crystfel": "source /opt/crystfel/setup.sh",
-    "xds":      "source /opt/xds/setup.sh"
+    "xds":      "source /opt/xds/setup.sh",
+    "ccp4":     "source /opt/ccp4/setup.sh"
 }
 ```
 
-Or override per-program with environment variables:
+Or use environment variables (no file edit needed):
 ```bash
 export QP2_SETUP_DIALS="source /opt/dials/setup.sh"
 export QP2_LIB_XDS_ZCBF="/opt/xds/xds-zcbf.so"
+export QP2_BASHRC="/opt/facility/setup.sh"   # sourced before every bin/ script launch
 ```
