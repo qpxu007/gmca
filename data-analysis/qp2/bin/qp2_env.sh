@@ -104,8 +104,9 @@ export PYTHONPATH="$PROJECT_ROOT:$PYTHONPATH"
 # ------------------------------------------------------------------------------
 # Priority:
 # 1. Environment variable QP2_PYTHON
-# 2. Local environment (e.g. ../env/bin/python, ../qp2_env/bin/python) relative to PROJECT_ROOT
-# 3. Hardcoded candidate paths
+# 2. Active virtual environment ($VIRTUAL_ENV set by venv/conda activate)
+# 3. Local environment folders relative to PROJECT_ROOT
+# 4. Hardcoded candidate paths
 
 MYPYTHON=""
 
@@ -113,11 +114,18 @@ if [ -n "$QP2_PYTHON" ] && [ -x "$QP2_PYTHON" ]; then
     MYPYTHON="$QP2_PYTHON"
 fi
 
+# Use the active virtual environment if one is activated
+if [ -z "$MYPYTHON" ] && [ -n "$VIRTUAL_ENV" ] && [ -x "$VIRTUAL_ENV/bin/python" ]; then
+    MYPYTHON="$VIRTUAL_ENV/bin/python"
+fi
+
 # Check for local environment folders if QP2_PYTHON is not set
 if [ -z "$MYPYTHON" ]; then
     LOCAL_ENV_CANDIDATES=(
         "$PROJECT_ROOT/qp2_env/bin/python"
+        "$PROJECT_ROOT/qp2-env/bin/python"
         "$PROJECT_DIR/qp2_env/bin/python"
+        "$PROJECT_DIR/qp2-env/bin/python"
         "$PROJECT_ROOT/env/bin/python"
         "$PROJECT_ROOT/.venv/bin/python"
         "$PROJECT_DIR/env/bin/python"
@@ -134,10 +142,10 @@ fi
 
 if [ -z "$MYPYTHON" ]; then
     CANDIDATE_PATHS=(
+        "$HOME/qp2-env/bin/python"
         "$HOME/qp2_env/bin/python"
-        "/mnt/software/px/miniconda3/envs/opencv/bin/python"
-        "/mnt/software/px/miniconda3/envs/py313/bin/python"
         "/opt/anaconda3/bin/python"
+        "/usr/bin/python3"
         "/usr/bin/python"
     )
 
@@ -160,8 +168,9 @@ fi
 
 # 4. Source Common Environments (Optional)
 # ------------------------------------------------------------------------------
-if [ -f /mnt/software/px/bashrc_px ] && [ -z "$CCP4" ]; then
-  . /mnt/software/px/bashrc_px
+# If QP2_BASHRC is set, source it for facility-specific program setup.
+if [ -n "$QP2_BASHRC" ] && [ -f "$QP2_BASHRC" ]; then
+    . "$QP2_BASHRC"
 fi
 
 # 5. Define Cluster Environment Variables (Portable Job Submission)
