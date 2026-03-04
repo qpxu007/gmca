@@ -8,7 +8,7 @@ source "$SCRIPT_DIR/qp2_env.sh"
 # Set QP2_LIVE_GROUPS to a colon-separated list of Unix groups that are
 # allowed to use live mode. If unset, live mode is unrestricted (default
 # for a standalone installation).
-if [ -n "$QP2_LIVE_GROUPS" ]; then
+if [ -n "$QP2_LIVE_GROUPS" ] && [[ "$*" == *"--live"* ]]; then
     USER_GROUPS=$(id -nG "$USER")
     AUTHORIZED=false
     IFS=':' read -ra ALLOWED <<< "$QP2_LIVE_GROUPS"
@@ -20,9 +20,10 @@ if [ -n "$QP2_LIVE_GROUPS" ]; then
             fi
         done
     done
-    if [ "$AUTHORIZED" = false ] && [[ ! "$*" == *"--nolive"* ]]; then
+    if [ "$AUTHORIZED" = false ]; then
         echo "Live mode restricted: user '$USER' is not in QP2_LIVE_GROUPS ($QP2_LIVE_GROUPS)." >&2
-        set -- "$@" "--nolive"
+        # Strip --live from arguments so the viewer opens in offline mode
+        set -- "${@/--live/}"
     fi
 fi
 

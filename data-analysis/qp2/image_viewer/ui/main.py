@@ -135,7 +135,8 @@ def main():
     )
 
     parser.add_argument("--version", action="version", version="%(prog)s 1.0")
-    parser.add_argument("--nolive", action="store_true", help="Start in non-live mode")
+    parser.add_argument("--live", action="store_true", help="Connect to Redis stream on startup (live mode)")
+    parser.add_argument("--nolive", action="store_true", help="Start in offline mode (default; kept for backward compatibility)")
     parser.add_argument(
         "-r",
         "--recursive",
@@ -169,8 +170,9 @@ def main():
     # Determine initial file path but DO NOT load it yet
     initial_master_file = all_master_files[0] if all_master_files else None
 
-    # Determine if we should start in live mode
-    start_in_live_mode = initial_master_file is None and not args.nolive
+    # Determine if we should start in live mode.
+    # Live mode requires --live to be explicitly requested; offline is the default.
+    start_in_live_mode = args.live and not args.nolive and initial_master_file is None
 
     # We no longer query Redis here. We'll pass a flag to the main window to do it after it's visible.
     query_redis_for_initial_file = start_in_live_mode and not initial_master_file

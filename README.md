@@ -334,10 +334,10 @@ All `bin/` scripts use the active venv automatically. Add `data-analysis/qp2/bin
 ### Image viewer flags
 
 ```bash
-qp2-image-viewer                         # open with file browser
+qp2-image-viewer                         # open in offline mode (default)
 qp2-image-viewer /path/to/master.h5     # open a specific file
 qp2-image-viewer --live                  # connect to Redis stream on startup
-qp2-image-viewer --nolive               # force offline mode
+qp2-image-viewer --nolive               # offline mode (same as default; kept for compatibility)
 ```
 
 ### Web app
