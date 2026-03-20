@@ -1,6 +1,7 @@
 # qp2/image_viewer/actions/dataset_context_manager.py
 
 import os
+import shlex
 import shutil
 import time
 import json
@@ -200,30 +201,38 @@ class DatasetContextMenuManager:
             return
 
         params = dialog.get_params()
-        
-        # Determine the path to the combiner script
-        # Assuming it's in qp2/xio/hdf5_combiner.py
-        script_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "xio", "hdf5_combiner.py")
-        
-        # Construct Command
-        cmd = [sys.executable, script_path]
+
+        # Resolve cluster-safe Python/script paths so the command works on
+        # Slurm worker nodes that may have a different mount layout.
+        cluster_python = os.environ.get("CLUSTER_PYTHON")
+        cluster_root = os.environ.get("CLUSTER_PROJECT_ROOT")
+
+        if cluster_python and cluster_root:
+            python_exe = cluster_python
+            execution_script = os.path.join(cluster_root, "xio", "hdf5_combiner.py")
+        else:
+            python_exe = sys.executable
+            execution_script = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+                "xio", "hdf5_combiner.py",
+            )
+
+        # Construct command — use raw (unquoted) values so the list works
+        # with both Popen (passes argv directly) and run_command (needs
+        # shell quoting, applied below before submission).
+        cmd = [python_exe, execution_script]
         cmd.extend(["--prefix", params["prefix"]])
         cmd.extend(["--outdir", params["outdir"]])
         cmd.extend(["--n", str(params["n"])])
         cmd.extend(["--nproc", str(params["nproc"])])
-        
-        if params["submit"]:
-            cmd.append("--submit")
-            cmd.extend(["--time", params["time"]])
-            cmd.extend(["--mem", params["mem"]])
-        
+
         if params["mode"] == "redis":
             cmd.extend(["--plugin", params["plugin"]])
             cmd.extend(["--metric", params["metric"]])
             cmd.extend(["--condition", params["condition"]])
             if params["redis_host"]:
                 cmd.extend(["--redis_host", params["redis_host"]])
-            
+
             # Restrict scanning to the selected datasets
             if dataset_paths:
                 cmd.append("--files")
@@ -234,27 +243,69 @@ class DatasetContextMenuManager:
             cmd.extend(["--mapping", mapping_json])
 
         try:
-            # Launch as a detached background process
-            # We redirect output to a log file in the output directory
-            log_path = os.path.join(params["outdir"], f"combiner_{params['prefix']}.log")
             os.makedirs(params["outdir"], exist_ok=True)
-            
-            with open(log_path, "w") as log_file:
-                subprocess.Popen(
-                    cmd, 
-                    stdout=log_file, 
-                    stderr=subprocess.STDOUT, 
-                    start_new_session=True # Detach
+
+            if params["submit"]:
+                # Submit directly to Slurm using run_command (same pattern as nXDS).
+                # run_job joins the list with " ".join() so we must shell-quote
+                # values that contain spaces or metacharacters.
+                from qp2.image_viewer.utils.run_job import run_command, is_sbatch_available
+
+                if not is_sbatch_available():
+                    self.main_window.ui_manager.show_critical_message(
+                        "Combination Failed", "sbatch command not found. Cannot submit to Slurm."
+                    )
+                    return
+
+                slurm_cmd = [shlex.quote(c) for c in cmd]
+
+                # The combiner only needs the Python venv (already set via
+                # CLUSTER_PYTHON) — no external module load required.
+                pre_command_str = "set -e"
+                job_name = f"combine_{params['prefix']}"
+
+                job_id = run_command(
+                    cmd=slurm_cmd,
+                    cwd=params["outdir"],
+                    method="slurm",
+                    job_name=job_name,
+                    walltime=params["time"],
+                    memory=params["mem"],
+                    processors=params["nproc"],
+                    background=True,
+                    pre_command=pre_command_str,
                 )
-            
-            self.main_window.ui_manager.show_status_message(
-                f"Launched background combination job. Log: {os.path.basename(log_path)}", 5000
-            )
-            logger.info(f"Launched DatasetCombiner: {' '.join(cmd)}")
-            
+
+                if job_id:
+                    self.main_window.ui_manager.show_status_message(
+                        f"Submitted Slurm job {job_id} for dataset combination.", 5000
+                    )
+                    logger.info(f"Submitted DatasetCombiner Slurm job {job_id}: {' '.join(slurm_cmd)}")
+                else:
+                    self.main_window.ui_manager.show_critical_message(
+                        "Combination Failed", "Slurm job submission returned no job ID."
+                    )
+            else:
+                # Run locally as a detached background process.
+                # Popen with a list passes each element as a separate argv
+                # entry — no shell quoting needed.
+                log_path = os.path.join(params["outdir"], f"combiner_{params['prefix']}.log")
+                with open(log_path, "w") as log_file:
+                    subprocess.Popen(
+                        cmd,
+                        stdout=log_file,
+                        stderr=subprocess.STDOUT,
+                        start_new_session=True,
+                    )
+
+                self.main_window.ui_manager.show_status_message(
+                    f"Launched background combination job. Log: {os.path.basename(log_path)}", 5000
+                )
+                logger.info(f"Launched DatasetCombiner: {' '.join(cmd)}")
+
         except Exception as e:
             self.main_window.ui_manager.show_critical_message(
-                "Combination Failed", f"Could not launch background process:\n{e}"
+                "Combination Failed", f"Could not launch combination process:\n{e}"
             )
 
     # --- New Pipeline Launch Logic ---
@@ -336,6 +387,23 @@ class DatasetContextMenuManager:
         """Launch xia2.ssx on multiple datasets, each in its own subdirectory within a common batch root."""
         # 1. Settings
         current_settings = self.main_window.settings_manager.as_dict()
+
+        # Inject Global Settings Fallbacks before dialog
+        if not current_settings.get("xia2_ssx_space_group") and current_settings.get("processing_common_space_group"):
+            current_settings["xia2_ssx_space_group"] = current_settings.get("processing_common_space_group")
+        if not current_settings.get("xia2_ssx_unit_cell") and current_settings.get("processing_common_unit_cell"):
+            current_settings["xia2_ssx_unit_cell"] = current_settings.get("processing_common_unit_cell")
+        if not current_settings.get("xia2_ssx_model") and current_settings.get("processing_common_model_file"):
+            current_settings["xia2_ssx_model"] = current_settings.get("processing_common_model_file")
+        if not current_settings.get("xia2_ssx_reference_hkl") and current_settings.get("processing_common_reference_reflection_file"):
+            current_settings["xia2_ssx_reference_hkl"] = current_settings.get("processing_common_reference_reflection_file")
+        if not current_settings.get("xia2_ssx_d_min") and current_settings.get("processing_common_res_cutoff_high"):
+            current_settings["xia2_ssx_d_min"] = current_settings.get("processing_common_res_cutoff_high")
+        if not current_settings.get("xia2_ssx_d_max") and current_settings.get("processing_common_res_cutoff_low"):
+            current_settings["xia2_ssx_d_max"] = current_settings.get("processing_common_res_cutoff_low")
+        if "xia2_ssx_native" not in current_settings:
+            current_settings["xia2_ssx_native"] = current_settings.get("processing_common_native", True)
+
         dialog = Xia2SSXSettingsDialog(current_settings, self.main_window)
         
         if dialog.exec_() != QtWidgets.QDialog.Accepted:
@@ -349,14 +417,34 @@ class DatasetContextMenuManager:
         job_kwargs["force_rerun"] = True
         job_kwargs["xia2_ssx_steps"] = "find_spots+index+integrate"
 
+        if not job_kwargs.get("xia2_ssx_d_min") and all_settings.get("processing_common_res_cutoff_high"):
+            job_kwargs["xia2_ssx_d_min"] = all_settings.get("processing_common_res_cutoff_high")
+        if not job_kwargs.get("xia2_ssx_d_max") and all_settings.get("processing_common_res_cutoff_low"):
+            job_kwargs["xia2_ssx_d_max"] = all_settings.get("processing_common_res_cutoff_low")
+        if "xia2_ssx_native" not in job_kwargs:
+            job_kwargs["xia2_ssx_native"] = all_settings.get("processing_common_native", True)
+
+        if not job_kwargs.get("xia2_ssx_space_group") and all_settings.get("processing_common_space_group"):
+            job_kwargs["xia2_ssx_space_group"] = all_settings.get("processing_common_space_group")
+        if not job_kwargs.get("xia2_ssx_unit_cell") and all_settings.get("processing_common_unit_cell"):
+            job_kwargs["xia2_ssx_unit_cell"] = all_settings.get("processing_common_unit_cell")
+        if not job_kwargs.get("xia2_ssx_model") and all_settings.get("processing_common_model_file"):
+            job_kwargs["xia2_ssx_model"] = all_settings.get("processing_common_model_file")
+        if not job_kwargs.get("xia2_ssx_reference_hkl") and all_settings.get("processing_common_reference_reflection_file"):
+            job_kwargs["xia2_ssx_reference_hkl"] = all_settings.get("processing_common_reference_reflection_file")
+        
+        job_kwargs["processing_common_proc_dir_root"] = all_settings.get("processing_common_proc_dir_root", "")
+
         # 2. Prepare Root Directory
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        # Default root can be customized via env or settings, but falling back to ~/xia2_ssx_runs
-        default_root = os.path.join(os.path.expanduser("~"), "xia2_ssx_runs")
+        from qp2.xio.proc_utils import determine_proc_base_dir
+        
+        user_root = job_kwargs.get("processing_common_proc_dir_root") or job_kwargs.get("xia2_ssx_proc_dir_root")
+        default_root = str(determine_proc_base_dir(user_root, dataset_paths[0]) / "xia2_ssx")
         
         # Naming scheme: xia2_ssx_batch_<first_dataset_name>_<count>sets_<timestamp>
         first_name = os.path.splitext(os.path.basename(dataset_paths[0]))[0]
-        batch_dir_name = f"xia2_ssx_batch_{first_name}_{len(dataset_paths)}sets_{timestamp}"
+        batch_dir_name = f"batch_{first_name}_{len(dataset_paths)}sets_{timestamp}"
         batch_root = os.path.join(default_root, batch_dir_name)
         
         try:
@@ -410,6 +498,23 @@ class DatasetContextMenuManager:
         """Launch xia2.ssx in distributed mode (one master script submits individual jobs + reducer)."""
         # 1. Settings
         current_settings = self.main_window.settings_manager.as_dict()
+
+        # Inject Global Settings Fallbacks before dialog
+        if not current_settings.get("xia2_ssx_space_group") and current_settings.get("processing_common_space_group"):
+            current_settings["xia2_ssx_space_group"] = current_settings.get("processing_common_space_group")
+        if not current_settings.get("xia2_ssx_unit_cell") and current_settings.get("processing_common_unit_cell"):
+            current_settings["xia2_ssx_unit_cell"] = current_settings.get("processing_common_unit_cell")
+        if not current_settings.get("xia2_ssx_model") and current_settings.get("processing_common_model_file"):
+            current_settings["xia2_ssx_model"] = current_settings.get("processing_common_model_file")
+        if not current_settings.get("xia2_ssx_reference_hkl") and current_settings.get("processing_common_reference_reflection_file"):
+            current_settings["xia2_ssx_reference_hkl"] = current_settings.get("processing_common_reference_reflection_file")
+        if not current_settings.get("xia2_ssx_d_min") and current_settings.get("processing_common_res_cutoff_high"):
+            current_settings["xia2_ssx_d_min"] = current_settings.get("processing_common_res_cutoff_high")
+        if not current_settings.get("xia2_ssx_d_max") and current_settings.get("processing_common_res_cutoff_low"):
+            current_settings["xia2_ssx_d_max"] = current_settings.get("processing_common_res_cutoff_low")
+        if "xia2_ssx_native" not in current_settings:
+            current_settings["xia2_ssx_native"] = current_settings.get("processing_common_native", True)
+
         dialog = Xia2SSXSettingsDialog(current_settings, self.main_window)
         
         if dialog.exec_() != QtWidgets.QDialog.Accepted:
@@ -424,12 +529,33 @@ class DatasetContextMenuManager:
         job_kwargs["distributed"] = True
         job_kwargs["xia2_ssx_steps"] = "find_spots+index+integrate" # Enforce steps for distributed integration
 
+        if not job_kwargs.get("xia2_ssx_d_min") and all_settings.get("processing_common_res_cutoff_high"):
+            job_kwargs["xia2_ssx_d_min"] = all_settings.get("processing_common_res_cutoff_high")
+        if not job_kwargs.get("xia2_ssx_d_max") and all_settings.get("processing_common_res_cutoff_low"):
+            job_kwargs["xia2_ssx_d_max"] = all_settings.get("processing_common_res_cutoff_low")
+        if "xia2_ssx_native" not in job_kwargs:
+            job_kwargs["xia2_ssx_native"] = all_settings.get("processing_common_native", True)
+
+        if not job_kwargs.get("xia2_ssx_space_group") and all_settings.get("processing_common_space_group"):
+            job_kwargs["xia2_ssx_space_group"] = all_settings.get("processing_common_space_group")
+        if not job_kwargs.get("xia2_ssx_unit_cell") and all_settings.get("processing_common_unit_cell"):
+            job_kwargs["xia2_ssx_unit_cell"] = all_settings.get("processing_common_unit_cell")
+        if not job_kwargs.get("xia2_ssx_model") and all_settings.get("processing_common_model_file"):
+            job_kwargs["xia2_ssx_model"] = all_settings.get("processing_common_model_file")
+        if not job_kwargs.get("xia2_ssx_reference_hkl") and all_settings.get("processing_common_reference_reflection_file"):
+            job_kwargs["xia2_ssx_reference_hkl"] = all_settings.get("processing_common_reference_reflection_file")
+        
+        job_kwargs["processing_common_proc_dir_root"] = all_settings.get("processing_common_proc_dir_root", "")
+
         # 2. Prepare Root Directory
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        default_root = os.path.join(os.path.expanduser("~"), "xia2_ssx_runs")
+        from qp2.xio.proc_utils import determine_proc_base_dir
+        
+        user_root = job_kwargs.get("processing_common_proc_dir_root") or job_kwargs.get("xia2_ssx_proc_dir_root")
+        default_root = str(determine_proc_base_dir(user_root, dataset_paths[0]) / "xia2_ssx")
         
         first_name = os.path.splitext(os.path.basename(dataset_paths[0]))[0]
-        batch_dir_name = f"xia2_ssx_distributed_{first_name}_{len(dataset_paths)}sets"
+        batch_dir_name = f"distributed_{first_name}_{len(dataset_paths)}sets"
         batch_root = os.path.join(default_root, batch_dir_name)
         
         try:
@@ -509,19 +635,27 @@ class DatasetContextMenuManager:
         refl_files = []
         proc_dirs_found = set()
 
-        # 1. Gather files from SELECTED datasets only
+        # 1. Gather all unique processing directories from selected datasets
+        proc_dirs_to_check = set()
         for path in dataset_paths:
             key = f"analysis:out:xia2_ssx:{path}"
             proc_dir_bytes = redis_conn.hget(key, "_proc_dir")
             
             if proc_dir_bytes:
                 proc_dir = proc_dir_bytes.decode('utf-8') if isinstance(proc_dir_bytes, bytes) else proc_dir_bytes
+                proc_dirs_to_check.add(proc_dir)
                 
+        # 2. Extract valid experiments and reflections from unique directories
+        with BusyCursor():
+            for proc_dir in proc_dirs_to_check:
                 if os.path.exists(proc_dir):
-                    # Look for batch_* subdirectories to find specific integrated files
-                    # Pattern: proc_dir/batch_*/integrated*.expt
+                    # Look for batch_* subdirectories to find specific integrated files (Standard Batch Mode)
                     curr_expts = glob.glob(os.path.join(proc_dir, "batch_*", "integrated*.expt"))
                     
+                    # Look for job_*/DataFiles subdirectories to find specific integrated files (Distributed Mode)
+                    if not curr_expts:
+                        curr_expts = glob.glob(os.path.join(proc_dir, "job_*", "DataFiles", "integrated*.expt"))
+                        
                     # Also try fallback to root dir if no batch subdir (though unlikely for SSX batch runs)
                     if not curr_expts:
                         curr_expts = glob.glob(os.path.join(proc_dir, "integrated*.expt"))
@@ -562,28 +696,101 @@ class DatasetContextMenuManager:
             "Confirm Merge", 
             f"Found results for {len(proc_dirs_found)} datasets.\n"
             f"({len(expt_files)} experiments, {len(refl_files)} reflection files)\n\n"
-            f"Merge these results in {common_root}?",
+            f"Configure advanced merge settings next?",
             QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No
         )
         if reply != QtWidgets.QMessageBox.Yes:
             return
+
+        # 3. Settings Dialog Injection
+        current_settings = self.main_window.settings_manager.as_dict()
+        
+        # Inject Global Settings Fallbacks
+        if not current_settings.get("xia2_ssx_space_group") and current_settings.get("processing_common_space_group"):
+            current_settings["xia2_ssx_space_group"] = current_settings.get("processing_common_space_group")
+        if not current_settings.get("xia2_ssx_unit_cell") and current_settings.get("processing_common_unit_cell"):
+            current_settings["xia2_ssx_unit_cell"] = current_settings.get("processing_common_unit_cell")
+        if not current_settings.get("xia2_ssx_model") and current_settings.get("processing_common_model_file"):
+            current_settings["xia2_ssx_model"] = current_settings.get("processing_common_model_file")
+        if not current_settings.get("xia2_ssx_d_min") and current_settings.get("processing_common_res_cutoff_high"):
+            current_settings["xia2_ssx_d_min"] = current_settings.get("processing_common_res_cutoff_high")
+
+        # Reuse Xia2SSXSettingsDialog
+        from qp2.image_viewer.plugins.xia2_ssx.xia2_ssx_settings_dialog import Xia2SSXSettingsDialog
+        dialog = Xia2SSXSettingsDialog(current_settings, self.main_window)
+        # Modify title to clarify this is just for merging
+        dialog.setWindowTitle("xia2.ssx_reduce Merge Settings")
+        # Hide the indexing and job control groups as they don't apply to reduce
+        for child in dialog.findChildren(QtWidgets.QGroupBox):
+            if "Indexing" in child.title() or "Job Control" in child.title() or "Reference Model" in child.title():
+                child.hide()
+
+        # Build custom Reference Model group that only shows PDB
+        ref_group = QtWidgets.QGroupBox("Reference Model (Dimple)")
+        ref_layout = QtWidgets.QFormLayout(ref_group)
+        dialog.model_pdb_merge = dialog._create_file_input(
+            dialog.new_settings.get("xia2_ssx_model", ""), "PDB/MTZ Files (*.pdb *.mtz *.hkl)"
+        )
+        ref_layout.addRow("Reference (PDB):", dialog.model_pdb_merge)
+        dialog.layout().insertWidget(1, ref_group)
+
+        # Build custom Job group for nproc
+        job_group = QtWidgets.QGroupBox("Job Control")
+        job_layout = QtWidgets.QFormLayout(job_group)
+        dialog.nproc_merge = QtWidgets.QSpinBox(
+            minimum=1, maximum=128, value=current_settings.get("xia2_ssx_nproc", 64)
+        )
+        job_layout.addRow("Processors:", dialog.nproc_merge)
+        dialog.layout().insertWidget(2, job_group)
+
+        if dialog.exec_() != QtWidgets.QDialog.Accepted:
+            return
+
+        # Extract values
+        d_min = dialog.d_min.text().strip()
+        space_group = dialog.space_group.text().strip()
+        unit_cell = dialog.unit_cell.text().strip()
+        model_pdb = dialog.model_pdb_merge.line_edit.text().strip()
+        nproc = dialog.nproc_merge.value()
+        
+        # Save them back into settings so they persist
+        if d_min: current_settings["xia2_ssx_d_min"] = float(d_min)
+        if space_group: current_settings["xia2_ssx_space_group"] = space_group
+        if unit_cell: current_settings["xia2_ssx_unit_cell"] = unit_cell
+        if model_pdb: current_settings["xia2_ssx_model"] = model_pdb
+        current_settings["xia2_ssx_nproc"] = nproc
+        self.main_window.settings_manager.update_from_dict(current_settings)
 
         # Construct Merge Command
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         merge_dir = os.path.join(common_root, f"merge_selected_{len(proc_dirs_found)}datasets_{timestamp}")
         os.makedirs(merge_dir, exist_ok=True)
         
+        # Generate a PHIL file to avoid 'Argument list too long' bash errors
+        phil_path = os.path.join(merge_dir, "merge_input.phil")
+        with open(phil_path, "w") as f:
+            for expt, refl in zip(expt_files, refl_files):
+                f.write(f"input {{\n  experiments = {expt}\n  reflections = {refl}\n}}\n")
+                
         # Command setup
-        # Structure: "setup && xia2.ssx_reduce \
-        #   experiments=file1.expt reflections=file1.refl \
-        #   experiments=file2.expt reflections=file2.refl"
-        nproc=64
-        cmd_str = f"{ProgramConfig.get_setup_command('dials')} && xia2.ssx_reduce nproc={nproc}"
-        
-        # Append all files as paired named arguments, formatted for readability
-        for expt, refl in zip(expt_files, refl_files):
-            # Use backslash-newline for multi-line command in bash script
-            cmd_str += f" \\\n  experiments={expt} reflections={refl} "
+        cmd_str = f"{ProgramConfig.get_setup_command('dials')} && xia2.ssx_reduce {phil_path}"
+        if nproc:
+            cmd_str += f" nproc={nproc}"
+        if d_min:
+            cmd_str += f" d_min={d_min}"
+        if space_group:
+            # Prevent bash truncation
+            quoted_sg = f"'{space_group}'"
+            cmd_str += f" space_group={quoted_sg}"
+        if unit_cell:
+            from qp2.utils.auxillary import sanitize_unit_cell
+            quoted_uc = f"'{sanitize_unit_cell(unit_cell)}'"
+            cmd_str += f" unit_cell={quoted_uc}"
+            
+        # Post-merge Dimple if PDB provided
+        if model_pdb:
+            dimple_cmd = f"module load ccp4 && mkdir -p dimple && dimple DataFiles/merged.mtz '{model_pdb}' dimple"
+            cmd_str += f" && {dimple_cmd}"
         
         job_name = f"xia2_merge_sel_{len(proc_dirs_found)}"
         
@@ -604,6 +811,19 @@ class DatasetContextMenuManager:
         """Runs XDS on multiple datasets. Merges them if multiple are selected."""
         # 1. Settings
         current_settings = self.main_window.settings_manager.as_dict()
+        
+        # Inject Global Settings Fallbacks
+        if not current_settings.get("xds_space_group") and current_settings.get("processing_common_space_group"):
+            current_settings["xds_space_group"] = current_settings.get("processing_common_space_group")
+        if not current_settings.get("xds_unit_cell") and current_settings.get("processing_common_unit_cell"):
+            current_settings["xds_unit_cell"] = current_settings.get("processing_common_unit_cell")
+        if not current_settings.get("xds_model_pdb") and current_settings.get("processing_common_model_file"):
+            current_settings["xds_model_pdb"] = current_settings.get("processing_common_model_file")
+        if not current_settings.get("xds_reference_hkl") and current_settings.get("processing_common_reference_reflection_file"):
+            current_settings["xds_reference_hkl"] = current_settings.get("processing_common_reference_reflection_file")
+        if not current_settings.get("xds_resolution") and current_settings.get("processing_common_res_cutoff_high"):
+            current_settings["xds_resolution"] = current_settings.get("processing_common_res_cutoff_high")
+
         dialog = XDSSettingsDialog(current_settings, self.main_window)
         
         if dialog.exec_() != QtWidgets.QDialog.Accepted:
@@ -613,7 +833,7 @@ class DatasetContextMenuManager:
         self.main_window.settings_manager.update_from_dict(dialog.new_settings)
         all_settings = self.main_window.settings_manager.as_dict()
         # Filter for xds specific settings
-        job_kwargs = {k: v for k, v in all_settings.items() if k.startswith("xds_")}
+        job_kwargs = {k: v for k, v in all_settings.items() if k.startswith("xds_") or k.startswith("processing_common_")}
         job_kwargs["force_rerun"] = True
 
         self.main_window.ui_manager.show_status_message(f"Submitting {len(dataset_paths)} XDS jobs...", 0)
@@ -733,6 +953,27 @@ class DatasetContextMenuManager:
 
         # 2. Fetch stored crystal data from Redis
         current_settings = self.main_window.settings_manager.as_dict()
+        
+        # Inject Global Settings Fallbacks before dialog
+        fallback_mappings = {
+            "xds": {"space_group": "space_group", "unit_cell": "unit_cell", "model_pdb": "model_file", "reference_hkl": "reference_reflection_file", "resolution": "res_cutoff_high"},
+            "xia2": {"space_group": "space_group", "unit_cell": "unit_cell", "model": "model_file", "highres": "res_cutoff_high"},
+            "xia2_ssx": {"space_group": "space_group", "unit_cell": "unit_cell", "model": "model_file", "reference_hkl": "reference_reflection_file", "d_min": "res_cutoff_high", "d_max": "res_cutoff_low"},
+            "autoproc": {"space_group": "space_group", "unit_cell": "unit_cell", "model": "model_file", "highres": "res_cutoff_high"}
+        }
+        
+        mapping = fallback_mappings.get(pipeline, {})
+        for local_suffix, global_suffix in mapping.items():
+            local_key = f"{settings_prefix}{local_suffix}"
+            global_key = f"processing_common_{global_suffix}"
+            if not current_settings.get(local_key) and current_settings.get(global_key):
+                current_settings[local_key] = current_settings[global_key]
+                
+        if pipeline in ["autoproc", "xia2_ssx", "xia2"]:
+            local_native = f"{settings_prefix}native"
+            if local_native not in current_settings:
+                current_settings[local_native] = current_settings.get("processing_common_native", True)
+
         primary_dataset = dataset_paths[0]
 
         try:
@@ -783,7 +1024,7 @@ class DatasetContextMenuManager:
         # 4. Gather Job Parameters
         all_settings = self.main_window.settings_manager.as_dict()
         job_kwargs = {
-            k: v for k, v in all_settings.items() if k.startswith(settings_prefix)
+            k: v for k, v in all_settings.items() if k.startswith(settings_prefix) or k.startswith("processing_common_")
         }
 
         if force_rerun:
@@ -1298,13 +1539,15 @@ class DatasetContextMenuManager:
         num_paths = len(info["dataset_paths"])
 
         if num_paths > 1:
+            rerun_menu = menu.addMenu(f"Group Rerun ({num_paths} Datasets)")
+            
             # Generic nXDS Runner (independent of active plugin)
-            menu.addAction(f"Run nXDS on {num_paths} Selected Datasets").triggered.connect(
+            rerun_menu.addAction("nXDS").triggered.connect(
                 lambda: self._trigger_group_rerun(info["dataset_paths"], "nXDS")
             )
             
             # Additional explicit Dozor Runner
-            menu.addAction(f"Run Dozor on {num_paths} Selected Datasets").triggered.connect(
+            rerun_menu.addAction("Dozor").triggered.connect(
                 lambda: self._trigger_group_rerun(info["dataset_paths"], "Dozor")
             )
 
@@ -1313,9 +1556,7 @@ class DatasetContextMenuManager:
                 self.main_window.ui_manager.analysis_selector_combo.currentText()
             )
             if active_plugin_name != "None" and active_plugin_name not in ["nXDS", "Dozor"]:
-                action = menu.addAction(
-                    f"Run {active_plugin_name} on {num_paths} Selected Datasets"
-                )
+                action = rerun_menu.addAction(f"{active_plugin_name}")
                 action.triggered.connect(
                     lambda: self._trigger_group_rerun(
                         info["dataset_paths"], active_plugin_name

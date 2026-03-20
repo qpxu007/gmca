@@ -284,6 +284,12 @@ class DiffractionViewerWindow(QtWidgets.QMainWindow):
         self._connect_manager_signals()
         self.dataset_manager.runs_changed.connect(self._update_dataset_tree_widget)
         
+        # Resolve group_name for scoping Redis processing override keys
+        self._group_name = self._resolve_group_name()
+
+        # Pull live processing overrides from Redis so we start perfectly in sync
+        self._pull_redis_processing_overrides()
+        
         # Schedule initial data loading and live mode startup
         QtCore.QTimer.singleShot(10, self._deferred_initial_load)
 
@@ -872,38 +878,12 @@ class DiffractionViewerWindow(QtWidgets.QMainWindow):
 
         lag_to_latest = latest_available_index - self.current_frame_index
 
-        jump_required = False
-        if (
-            self.playback_manager.state == PlaybackState.PLAYING
-            and data_incomplete
-            and lag_to_latest > PLAYBACK_LAG_THRESHOLD
-        ):
-            target_index = max(0, latest_available_index - PLAYBACK_JUMP_OFFSET)
-            logger.info(
-                f"Anti-lag jump: {self.current_frame_index + 1} → {target_index + 1} "
-                f"(lag was {lag_to_latest} frames, available={latest_available_index + 1}/{total_frames})"
-            )
-            self.current_frame_index = target_index
-            self.update_frame_display(self.current_frame_index, is_playback=False)
-            jump_required = True
-        elif (
-            not data_incomplete
-            and lag_to_latest > PLAYBACK_LAG_THRESHOLD
-            and self.playback_manager.state == PlaybackState.PLAYING
-        ):
-            logger.info(
-                f"Jump suppressed (collection done): lag={lag_to_latest} frames, "
-                f"at {self.current_frame_index + 1}/{total_frames}. "
-                f"Adaptive playback will catch up."
-            )
         self.ui_manager.update_frame_elements(
             self.current_frame_index, total_frames, latest_available_index
         )
         status_msg = (
             f"Data updated. Available: {latest_available_index + 1}/{total_frames}"
         )
-        if jump_required:
-            status_msg = f"Jumped to frame {self.current_frame_index + 1}. Available: {latest_available_index + 1}/{total_frames}"
         current_status = self.statusBar().currentMessage()
         if not any(
             current_status.startswith(p)
@@ -1243,6 +1223,10 @@ class DiffractionViewerWindow(QtWidgets.QMainWindow):
         logger.info(f"mask value: {self.mask_values}")
 
     def _open_settings_dialog(self):
+        # Sync local dictionary with whatever is currently live in Redis
+        # so multiple image viewer instances stay in parity
+        self._pull_redis_processing_overrides()
+
         # Lazy import to avoid importing matplotlib at startup via SettingsDialog
         from qp2.image_viewer.ui.settings import SettingsDialog
 
@@ -1274,6 +1258,16 @@ class DiffractionViewerWindow(QtWidgets.QMainWindow):
             "peak_finding_median_filter_size",
         }
         contrast_params = {"contrast_low_percentile", "contrast_high_percentile"}
+        common_proc_params = {
+            "processing_common_space_group",
+            "processing_common_unit_cell",
+            "processing_common_model_file",
+            "processing_common_res_cutoff_low",
+            "processing_common_res_cutoff_high",
+            "processing_common_native",
+            "processing_common_proc_dir_root",
+            "pipelines_by_mode",
+        }
 
         if peak_params.intersection(changed_keys):
             logger.info("Peak finding parameters changed, running peak finder.")
@@ -1281,6 +1275,10 @@ class DiffractionViewerWindow(QtWidgets.QMainWindow):
 
         if contrast_params.intersection(changed_keys):
             self._apply_contrast()
+
+        if common_proc_params.intersection(changed_keys):
+            if not getattr(self, "_is_pulling_redis", False):
+                self._update_redis_processing_overrides(new_settings)
 
         if "resolution_rings" in changed_keys:
             if not self.resolution_rings_visible:
@@ -1299,6 +1297,139 @@ class DiffractionViewerWindow(QtWidgets.QMainWindow):
                 self.playback_manager.play_timer.setInterval(new_interval)
 
         self.statusBar().showMessage("Settings updated.", 3000)
+
+    def _resolve_group_name(self) -> str:
+        """Resolves the group_name (ESAF or 'staff') for scoping Redis keys."""
+        try:
+            from qp2.xio.user_group_manager import get_esaf_from_data_path
+            initial_path = self._initial_file_path or ""
+            esaf_info = get_esaf_from_data_path(initial_path)
+            group_name = esaf_info.get("group_name") or esaf_info.get("primary_group", "staff")
+            logger.info(f"Resolved group_name for Redis key scoping: '{group_name}'")
+            return group_name
+        except Exception as e:
+            logger.warning(f"Failed to resolve group_name, falling back to 'staff': {e}")
+            return "staff"
+
+    def _pull_redis_processing_overrides(self):
+        """Pulls processing settings from Redis and updates local settings_manager."""
+        if not self.redis_manager:
+            return
+        analysis_conn = self.redis_manager.get_analysis_connection()
+        if not analysis_conn:
+            return
+
+        try:
+            from qp2.config.redis_keys import AnalysisRedisKeys
+            import json
+
+            def _safe_decode(val):
+                return val.decode('utf-8') if isinstance(val, bytes) else str(val)
+
+            all_updates = {}
+
+            # Fetch common overrides (group-scoped key, fallback to global)
+            key = AnalysisRedisKeys.scoped_processing_overrides(self._group_name)
+            if not analysis_conn.exists(key):
+                key = AnalysisRedisKeys.KEY_PROCESSING_OVERRIDES
+            if analysis_conn.exists(key):
+                overrides = analysis_conn.hgetall(key)
+                if overrides:
+                    updates = {}
+                    if overrides.get("space_group"):
+                        updates["processing_common_space_group"] = overrides["space_group"]
+                    if overrides.get("unit_cell"):
+                        updates["processing_common_unit_cell"] = overrides["unit_cell"]
+                    if overrides.get("model_pdb"):
+                        updates["processing_common_model_file"] = overrides["model_pdb"]
+                    if overrides.get("proc_dir_root"):
+                        updates["processing_common_proc_dir_root"] = overrides["proc_dir_root"]
+
+                    if "res_cutoff_low" in overrides:
+                        val = overrides["res_cutoff_low"]
+                        updates["processing_common_res_cutoff_low"] = float(val) if val else None
+                    if "res_cutoff_high" in overrides:
+                        val = overrides["res_cutoff_high"]
+                        updates["processing_common_res_cutoff_high"] = float(val) if val else None
+
+                    if "native" in overrides:
+                        updates["processing_common_native"] = (overrides["native"].lower() == 'true')
+
+                    if updates:
+                        all_updates.update(updates)
+
+            # Fetch pipelines by mode (group-scoped key, fallback to global)
+            key_by_mode = AnalysisRedisKeys.scoped_pipelines_by_mode(self._group_name)
+            modes_str = analysis_conn.get(key_by_mode)
+            if not modes_str:
+                key_by_mode = AnalysisRedisKeys.KEY_PROCESSING_OVERRIDES_BY_MODE
+                modes_str = analysis_conn.get(key_by_mode)
+            if modes_str:
+                try:
+                    modes_str = _safe_decode(modes_str)
+                    pipelines = json.loads(modes_str)
+                    all_updates["pipelines_by_mode"] = pipelines
+                except json.JSONDecodeError:
+                    logger.warning("Failed to decode pipelines_by_mode from Redis")
+                    
+            if all_updates:
+                try:
+                    self._is_pulling_redis = True
+                    self.settings_manager.update_from_dict(all_updates)
+                    logger.debug(f"Pulled processing overrides from Redis: {list(all_updates.keys())}")
+                finally:
+                    self._is_pulling_redis = False
+                    
+        except Exception as e:
+            logger.error(f"Failed to pull redis processing overrides: {e}")
+
+    def _update_redis_processing_overrides(self, new_settings):
+        """Pushes user-defined processing settings overrides to Redis (group-scoped)."""
+        if not self.redis_manager:
+            return
+        analysis_conn = self.redis_manager.get_analysis_connection()
+        if not analysis_conn:
+            return
+
+        try:
+            from qp2.config.redis_keys import AnalysisRedisKeys
+            key = AnalysisRedisKeys.scoped_processing_overrides(self._group_name)
+
+            overrides = {
+                "space_group": new_settings.get("processing_common_space_group", ""),
+                "unit_cell": new_settings.get("processing_common_unit_cell", ""),
+                "model_pdb": new_settings.get("processing_common_model_file", ""),
+                "res_cutoff_low": str(new_settings.get("processing_common_res_cutoff_low") or ""),
+                "res_cutoff_high": str(new_settings.get("processing_common_res_cutoff_high") or ""),
+                "native": str(new_settings.get("processing_common_native", True)),
+                "proc_dir_root": new_settings.get("processing_common_proc_dir_root", ""),
+            }
+
+            for field, value in overrides.items():
+                if value:
+                    analysis_conn.hset(key, field, value)
+                else:
+                    analysis_conn.hdel(key, field)
+
+            analysis_conn.expire(key, 86400)
+
+            logger.debug(f"Pushed processing overrides to Redis key '{key}': {overrides}")
+
+            # Push pipelines_by_mode (group-scoped)
+            pipelines_by_mode = new_settings.get("pipelines_by_mode")
+            if pipelines_by_mode:
+                try:
+                    import json
+                    key_by_mode = AnalysisRedisKeys.scoped_pipelines_by_mode(self._group_name)
+                    pipelines_json = json.dumps(pipelines_by_mode)
+                    analysis_conn.set(key_by_mode, pipelines_json)
+                    analysis_conn.expire(key_by_mode, 86400)
+                    logger.debug(f"Pushed pipelines_by_mode to Redis key '{key_by_mode}'")
+                except Exception as e:
+                    logger.error(f"Failed to push pipelines_by_mode to Redis: {e}")
+
+        except Exception as e:
+            logger.error(f"Failed to update redis processing overrides: {e}")
 
     def closeEvent(self, event):
         self.playback_manager.play_timer.stop()
@@ -1699,7 +1830,7 @@ class DiffractionViewerWindow(QtWidgets.QMainWindow):
         self.update_window_title()
         if self.is_live_mode and self.reader.total_frames > 0:
             if self.playback_manager.state != PlaybackState.PLAYING:
-                QTimer.singleShot(50, self.toggle_playback)
+                QTimer.singleShot(50, self.playback_manager.play)
 
         self._fetch_and_apply_crystal_data(self.current_master_file)
 

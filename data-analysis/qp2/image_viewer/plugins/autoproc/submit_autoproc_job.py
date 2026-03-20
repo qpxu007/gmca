@@ -102,13 +102,21 @@ class AutoPROCProcessDatasetWorker(QRunnable):
                 python_exe = sys.executable
                 execution_script = script_path
 
+            # Format --data as path:start:end when frame range is specified
+            start_frame = self.kwargs.get("start_frame")
+            end_frame = self.kwargs.get("end_frame")
+            if start_frame is not None and end_frame is not None:
+                data_arg = f"{self.master_file}:{start_frame}:{end_frame}"
+            else:
+                data_arg = self.master_file
+
             command_list = [
                 python_exe,
                 execution_script,
                 "--pipeline",
                 "autoPROC",
                 "--data",
-                self.master_file,
+                data_arg,
                 "--work_dir",
                 str(proc_dir),
                 "--beamline",

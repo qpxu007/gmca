@@ -36,6 +36,12 @@ def main():
         cmd.append(f"steps={config['steps']}")
     if config.get('d_min'):
         cmd.append(f"d_min={config['d_min']}")
+    if config.get('d_max'):
+        cmd.append(f"d_max={config['d_max']}")
+    if config.get("native"):
+        cmd.append("anomalous=False")
+    else:
+        cmd.append("anomalous=True")
     if config.get('unit_cell'):
         cmd.append(f"unit_cell={config['unit_cell']}")
     if config.get('space_group'):
@@ -46,7 +52,28 @@ def main():
         cmd.append(f"indexing.max_lattices={config['max_lattices']}")
     if config.get('min_spots'):
         cmd.append(f"indexing.min_spots={config['min_spots']}")
-        
+
+    # Detector geometry override via import.phil
+    import_phil_lines = []
+    if config.get('override_geometry'):
+        beam_x = config.get('beam_x')
+        beam_y = config.get('beam_y')
+        distance = config.get('distance')
+        if beam_x and beam_y:
+            import_phil_lines += [
+                "geometry {",
+                "  detector {",
+                f'    fast_slow_beam_centre = "{beam_x},{beam_y}"',
+            ]
+            if distance:
+                import_phil_lines.append(f"    distance = {distance}")
+            import_phil_lines += ["  }", "}"]
+    if import_phil_lines:
+        import_phil_path = os.path.join(os.getcwd(), "import.phil")
+        with open(import_phil_path, "w") as phil_f:
+            phil_f.write("\n".join(import_phil_lines) + "\n")
+        cmd.append(f"dials_import.phil={import_phil_path}")
+
     print(f"Running: {' '.join(cmd)}")
     subprocess.check_call(cmd)
     

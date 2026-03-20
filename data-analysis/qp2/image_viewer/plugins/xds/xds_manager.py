@@ -81,7 +81,7 @@ class XDSManager(GenericPlotManager):
 
     def _open_xds_settings(self):
         dialog = XDSSettingsDialog(
-            current_settings=self.xds_settings,
+            current_settings=self.main_window.settings_manager.as_dict(),
             parent=self.main_window,
         )
         dialog.settings_changed.connect(self._on_xds_settings_changed)
@@ -200,7 +200,9 @@ class XDSManager(GenericPlotManager):
             **worker_kwargs,
         )
         worker.signals.error.connect(self._handle_worker_error)
-        worker.signals.result.connect(self._handle_worker_result)
+        worker.signals.result.connect(
+            lambda status, msg, path: self._handle_worker_result(path, status, msg)
+        )
         self.request_main_threadpool.emit(worker)
 
     @QtCore.pyqtSlot()

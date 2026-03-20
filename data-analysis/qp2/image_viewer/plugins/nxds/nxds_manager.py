@@ -160,7 +160,9 @@ class NXDSManager(GenericPlotManager):
             **worker_kwargs,
         )
         worker.signals.error.connect(self._handle_worker_error)
-        worker.signals.result.connect(self._handle_worker_result)
+        worker.signals.result.connect(
+            lambda status, msg, path: self._handle_worker_result(path, status, msg)
+        )
         self.request_main_threadpool.emit(worker)
 
     @QtCore.pyqtSlot()

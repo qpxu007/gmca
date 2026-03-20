@@ -407,7 +407,7 @@ class CrystalLifetimeGUI(QWidget):
         r3d_grid.addWidget(self.nres_edit, 4, 1)
         self.nmon_label = QLabel("NMon/Cell:")
         self.nmon_edit = QLineEdit("8")
-        self.nres_edit.setToolTip("Number of monomers per unit cell")
+        self.nmon_edit.setToolTip("Number of monomers per unit cell")
         self.nmon_edit.editingFinished.connect(self.on_parameter_change)
         r3d_grid.addWidget(self.nmon_label, 5, 0)
         r3d_grid.addWidget(self.nmon_edit, 5, 1)
@@ -1673,7 +1673,29 @@ class CrystalLifetimeGUI(QWidget):
 
 
 if __name__ == "__main__":
-    setup_logging(root_name="qp2")
+    import argparse
+    import os
+    from datetime import datetime
+
+    parser = argparse.ArgumentParser(description="Crystal Lifetime Dose Planner")
+    parser.add_argument(
+        "--log-file",
+        help="Optional path to save log output to a file. Overrides QP2_LOG_FILE env var.",
+    )
+    args, _ = parser.parse_known_args()
+
+    log_file = args.log_file
+    if not log_file:
+        try:
+            from qp2.config.servers import ServerConfig
+            log_file = ServerConfig.LOG_FILE
+        except ImportError:
+            pass
+    if not log_file:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        log_file = os.path.join(os.path.expanduser("~"), f"dose_planner-{timestamp}.log")
+
+    setup_logging(root_name="qp2", log_file=log_file)
     
     try:
         from qp2.config.servers import ServerConfig

@@ -36,7 +36,21 @@ class HeatmapDataWorker(QRunnable):
             # --- START: MODIFIED GEOMETRY LOGIC ---
             is_serpentine = "serpentine" in self.scan_mode
             is_column_scan = "column" in self.scan_mode
-            scan_idx_pattern = r"_C(\d+)" if is_column_scan else r"_R(\d+)"
+
+            # Auto-detect scan index pattern from filenames, independent of
+            # scan_mode.  scan_mode controls grid orientation only; the
+            # filename convention (_R vs _C) just identifies scan-line numbers.
+            scan_idx_pattern = None
+            for candidate in [r"_R(\d+)", r"_C(\d+)"]:
+                if any(re.search(candidate, r.master_file_path, re.IGNORECASE)
+                       for r in self.datasets):
+                    scan_idx_pattern = candidate
+                    break
+
+            if not scan_idx_pattern:
+                raise ValueError(
+                    "Could not detect scan index pattern (_R or _C) in any dataset filename."
+                )
 
             max_scan_idx = 0
             max_frames = 0

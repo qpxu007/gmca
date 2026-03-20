@@ -51,13 +51,16 @@ logging.basicConfig(
 
 def find_master_files(data_dir: str, run_prefix: str) -> list:
     """Finds all master files for a given run prefix in the data directory."""
-    pattern = os.path.join(data_dir, f"{run_prefix}_R*_master.h5")
-    files = glob.glob(pattern)
-    if not files:
-        logging.warning(
-            f"No master files found for prefix '{run_prefix}' in '{data_dir}'"
-        )
-    return sorted(files)
+    # Try _R first (most common), fall back to _C
+    for tag in ["_R", "_C"]:
+        pattern = os.path.join(data_dir, f"{run_prefix}{tag}*_master.h5")
+        files = glob.glob(pattern)
+        if files:
+            return sorted(files)
+    logging.warning(
+        f"No master files found for prefix '{run_prefix}' in '{data_dir}'"
+    )
+    return []
 
 
 def build_data_matrix(master_files: list, redis_conn: redis.Redis) -> np.ndarray:
@@ -65,14 +68,24 @@ def build_data_matrix(master_files: list, redis_conn: redis.Redis) -> np.ndarray
     if not master_files:
         return np.array([])
 
+    # Auto-detect scan index pattern from filenames
+    scan_idx_pattern = None
+    for candidate in [r"_R(\d+)", r"_C(\d+)"]:
+        if any(re.search(candidate, f, re.IGNORECASE) for f in master_files):
+            scan_idx_pattern = candidate
+            break
+    if not scan_idx_pattern:
+        logging.error("Could not detect scan index pattern (_R or _C) in filenames.")
+        return np.array([])
+
     max_row, max_frames = 0, 0
     readers = {}
     for f_path in master_files:
         try:
             reader = HDF5Reader(f_path, start_timer=False)
-            match = re.search(r"_R(\d+)", f_path, re.IGNORECASE)
+            match = re.search(scan_idx_pattern, f_path, re.IGNORECASE)
             if not match:
-                logging.warning(f"Could not parse row number from {f_path}, skipping.")
+                logging.warning(f"Could not parse scan index from {f_path}, skipping.")
                 reader.close()
                 continue
 

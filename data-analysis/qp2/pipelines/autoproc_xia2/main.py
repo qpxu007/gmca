@@ -148,6 +148,9 @@ def main():
     parser.add_argument(
         "--highres", type=float, help="High resolution cutoff (in Angstroms)."
     )
+    parser.add_argument(
+        "--lowres", type=float, help="Low resolution cutoff (in Angstroms)."
+    )
     parser.add_argument("--space_group", help="Space group symbol or number.")
     parser.add_argument(
         "--unit_cell",
@@ -193,6 +196,9 @@ def main():
     )
     parser.add_argument("--max_lattices", type=int, help="Maximum number of lattices to search for.")
     parser.add_argument("--min_spots", type=int, help="Minimum number of spots for indexing.")
+    parser.add_argument("--beam_x", type=float, help="Override beam centre X (pixels).")
+    parser.add_argument("--beam_y", type=float, help="Override beam centre Y (pixels).")
+    parser.add_argument("--distance", type=float, help="Override detector distance (mm).")
 
     # --- Tracking and Metadata Parameters ---
     parser.add_argument(

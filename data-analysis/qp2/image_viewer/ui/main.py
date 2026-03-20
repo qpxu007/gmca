@@ -135,17 +135,32 @@ def main():
     )
 
     parser.add_argument("--version", action="version", version="%(prog)s 1.0")
-    parser.add_argument("--live", action="store_true", help="Connect to Redis stream on startup (live mode)")
-    parser.add_argument("--nolive", action="store_true", help="Start in offline mode (default; kept for backward compatibility)")
+    parser.add_argument("--nolive", action="store_true", help="Start in non-live mode")
     parser.add_argument(
         "-r",
         "--recursive",
         action="store_true",
         help="Search for master files recursively when a directory is provided.",
     )
+    parser.add_argument(
+        "--log-file",
+        help="Optional path to save log output to a file. Overrides QP2_LOG_FILE env var.",
+    )
     args = parser.parse_args()
 
-    setup_logging(root_name="qp2", log_level=args.log_level)
+    log_file = args.log_file
+    if not log_file:
+        try:
+            from qp2.config.servers import ServerConfig
+            log_file = ServerConfig.LOG_FILE
+        except ImportError:
+            pass
+    if not log_file:
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        log_file = os.path.join(os.path.expanduser("~"), f"iv-{timestamp}.log")
+
+    setup_logging(root_name="qp2", log_level=args.log_level, log_file=log_file)
 
     try:
         from qp2.config.servers import ServerConfig
@@ -170,9 +185,8 @@ def main():
     # Determine initial file path but DO NOT load it yet
     initial_master_file = all_master_files[0] if all_master_files else None
 
-    # Determine if we should start in live mode.
-    # Live mode requires --live to be explicitly requested; offline is the default.
-    start_in_live_mode = args.live and not args.nolive and initial_master_file is None
+    # Determine if we should start in live mode
+    start_in_live_mode = initial_master_file is None and not args.nolive
 
     # We no longer query Redis here. We'll pass a flag to the main window to do it after it's visible.
     query_redis_for_initial_file = start_in_live_mode and not initial_master_file

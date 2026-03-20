@@ -79,6 +79,29 @@ class AutoPROCSettingsDialog(SingletonDialog):
         form_layout.addRow(job_group)
 
         layout.addLayout(form_layout)
+
+        # Apply common setting fallbacks
+        self._apply_common_fallback(
+            self.space_group,
+            self.new_settings.get("autoproc_space_group", ""),
+            self.new_settings.get("processing_common_space_group", ""),
+        )
+        self._apply_common_fallback(
+            self.unit_cell,
+            self.new_settings.get("autoproc_unit_cell", ""),
+            self.new_settings.get("processing_common_unit_cell", ""),
+        )
+        self._apply_common_fallback(
+            self.model_pdb.line_edit,
+            self.new_settings.get("autoproc_model", ""),
+            self.new_settings.get("processing_common_model_file", ""),
+        )
+        self._apply_common_spinbox_fallback(
+            self.highres,
+            self.new_settings.get("autoproc_highres"),
+            self.new_settings.get("processing_common_res_cutoff_high"),
+        )
+
         button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
         )

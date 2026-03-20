@@ -2145,8 +2145,10 @@ class nXDS(XDS):
 
         # --- Handle nXDS-specific keyword arguments ---
         self.powder = kwargs.pop("powder", False)
+        self.run_correct = kwargs.pop("run_correct", False)
         logger.info(
-            f"Re-configuring for nXDS run. POWDER step is {'enabled' if self.powder else 'disabled'}."
+            f"Re-configuring for nXDS run. POWDER step is {'enabled' if self.powder else 'disabled'}. "
+            f"CORRECT step is {'enabled' if self.run_correct else 'disabled'}."
         )
 
         # --- Correctly pass all arguments to the parent constructor ---
@@ -2310,19 +2312,16 @@ class nXDS(XDS):
             self._handle_error("INTEGRATE", "nXDS integration failed.")
             return
 
-        # Step 4: Correction (only if required info is present)
-        if self.user_unit_cell and self.user_space_group:
+        # Step 4: Correction (optional, off by default)
+        if self.run_correct:
             if self._run_step("CORRECT", "CORRECT"):
                 self._handle_error("CORRECT", "nXDS scaling (CORRECT) failed.")
                 return
         else:
             logger.info(
-                "Skipping CORRECT step as space group and unit cell were not provided."
+                f"End of nXDS processing run for {self.proc_dir}. CORRECT step was not requested."
             )
-            logger.info(
-                f"End of nXDS processing run for {self.proc_dir}. CORRECT was not run."
-            )
-            return  # End of processing if CORRECT is skipped
+            return
 
         logger.info("nXDS main processing completed successfully.")
 

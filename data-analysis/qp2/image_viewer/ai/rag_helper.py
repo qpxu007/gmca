@@ -13,7 +13,7 @@ from qp2.log.logging_config import get_logger
 logger = get_logger(__name__)
 
 class CodebaseRAG:
-    def __init__(self, client: OpenAI, embedding_model: str = "argo:text-embedding-3-small", redis_client: Optional[redis.Redis] = None):
+    def __init__(self, client: OpenAI, embedding_model: str = "text-embedding-3-small", redis_client: Optional[redis.Redis] = None):
         self.client = client
         self.embedding_model = embedding_model
         self.knowledge_base: List[Dict[str, Any]] = []

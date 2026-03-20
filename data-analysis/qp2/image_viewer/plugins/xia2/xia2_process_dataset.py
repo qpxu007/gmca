@@ -44,6 +44,9 @@ def main():
     parser.add_argument("--fast", action="store_true")
     parser.add_argument("--native", action="store_true")
     parser.add_argument("--trust_beam_centre", default="True")
+    parser.add_argument("--beam_x", type=float)
+    parser.add_argument("--beam_y", type=float)
+    parser.add_argument("--distance", type=float)
     parser.add_argument("--status_key", required=True)
     parser.add_argument("--redis_host", required=True)
     parser.add_argument("--redis_port", required=True)
@@ -128,6 +131,10 @@ def main():
             sys.argv.append("--native")
         
         sys.argv.extend(["--trust_beam_centre", args.trust_beam_centre])
+        if args.beam_x and args.beam_y:
+            sys.argv.extend(["--beam_x", str(args.beam_x), "--beam_y", str(args.beam_y)])
+        if args.distance:
+            sys.argv.extend(["--distance", str(args.distance)])
 
         # Add pipeline parameters for DB logging
         if primary_group:

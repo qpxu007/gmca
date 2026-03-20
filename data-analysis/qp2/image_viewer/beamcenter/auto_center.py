@@ -41,7 +41,7 @@ def generate_asymmetric_image(shape=(512, 512), center=(256, 256), pixel_size=0.
         sy = np.random.randint(0, H)
         
         # Distance to this spot center
-        d2 = (x - sx)**2 + (y - cy)**2
+        d2 = (x - sx)**2 + (y - sy)**2
         
         # Spot profile (Gaussian)
         intensity = 5000 * np.exp(-d2 / (2 * 1.5**2)) # Bright spot

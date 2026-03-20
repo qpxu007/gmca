@@ -78,11 +78,18 @@ class ImageFilterWorker(QRunnable):
     def run(self):
         start_time = time.time()
         beam_center = (self.params.get("beam_x"), self.params.get("beam_y"))
-        if not all(beam_center):
+        _radial_filters = {
+            "Radial Poisson Threshold", "Beam Center Correction",
+            "Radial Background Removal", "Radial Spot Enhancement", "Radial Top-hat",
+        }
+        if beam_center[0] is None or beam_center[1] is None:
+            if self.filter_type in _radial_filters:
+                self.signals.error.emit(
+                    f"Beam center is required for {self.filter_type} filter."
+                )
+                return
             height, width = self.image_data.shape
             beam_center = (height // 2, width // 2)
-
-            logger.error("Beam center is required for Radial Poisson Threshold filter.")
 
         from cv2 import blur, GaussianBlur
         try:
@@ -180,11 +187,6 @@ class ImageFilterWorker(QRunnable):
                 )
                 extra_info = {"poisson_threshold": threshold}
             elif self.filter_type == "Radial Poisson Threshold":
-                if not all(beam_center):
-                    raise ValueError(
-                        "Beam center is required for Radial Poisson Threshold filter."
-                    )
-
                 filtered, extra_info = apply_radial_poisson_threshold(
                     image_for_filter, self.se_size, self.detector_mask, beam_center
                 )
@@ -217,7 +219,7 @@ class ImageFilterWorker(QRunnable):
                 raise NotImplementedError(
                     f"Filter type '{self.filter_type}' not implemented."
                 )
-            if self.filter_type != "Poisson Threshold":
+            if self.filter_type not in ("Poisson Threshold", "Radial Poisson Threshold"):
                 extra_info = None
 
             # --- Post-processing (Optional): Restore masked pixels in the *output* ---
@@ -231,7 +233,8 @@ class ImageFilterWorker(QRunnable):
             duration = time.time() - start_time
             logger.debug(f"{self.filter_type} filter completed in {duration:.3f}s")
             # restore mask value
-            filtered[self.detector_mask] = self.image_data[self.detector_mask]
+            if self.detector_mask is not None and self.detector_mask.shape == filtered.shape:
+                filtered[self.detector_mask] = self.image_data[self.detector_mask]
             self.signals.finished.emit((filtered, extra_info))
 
         except Exception as e:

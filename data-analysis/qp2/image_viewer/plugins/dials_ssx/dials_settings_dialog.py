@@ -90,6 +90,28 @@ class DialsSettingsDialog(SingletonDialog):
 
         layout.addLayout(form_layout)
 
+        # Apply common setting fallbacks
+        self._apply_common_fallback(
+            self.space_group_input,
+            self.new_settings.get("dials_space_group", ""),
+            self.new_settings.get("processing_common_space_group", ""),
+        )
+        self._apply_common_fallback(
+            self.unit_cell_input,
+            self.new_settings.get("dials_unit_cell", ""),
+            self.new_settings.get("processing_common_unit_cell", ""),
+        )
+        self._apply_common_fallback(
+            self.model_pdb_input.line_edit,
+            self.new_settings.get("dials_model_pdb", ""),
+            self.new_settings.get("processing_common_model_file", ""),
+        )
+        self._apply_common_fallback(
+            self.ref_refl_input.line_edit,
+            self.new_settings.get("dials_reference_reflections", ""),
+            self.new_settings.get("processing_common_reference_reflection_file", ""),
+        )
+
         # --- Buttons ---
         button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel

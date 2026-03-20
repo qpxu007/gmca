@@ -123,23 +123,23 @@ class PlaybackManager(QObject):
         
         if settings.get("adaptive_live_playback") and mw.is_live_mode:
             lag = latest_avail - mw.current_frame_index
-
+            
             # Use cached parameters from main window to minimize overhead
             exposure_ms = mw.params.get("exposure", 0.1) * 1000
-
-            if lag <= 5:
+            
+            if lag <= 3:
                 # Close to real-time: Smooth and accurate
                 current_skip = 1
-                current_interval = max(20, int(exposure_ms))
+                current_interval = 20
                 in_turbo = False
-            elif lag <= 50:
+            elif lag <= 10:
                 # Moderate lag: Speed up refresh, skip slightly
-                current_skip = 2
-                current_interval = 30
+                current_skip = 3
+                current_interval = 20
                 in_turbo = False
             else:
                 # Heavy lag: Turbo mode
-                current_skip = max(5, int(math.ceil(lag / 10)))
+                current_skip = max(10, int(math.ceil(lag / 5)))
                 current_interval = 20  # Max UI speed
                 in_turbo = True
 

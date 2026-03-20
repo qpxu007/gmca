@@ -476,8 +476,6 @@ class CrystalLifetimeCalculatorApp(QWidget):
                 trans = 100.0
             if trans < 0.01:
                 trans = 0.01
-            if trans <= 0:
-                trans = 0.01
 
             attn = 100.0 / trans
 

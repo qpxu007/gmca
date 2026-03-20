@@ -385,10 +385,17 @@ class CrystfelSettingsDialog(SingletonDialog):
 
         layout.addLayout(form_layout)
 
+        # Apply common setting fallback
+        self._apply_common_fallback(
+            self.pdb_path_label,
+            self.new_settings.get("crystfel_pdb_file", ""),
+            self.new_settings.get("processing_common_model_file", ""),
+        )
+
         button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
         )
-        
+
         button_box.accepted.connect(self.accept)
         button_box.rejected.connect(self.reject)
         layout.addWidget(button_box)

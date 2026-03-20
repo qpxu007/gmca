@@ -344,6 +344,8 @@ class CustomColumnDelegate(QStyledItemDelegate):
         # Keep references to the thread and worker to prevent premature garbage collection
         self.thread = None
         self.worker = None
+        # Reusable QTextDocument to avoid per-cell allocation
+        self._doc = QTextDocument()
 
     def paint(self, painter, option, index):
         if index.data(GenericTableModel.RENDERER_ROLE):
@@ -351,25 +353,23 @@ class CustomColumnDelegate(QStyledItemDelegate):
             option.text = ""
             style = QApplication.instance().style()
             style.drawControl(QStyle.CE_ItemViewItem, option, painter)
-            doc = QTextDocument()
-            doc.setTextWidth(option.rect.width())
-            doc.setHtml(index.data(Qt.DisplayRole))
-            y_offset = (option.rect.height() - doc.size().height()) / 2
+            self._doc.setTextWidth(option.rect.width())
+            self._doc.setHtml(index.data(Qt.DisplayRole))
+            y_offset = (option.rect.height() - self._doc.size().height()) / 2
             painter.setClipRect(option.rect)
             painter.translate(
                 option.rect.topLeft().x(), option.rect.topLeft().y() + y_offset
             )
-            doc.drawContents(painter)
+            self._doc.drawContents(painter)
             painter.restore()
         else:
             super().paint(painter, option, index)
 
     def sizeHint(self, option, index):
         if index.data(GenericTableModel.RENDERER_ROLE):
-            doc = QTextDocument()
-            doc.setHtml(index.data(Qt.DisplayRole))
-            doc.setTextWidth(option.rect.width())
-            return QSize(int(doc.idealWidth()) + 10, int(doc.size().height()) + 4)
+            self._doc.setHtml(index.data(Qt.DisplayRole))
+            self._doc.setTextWidth(option.rect.width())
+            return QSize(int(self._doc.idealWidth()) + 10, int(self._doc.size().height()) + 4)
         return super().sizeHint(option, index)
 
     def _check_path_worker(self, path):
@@ -593,6 +593,7 @@ class GenericTableModel(QAbstractTableModel):
         super().__init__(parent)
         self._data, self._column_configs = [], config
         self.row_colors = {}  # Map: row_id -> QColor
+        self._render_cache = {}  # (row, col) -> rendered string
 
     def rowCount(self, p=QModelIndex()):
         return len(self._data)
@@ -639,13 +640,18 @@ class GenericTableModel(QAbstractTableModel):
             return str(raw_value or "")
 
         if role == Qt.DisplayRole:
-            # CORRECTED LINE: Check the renderer's name instead of its object identity.
             if renderer and renderer != "state_renderer":
-                return (
+                cache_key = (index.row(), index.column())
+                cached = self._render_cache.get(cache_key)
+                if cached is not None:
+                    return cached
+                result = (
                     renderer(row_data)
                     if col_conf.get("renderer_uses_row")
                     else renderer(raw_value)
                 )
+                self._render_cache[cache_key] = result
+                return result
             return str(raw_value or "")
 
         if role == Qt.TextAlignmentRole:
@@ -663,6 +669,12 @@ class GenericTableModel(QAbstractTableModel):
         return QVariant()
 
     def refresh_data(self, new_data):
+        # Skip expensive model reset if data hasn't changed.
+        # Compare row count and boundary IDs as a fast fingerprint.
+        if len(new_data) == len(self._data) and new_data and self._data:
+            if new_data[0] == self._data[0] and new_data[-1] == self._data[-1]:
+                return
+        self._render_cache.clear()
         self.beginResetModel()
         self._data = new_data
         self.endResetModel()
@@ -692,13 +704,13 @@ class QueryTab(QWidget):
         self.worker = None
         self._is_loading = False
         self._columns_sized = False  # Auto-size only on first load
+        self._initial_load_done = False  # Defer first query until tab is shown
 
         self.model.sort_requested.connect(self.on_sort_requested)
         self.current_sort_key = "id"  # Default sort column
         self.current_sort_order = Qt.DescendingOrder
 
         self._setup_ui()
-        self.load_data()
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
@@ -765,6 +777,16 @@ class QueryTab(QWidget):
         self.model.modelReset.connect(self._auto_resize_columns)
         layout.addWidget(self.table_view)
         self._setup_column_visibility_menu()
+
+    def showEvent(self, event):
+        """Load data on first visibility (lazy initialization) and auto-size columns."""
+        super().showEvent(event)
+        if not self._initial_load_done:
+            self._initial_load_done = True
+            self.load_data()
+        if not self._columns_sized and self.model.rowCount() > 0:
+            self._columns_sized = True
+            self._switch_header_to_interactive()
 
     def load_data(self, search_text=None):
         # Prevent a new load if one is already running
@@ -837,12 +859,6 @@ class QueryTab(QWidget):
                 self._columns_sized = True
                 self._switch_header_to_interactive()
             # else: tab is hidden; showEvent will trigger sizing when first shown
-
-    def showEvent(self, event):
-        super().showEvent(event)
-        if not self._columns_sized and self.model.rowCount() > 0:
-            self._columns_sized = True
-            self._switch_header_to_interactive()
 
     def _switch_header_to_interactive(self):
         header = self.table_view.horizontalHeader()

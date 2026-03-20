@@ -93,13 +93,15 @@ class RedisListener(QObject):
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, start_tab_index=1):
+    def __init__(self, start_tab_index=1, log_file=None):
         super().__init__()
         self.base_title = "GMCA Data Viewer"
         self.setWindowTitle(self.base_title)
         self.setGeometry(100, 100, 1600, 900)
         app_icon = generate_icon_with_text(text="dv", bg_color="#e74c3c", size=128)
         self.setWindowIcon(app_icon)
+
+        setup_logging(root_name="qp2", log_level="DEBUG", log_file=log_file)
 
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
@@ -114,8 +116,6 @@ class MainWindow(QMainWindow):
             "query_dataprocess": query_dataprocess,
             "query_strategy": query_strategy,
         }
-
-        setup_logging(root_name="qp2", log_level="DEBUG")
 
         try:
             from qp2.config.servers import ServerConfig
@@ -340,6 +340,10 @@ class MainWindow(QMainWindow):
         """
         if not self.isVisible():  # Don't poll if the window isn't visible
             return
+        # Skip caget when viewing the Datasets tab — it only matters for Processing/Strategy
+        current_tab = self.tabs.tabText(self.tabs.currentIndex())
+        if current_tab not in ("Processing", "Strategy"):
+            return
 
         pv_name = f"{self.current_user.beamline}:bi:analysis:pipelineStatus"
         try:
@@ -488,8 +492,28 @@ class MainWindow(QMainWindow):
         active_esaf = self.current_user.primary_group
         self.setWindowTitle(f"{self.base_title} - [ESAF: {active_esaf}]")
 
+    def hideEvent(self, event):
+        """Stop polling timers when window is hidden/minimized."""
+        self.status_poll_timer.stop()
+        self.dataset_poll_timer.stop()
+        logger.debug("Window hidden — polling timers stopped.")
+        super().hideEvent(event)
+
+    def showEvent(self, event):
+        """Restart polling timers when window becomes visible."""
+        if not self.status_poll_timer.isActive():
+            self.status_poll_timer.start(2000)
+        if not self.dataset_poll_timer.isActive():
+            self.dataset_poll_timer.start(5000)
+        logger.debug("Window shown — polling timers restarted.")
+        super().showEvent(event)
+
     def closeEvent(self, event):
-        """Ensures the listener thread is stopped cleanly on exit."""
+        """Ensures timers and listener thread are stopped cleanly on exit."""
+        self.status_poll_timer.stop()
+        self.dataset_poll_timer.stop()
+        self._refresh_timer.stop()
+
         if self.redis_listener:
             self.redis_listener.stop()
         if self.redis_thread:
@@ -500,6 +524,9 @@ class MainWindow(QMainWindow):
 
 
 if __name__ == "__main__":
+    import os
+    from datetime import datetime
+
     parser = argparse.ArgumentParser(description="GMCA Data Viewer")
     parser.add_argument(
         "--tab",
@@ -507,9 +534,24 @@ if __name__ == "__main__":
         default=1,
         help="Startup tab index (1=Processing, 2=Strategy). Default is 1.",
     )
+    parser.add_argument(
+        "--log-file",
+        help="Optional path to save log output to a file. Overrides QP2_LOG_FILE env var.",
+    )
     args, _ = parser.parse_known_args()
 
+    log_file = args.log_file
+    if not log_file:
+        try:
+            from qp2.config.servers import ServerConfig
+            log_file = ServerConfig.LOG_FILE
+        except ImportError:
+            pass
+    if not log_file:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        log_file = os.path.join(os.path.expanduser("~"), f"dv-{timestamp}.log")
+
     app = QApplication(sys.argv)
-    window = MainWindow(start_tab_index=args.tab)
+    window = MainWindow(start_tab_index=args.tab, log_file=log_file)
     window.show()
     sys.exit(app.exec_())

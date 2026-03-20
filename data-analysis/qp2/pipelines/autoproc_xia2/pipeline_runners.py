@@ -356,6 +356,9 @@ class Xia2Runner(BaseRunner):
         if self.kwargs.get("highres"):
             cmd.append(f'xia2.settings.resolution.d_min={self.kwargs["highres"]}')
 
+        if self.kwargs.get("lowres"):
+            cmd.append(f'xia2.settings.resolution.d_max={self.kwargs["lowres"]}')
+
         if self.kwargs.get("space_group"):
             cmd.append(f"xia2.settings.space_group='{self.kwargs['space_group']}'")
             if self.kwargs.get("unit_cell"):
@@ -443,6 +446,7 @@ class Xia2SSXRunner(BaseRunner):
 
         cmd = ["xia2.ssx"]
 
+        import_phil_lines = []
         warned_about_oscillation = False
 
         # Add inputs
@@ -460,12 +464,12 @@ class Xia2SSXRunner(BaseRunner):
                             osc_range = None
                             if "/entry/sample/goniometer/omega_range_average" in f:
                                 osc_range = f["/entry/sample/goniometer/omega_range_average"][()]
-                            
+
                             if osc_range is not None:
                                 # Handle scalar/0-d array
                                 if hasattr(osc_range, "item"):
                                     osc_range = osc_range.item()
-                                
+
                                 # Check if oscillation is significantly non-zero
                                 if abs(osc_range) > 1e-6:
                                     logger.warning(
@@ -473,19 +477,35 @@ class Xia2SSXRunner(BaseRunner):
                                         "Applying workaround: forcing geometry.scan.oscillation=0.0,0.0."
                                     )
                                     warned_about_oscillation = True
-                                    
-                                    # Create the import.phil file
-                                    import_phil_path = os.path.join(self.work_dir, "import.phil")
-                                    try:
-                                        with open(import_phil_path, "w") as phil_f:
-                                            phil_f.write("geometry.scan.oscillation=0.0,0.0\n")
-                                        
-                                        cmd.append(f"dials_import.phil={import_phil_path}")
-                                    except Exception as e:
-                                        logger.error(f"Failed to create {import_phil_path} for oscillation workaround: {e}")
+                                    import_phil_lines.append("geometry.scan.oscillation=0.0,0.0")
 
                     except Exception as e:
                         logger.warning(f"Failed to check oscillation in {master_file}: {e}")
+
+        # Beam centre / distance override
+        beam_x = self.kwargs.get("beam_x")
+        beam_y = self.kwargs.get("beam_y")
+        distance = self.kwargs.get("distance")
+        if beam_x and beam_y:
+            import_phil_lines += [
+                "geometry {",
+                "  detector {",
+                f'    fast_slow_beam_centre = "{beam_x},{beam_y}"',
+            ]
+            if distance:
+                import_phil_lines.append(f"    distance = {distance}")
+            import_phil_lines += ["  }", "}"]
+            logger.info(f"Applying detector geometry override: beam_centre={beam_x},{beam_y}, distance={distance}")
+
+        # Write import.phil once and append to cmd
+        if import_phil_lines:
+            import_phil_path = os.path.join(self.work_dir, "import.phil")
+            try:
+                with open(import_phil_path, "w") as phil_f:
+                    phil_f.write("\n".join(import_phil_lines) + "\n")
+                cmd.append(f"dials_import.phil={import_phil_path}")
+            except Exception as e:
+                logger.error(f"Failed to write {import_phil_path}: {e}")
 
         # Processing parameters
         if self.kwargs.get("space_group"):
@@ -503,6 +523,15 @@ class Xia2SSXRunner(BaseRunner):
 
         if self.kwargs.get("highres"):
             cmd.append(f"d_min={self.kwargs['highres']}")
+
+        if self.kwargs.get("lowres"):
+            cmd.append(f"d_max={self.kwargs['lowres']}")
+
+        # Anomalous data processing
+        if not self.kwargs.get("native", True):
+            cmd.append("anomalous=True")
+        else:
+            cmd.append("anomalous=False")
 
         if self.kwargs.get("steps"):
             cmd.append(f"steps={self.kwargs['steps']}")

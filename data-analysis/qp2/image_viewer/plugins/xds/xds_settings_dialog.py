@@ -83,6 +83,34 @@ class XDSSettingsDialog(SingletonDialog):
         form_layout.addRow(job_group)
 
         layout.addLayout(form_layout)
+
+        # Apply common setting fallbacks
+        self._apply_common_fallback(
+            self.xds_space_group,
+            self.new_settings.get("xds_space_group", ""),
+            self.new_settings.get("processing_common_space_group", ""),
+        )
+        self._apply_common_fallback(
+            self.xds_unit_cell,
+            self.new_settings.get("xds_unit_cell", ""),
+            self.new_settings.get("processing_common_unit_cell", ""),
+        )
+        self._apply_common_fallback(
+            self.xds_model_pdb.line_edit,
+            self.new_settings.get("xds_model_pdb", ""),
+            self.new_settings.get("processing_common_model_file", ""),
+        )
+        self._apply_common_fallback(
+            self.xds_reference_hkl.line_edit,
+            self.new_settings.get("xds_reference_hkl", ""),
+            self.new_settings.get("processing_common_reference_reflection_file", ""),
+        )
+        self._apply_common_spinbox_fallback(
+            self.xds_resolution,
+            self.new_settings.get("xds_resolution"),
+            self.new_settings.get("processing_common_res_cutoff_high"),
+        )
+
         button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         button_box.accepted.connect(self.accept)
         button_box.rejected.connect(self.reject)

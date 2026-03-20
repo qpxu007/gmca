@@ -64,9 +64,16 @@ class FileIOManager(QObject):
 
         file_paths = self.main_window.ui_manager.get_file_dialog()
         if file_paths:
-            # Load all selected files. The UI will show the last one.
-            for path in file_paths:
-                self.load_file(path)
+            self.main_window.ui_manager.show_status_message(f"Loading {len(file_paths)} datasets...", 3000)
+            
+            # Use the parallel loader for all selected files to prevent UI locking
+            self.main_window.load_datasets_parallel(file_paths)
+            
+            # Automatically focus the viewer onto the last selected dataset in the list
+            if file_paths:
+                last_path = file_paths[-1]
+                logger.info(f"Selecting last loaded file from dialog: {last_path}")
+                self.load_file_if_different(last_path)
 
     @pyqtSlot()
     def load_from_list_file(self):

@@ -95,6 +95,15 @@ class Xia2SSXManager(GenericPlotManager):
         if not kwargs.get("xia2_ssx_reference_hkl"):
             kwargs["xia2_ssx_reference_hkl"] = settings.get("processing_common_reference_reflection_file", "")
             
+        if not kwargs.get("xia2_ssx_d_min") and settings.get("processing_common_res_cutoff_high"):
+            kwargs["xia2_ssx_d_min"] = settings.get("processing_common_res_cutoff_high")
+
+        if not kwargs.get("xia2_ssx_d_max") and settings.get("processing_common_res_cutoff_low"):
+            kwargs["xia2_ssx_d_max"] = settings.get("processing_common_res_cutoff_low")
+
+        if "xia2_ssx_native" not in kwargs:
+            kwargs["xia2_ssx_native"] = settings.get("processing_common_native", True)
+            
         kwargs["processing_common_proc_dir_root"] = settings.get("processing_common_proc_dir_root", "")
 
         return kwargs
@@ -233,7 +242,9 @@ class Xia2SSXManager(GenericPlotManager):
             **worker_kwargs,
         )
         worker.signals.error.connect(self._handle_worker_error)
-        worker.signals.result.connect(self._handle_worker_result)
+        worker.signals.result.connect(
+            lambda status, msg, path: self._handle_worker_result(path, status, msg)
+        )
         self.request_main_threadpool.emit(worker)
 
     @QtCore.pyqtSlot()

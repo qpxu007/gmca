@@ -196,6 +196,59 @@ def update_beam_center_in_master_file(file_path, new_x, new_y, new_wavelength=No
                 else:
                     logger.warning(f"Could not find {dist_path} to update detector distance")
 
+            # Update the NeXus detector transformation chain.
+            # dxtbx (used by dials/xia2) reads the beam center from
+            # the translation vector, NOT from beam_center_x/y.
+            #   detector_origin = translation_vector * translation_distance
+            #   beam_center_x = -origin_x / pixel_size
+            #   beam_center_y = -origin_y / pixel_size
+            #   det_distance  =  origin_z
+            trans_path = "/entry/instrument/detector/transformations/translation"
+            fast_path = "/entry/instrument/detector/module/fast_pixel_direction"
+            if trans_path in f:
+                # Read pixel size from fast_pixel_direction (meters)
+                pixel_size = None
+                if fast_path in f:
+                    pixel_size = float(f[fast_path][()])
+                if not pixel_size:
+                    pixel_size = 75e-6  # 75 um default (Eiger)
+                    logger.warning(f"Could not read pixel size, using default {pixel_size*1e6:.0f} um")
+
+                # Determine detector distance in meters
+                if new_det_dist is not None:
+                    det_dist_m = new_det_dist / 1000.0
+                else:
+                    # Read current distance from existing translation
+                    old_vec = f[trans_path].attrs.get("vector")
+                    old_dist = float(f[trans_path][()])
+                    if old_vec is not None:
+                        det_dist_m = float(old_vec[2] * old_dist)
+                    else:
+                        det_dist_m = float(f.get("/entry/instrument/detector/detector_distance", [0.35])[()])
+
+                # Compute new origin (meters)
+                origin_x = -new_x * pixel_size
+                origin_y = -new_y * pixel_size
+                origin_z = det_dist_m
+                origin = np.array([origin_x, origin_y, origin_z])
+
+                # translation_distance = |origin|, translation_vector = origin / |origin|
+                new_dist = float(np.linalg.norm(origin))
+                new_vec = origin / new_dist
+
+                f[trans_path][...] = new_dist
+                f[trans_path].attrs["vector"] = new_vec
+                logger.info(
+                    f"Updated NeXus translation: distance={new_dist:.6f} m, "
+                    f"vector=[{new_vec[0]:.6f}, {new_vec[1]:.6f}, {new_vec[2]:.6f}]"
+                )
+                updated_any = True
+            else:
+                logger.warning(
+                    f"NeXus translation path {trans_path} not found. "
+                    f"dials/xia2 may not see the updated beam center."
+                )
+
             # Also remove large/redundant detectorSpecific items if they exist to save space
             if remove_correction:
                 det_spec_path = "/entry/instrument/detector/detectorSpecific"

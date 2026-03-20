@@ -43,6 +43,7 @@ class UserGroupManager:
             "database": database,
             "connect_timeout": 3,
         }
+        logger.info(f"Accounts DB: mysql://{host}/{database}")
         # self.pool = None  # Pooling removed with pymysql
         self._group_info_cache = {}
         self._user_group_info_cache = {}

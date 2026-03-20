@@ -136,6 +136,12 @@ class XdsStrategy:
         if pipeline_params is None:
             pipeline_params = {}
 
+        self._bluice_redis_key = pipeline_params.get("redis_key")
+        self._bluice_redis = (
+            ServerConfig.get_bluice_redis_connection(pipeline_params.get("beamline"))
+            if self._bluice_redis_key else None
+        )
+
         # Derive sample name from master file stem if not provided
         sample_name = (
             pipeline_params.get("sampleName")
@@ -669,6 +675,27 @@ class XdsStrategy:
             else:
                 logger.warning(f"{self.xplan_lp_path} not found after XPLAN.")
 
+    def _publish_to_bluice_redis(self, success: bool):
+        """Write strategy results to the Bluice Redis key for pybluice GUI display."""
+        if not self._bluice_redis or not self._bluice_redis_key:
+            return
+        try:
+            mapped = self._get_sql_mapped_results(self.results)
+            mapped["software"] = "XDS"
+            if success:
+                mapped["status"] = "1"
+            else:
+                existing_status = self._bluice_redis.hget(self._bluice_redis_key, "status")
+                if existing_status == "1":
+                    logger.info("Bluice Redis key already has status=1; skipping failed update.")
+                    return
+                mapped["status"] = "0"
+            self._bluice_redis.hset(self._bluice_redis_key, mapping=mapped)
+            self._bluice_redis.incr("bluice:sample:strategy_ver__s")
+            logger.info(f"Published XDS strategy results (status={mapped['status']}) to {self._bluice_redis_key}")
+        except Exception as e:
+            logger.warning(f"Failed to publish to Bluice Redis: {e}")
+
     def run(self) -> Dict:
         """Execute the full strategy workflow and return results dict."""
         self.tracker.start()
@@ -782,12 +809,14 @@ class XdsStrategy:
             except Exception as e:
                 logger.warning(f"Failed to write summary JSON: {e}")
 
+            self._publish_to_bluice_redis(True)
             self.tracker.succeed(self.results)
             return self.results
 
         except Exception as e:
             error_message = f"XDS strategy failed: {e}"
             logger.error(error_message, exc_info=True)
+            self._publish_to_bluice_redis(False)
             self.tracker.fail(error_message, self.results)
             return None
         return self.results

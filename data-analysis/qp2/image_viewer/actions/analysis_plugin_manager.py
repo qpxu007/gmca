@@ -25,7 +25,7 @@ class AnalysisPluginManager(QtCore.QObject):
             "Dozor": "qp2.image_viewer.plugins.dozor.dozor_manager.DozorManager",
             "nXDS": "qp2.image_viewer.plugins.nxds.nxds_manager.NXDSManager",
             "Crystfel": "qp2.image_viewer.plugins.crystfel.crystfel_manager.CrystfelManager",
-            "Dials SSX": "qp2.image_viewer.plugins.dials_ssx.dials_manager.DialsManager",
+            # "Dials SSX": "qp2.image_viewer.plugins.dials_ssx.dials_manager.DialsManager",
             "XDS": "qp2.image_viewer.plugins.xds.xds_manager.XDSManager",
             "autoPROC": "qp2.image_viewer.plugins.autoproc.autoproc_manager.AutoPROCManager",
             "xia2": "qp2.image_viewer.plugins.xia2.xia2_manager.Xia2Manager",

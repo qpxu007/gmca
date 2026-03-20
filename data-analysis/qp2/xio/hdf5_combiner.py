@@ -1,13 +1,28 @@
 import json
 import os
+import shlex
 import shutil
 import operator
+import sys
 import time
 import math
 import subprocess
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 from concurrent.futures import ProcessPoolExecutor, as_completed
+
+# Ensure the project root is on sys.path so 'qp2' is importable when
+# this script is executed directly on a Slurm worker node.
+def _find_project_root(file_path):
+    path = Path(file_path).resolve()
+    for parent in path.parents:
+        if (parent / "qp2").is_dir():
+            return str(parent)
+    return None
+
+_project_root = _find_project_root(__file__)
+if _project_root and _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
 
 import h5py
 import numpy as np
@@ -297,7 +312,9 @@ class DatasetCombiner:
                     all_source_tasks.append({
                         "src_file": data_file_path,
                         "src_dset": dset_path,
-                        "src_idx": local_index
+                        "src_idx": local_index,
+                        "src_master": m_path,
+                        "src_frame": f_num,
                     })
 
         if not all_source_tasks:
@@ -306,6 +323,9 @@ class DatasetCombiner:
 
         total_to_combine = len(all_source_tasks)
         logger.info(f"Total frames to combine: {total_to_combine}")
+
+        # Keep provenance info for the master file
+        self._source_provenance = all_source_tasks
 
         # 3. Execute parallel copying
         try:
@@ -540,6 +560,10 @@ class DatasetCombiner:
 
                 src.visititems(copy_visitor)
 
+                # Copy root-level attributes (visititems doesn't visit root)
+                for k, v in src.attrs.items():
+                    dst.attrs[k] = v
+
                 # 2. Re-create /entry/data group
                 if "/entry/data" not in dst:
                     data_group = dst.create_group("/entry/data")
@@ -620,6 +644,11 @@ class DatasetCombiner:
                     self._reconstruct_per_frame_datasets(dst, per_frame_paths)
                 else:
                     logger.info("No per-frame datasets found for reconstruction.")
+
+                # 6. Write provenance — source master file and 1-based frame
+                #    number for every combined frame, so the original raster
+                #    row/column position can be recovered later.
+                self._write_provenance(dst)
 
 
     def _find_per_frame_datasets(self, master_path: str) -> List[str]:
@@ -734,21 +763,56 @@ class DatasetCombiner:
                  # Concatenate
                  final_array = np.concatenate(all_values, axis=0)
                  logger.info(f"    -> Reconstructed {dpath} with total length {len(final_array)}")
-                 
-                 # Write to destination
 
                  # Ensure parent group exists
                  parent = os.path.dirname(dpath)
                  if parent not in dst_file_obj:
                      dst_file_obj.create_group(parent)
-                 
-                 # Create dataset
-                 # We might need to handle compression if original was compressed? 
-                 # Usually metadata is not heavily compressed.
+
                  dst_file_obj.create_dataset(dpath, data=final_array)
 
+                 # Copy HDF5 attributes from the first source that has this dataset.
+                 # NeXus transformation datasets carry critical attrs (@vector,
+                 # @transformation_type, @units, @depends_on) that dxtbx needs.
+                 for m_path in self.current_mapping.keys():
+                     if not os.path.exists(m_path):
+                         continue
+                     try:
+                         with h5py.File(m_path, "r") as src:
+                             if dpath in src:
+                                 for attr_name, attr_val in src[dpath].attrs.items():
+                                     dst_file_obj[dpath].attrs[attr_name] = attr_val
+                                 break
+                     except Exception as e:
+                         logger.warning(f"Could not copy attributes for {dpath}: {e}")
 
 
+
+
+    def _write_provenance(self, dst_file_obj):
+        """Write per-frame provenance datasets into /entry/combiner/.
+
+        Stores the source master file path and 1-based frame number for
+        every frame in the combined dataset, so the original raster
+        position (row/column) can be recovered.
+        """
+        provenance = getattr(self, "_source_provenance", None)
+        if not provenance:
+            return
+
+        n = len(provenance)
+        grp = dst_file_obj.require_group("/entry/combiner")
+
+        # source_file: variable-length string per frame
+        masters = [task["src_master"] for task in provenance]
+        dt = h5py.string_dtype()
+        grp.create_dataset("source_file", data=masters, dtype=dt)
+
+        # source_frame: 1-based frame number per frame
+        frames = np.array([task["src_frame"] for task in provenance], dtype=np.int32)
+        grp.create_dataset("source_frame", data=frames)
+
+        logger.info(f"Wrote provenance for {n} frames to /entry/combiner/")
 
     def _find_data_path(self, f: h5py.File) -> Optional[str]:
         """Finds the dataset path containing the image data."""
@@ -820,10 +884,24 @@ def main():
             print("Error: sbatch command not found. Cannot submit to Slurm.")
             sys.exit(1)
 
-        # Reconstruct command line
-        cmd = [sys.executable, os.path.abspath(__file__)]
+        # Use cluster-safe Python/paths if available (submitting machine may
+        # have a different mount layout than the Slurm worker node).
+        cluster_python = os.environ.get("CLUSTER_PYTHON")
+        cluster_root = os.environ.get("CLUSTER_PROJECT_ROOT")
 
-        # Add arguments (excluding submission-related ones)
+        if cluster_python and cluster_root:
+            python_exe = cluster_python
+            relative_script = os.path.join("xio", "hdf5_combiner.py")
+            execution_script = os.path.join(cluster_root, relative_script)
+        else:
+            python_exe = sys.executable
+            execution_script = os.path.abspath(__file__)
+
+        # Reconstruct command line with raw values, then shell-quote the
+        # entire list before passing to run_command (which joins with
+        # plain " ".join(), so spaces/metacharacters must be escaped).
+        cmd = [python_exe, execution_script]
+
         if args.mapping:
             cmd.extend(["--mapping", args.mapping])
 
@@ -844,18 +922,26 @@ def main():
         cmd.extend(["--n", str(args.n)])
         cmd.extend(["--nproc", str(args.nproc)])
 
+        slurm_cmd = [shlex.quote(c) for c in cmd]
+
+        # Environment setup for worker node.
+        # The combiner only needs the Python venv (already set via
+        # CLUSTER_PYTHON) — no external module load required.
+        pre_command_str = "set -e"
+
         job_name = f"combine_{args.prefix}"
         print(f"Submitting job {job_name} to Slurm...")
 
         job_id = run_command(
-            cmd=cmd,
+            cmd=slurm_cmd,
             cwd=os.getcwd(),
             method="slurm",
             job_name=job_name,
             walltime=args.time,
             memory=args.mem,
             processors=args.nproc,
-            background=True
+            background=True,
+            pre_command=pre_command_str,
         )
 
         if job_id:

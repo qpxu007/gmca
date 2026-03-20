@@ -379,7 +379,6 @@ class GenericPlotManager(QtCore.QObject):
         self.data_source_changed.emit(source_type, path_or_key)
 
         self._refresh_data_and_plot()
-        self._update_source_button_text()
 
     def _prepare_worker_kwargs(self) -> dict:
         """
@@ -519,8 +518,6 @@ class GenericPlotManager(QtCore.QObject):
                     self.status_update.emit(
                         f"[{self.name}] Invalid file path. Source not changed.", 3000
                     )
-
-        self._update_source_button_text()
 
     def _open_file_dialog(self):
         """Helper to open a file dialog for selecting a JSON data source."""

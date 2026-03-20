@@ -300,11 +300,12 @@ class UIManager:
         tools_menu.addSeparator()
 
         tools_menu.addAction(mw.toggle_console_action)
-        tools_menu.addAction(mw.toggle_ai_action)
 
 
-        # --- HELP MENU (Unchanged) ---
+        # --- HELP MENU ---
         help_menu = menu_bar.addMenu("&Help")
+        help_menu.addAction(mw.toggle_ai_action)
+        help_menu.addSeparator()
         help_menu.addAction(mw.about_action)
 
         # --- Main Layout ---

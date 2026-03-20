@@ -198,7 +198,7 @@ class CrystfelProcessDatasetWorker(QRunnable):
             )
             
             self.signals.result.emit(
-                "SUBMITTED", f"Submitted CrystFEL job '{job_name}'", self.master_file
+                self.master_file, "SUBMITTED", f"Submitted CrystFEL job '{job_name}'"
             )
 
         except Exception as e:

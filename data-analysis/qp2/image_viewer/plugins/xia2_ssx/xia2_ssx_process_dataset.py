@@ -42,9 +42,14 @@ def main():
     parser.add_argument("--nproc", type=int)
     parser.add_argument("--njobs", type=int)
     parser.add_argument("--d_min", type=float)
+    parser.add_argument("--d_max", type=float)
+    parser.add_argument("--native", action="store_true")
     parser.add_argument("--steps", type=str)
     parser.add_argument("--max_lattices", type=int)
     parser.add_argument("--min_spots", type=int)
+    parser.add_argument("--beam_x", type=float)
+    parser.add_argument("--beam_y", type=float)
+    parser.add_argument("--distance", type=float)
     parser.add_argument("--status_key", required=True, action="append")
     parser.add_argument("--redis_host", required=True)
     parser.add_argument("--redis_port", required=True)
@@ -126,12 +131,20 @@ def main():
             sys.argv.extend(["--reference_hkl", args.reference_hkl])
         if args.d_min:
             sys.argv.extend(["--highres", str(args.d_min)])
+        if args.d_max:
+            sys.argv.extend(["--lowres", str(args.d_max)])
+        if args.native:
+            sys.argv.extend(["--native"])
         if args.steps:
             sys.argv.extend(["--steps", args.steps])
         if args.max_lattices:
             sys.argv.extend(["--max_lattices", str(args.max_lattices)])
         if args.min_spots:
             sys.argv.extend(["--min_spots", str(args.min_spots)])
+        if args.beam_x is not None and args.beam_y is not None:
+            sys.argv.extend(["--beam_x", str(args.beam_x), "--beam_y", str(args.beam_y)])
+        if args.distance is not None:
+            sys.argv.extend(["--distance", str(args.distance)])
 
         # Add pipeline parameters for DB logging
         if primary_group:

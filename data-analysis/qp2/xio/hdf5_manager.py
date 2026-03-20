@@ -214,8 +214,8 @@ class HDF5Reader(QtCore.QObject):
 
         self.data_file_paths = []
         self.frame_map = []
-        
         self.open_file_handles = OrderedDict()
+        self.open_datasets = OrderedDict()
         self.MAX_OPEN_FILES = 12
         self.dset_paths = ["/entry/data/data", "/entry/data/raw_data"]
 
@@ -371,8 +371,6 @@ class HDF5Reader(QtCore.QObject):
         self.series_completion_signal_emitted = True
         self.series_completed.emit(master_file, total_frames, metadata)
 
-    def _read_detector_params():
-        pass
 
     def _read_detector_params(self):
         """
@@ -395,30 +393,36 @@ class HDF5Reader(QtCore.QObject):
             raise IOError("Master file handle is not valid for reading parameters.")
 
         try:
-            # --- Helper to read scalar value safely ---
-            def read_scalar(path, default=None, dtype=None):
-                if path in self.master:
-                    try:
-                        dset = self.master[path]
-                        # Read scalar value correctly using [()]
-                        value = dset[()]
-                        # Optional type conversion
-                        if dtype is not None:
-                            return dtype(value)
-                        # Handle numpy types -> python types for convenience
-                        return value.item() if hasattr(value, "item") else value
-                    except Exception as e:
-                        logger.warning(
-                            f"Warning: Failed to read scalar parameter '{path}': {e}"
-                        )
-                return default
+            # --- Helper to read scalar value safely from a group ---
+            def read_scalar(grp, name, default=None, dtype=None):
+                if grp is None:
+                    return default
+                try:
+                    dset = grp[name]
+                    # Read scalar value correctly using [()]
+                    value = dset[()]
+                    # Optional type conversion
+                    if dtype is not None:
+                        return dtype(value)
+                    # Handle numpy types -> python types for convenience
+                    return value.item() if hasattr(value, "item") else value
+                except KeyError:
+                    return default
+                except Exception as e:
+                    logger.warning(
+                        f"Warning: Failed to read scalar parameter '{name}' from '{grp.name}': {e}"
+                    )
+                    return default
+
+            # --- Pre-fetch common groups to avoid redundant B-tree lookups ---
+            det_grp = self.master.get("/entry/instrument/detector")
+            det_spec_grp = det_grp.get("detectorSpecific") if det_grp else None
+            beam_grp = self.master.get("/entry/instrument/beam")
+            gonio_grp = self.master.get("/entry/sample/goniometer")
 
             # --- Read nimages (Total static number of frames) ---
-            # Common Eiger paths, adjust if different detector/format
-            nimg_path = "/entry/instrument/detector/detectorSpecific/nimages"
-            ntrig_path = "/entry/instrument/detector/detectorSpecific/ntrigger"
-            nimg_val = read_scalar(nimg_path, dtype=int)
-            ntrig_val = read_scalar(ntrig_path, dtype=int)
+            nimg_val = read_scalar(det_spec_grp, "nimages", dtype=int)
+            ntrig_val = read_scalar(det_spec_grp, "ntrigger", dtype=int)
 
             if nimg_val is not None and ntrig_val is not None:
                 self.nimages = nimg_val * ntrig_val
@@ -427,67 +431,73 @@ class HDF5Reader(QtCore.QObject):
                 )
             else:
                 logger.warning(
-                    f"Warning: Could not read '{nimg_path}' or '{ntrig_path}'. Attempting other paths..."
+                    f"Warning: Could not read 'nimages' or 'ntrigger' from detectorSpecific. Attempting other paths..."
                 )
 
             # --- Read other parameters (using helper for cleaner code) ---
             wl_m = read_scalar(
-                "/entry/instrument/beam/incident_wavelength",
+                beam_grp, "incident_wavelength",
                 default=1.0e-10,
                 dtype=float,
             )
             self.wavelength = wl_m
 
             dist_m = read_scalar(
-                "/entry/instrument/detector/detector_distance", default=0.1, dtype=float
+                det_grp, "detector_distance", default=0.1, dtype=float
             )
             self.det_dist = dist_m * 1000
 
             px_size_m = read_scalar(
-                "/entry/instrument/detector/x_pixel_size", default=7.5e-5, dtype=float
+                det_grp, "x_pixel_size", default=7.5e-5, dtype=float
             )
             self.pixel_size = px_size_m * 1000
 
             self.beam_x = read_scalar(
-                "/entry/instrument/detector/beam_center_x",
+                det_grp, "beam_center_x",
                 default=self.beam_x,
                 dtype=float,
             )
             self.beam_y = read_scalar(
-                "/entry/instrument/detector/beam_center_y",
+                det_grp, "beam_center_y",
                 default=self.beam_y,
                 dtype=float,
             )
 
             self.saturation_value = read_scalar(
-                "/entry/instrument/detector/detectorSpecific/countrate_correction_count_cutoff",
+                det_spec_grp, "countrate_correction_count_cutoff",
                 default=60000,
             )
 
             self.underload_value = read_scalar(
-                "/entry/instrument/detector/underload_value", default=-1
+                det_grp, "underload_value", default=-1
             )
 
             self.sensor_thickness = read_scalar(
-                "/entry/instrument/detector/sensor_thickness", default=None, dtype=float
+                det_grp, "sensor_thickness", default=None, dtype=float
             )
 
             self.nx = read_scalar(
-                "/entry/instrument/detector/detectorSpecific/x_pixels_in_detector",
+                det_spec_grp, "x_pixels_in_detector",
                 default=None,
             )
             self.ny = read_scalar(
-                "/entry/instrument/detector/detectorSpecific/y_pixels_in_detector",
+                det_spec_grp, "y_pixels_in_detector",
                 default=None,
             )
-            self.omega_start = self.master["/entry/sample/goniometer/omega"][()][0]
+            
+            omega_dset = gonio_grp["omega"] if gonio_grp and "omega" in gonio_grp else None
+            self.omega_start = omega_dset[()][0] if omega_dset else 0.0
+
             self.omega_range = read_scalar(
-                "/entry/sample/goniometer/omega_range_average", 0.2
+                gonio_grp, "omega_range_average", 0.2
             )
-            self.exposure = read_scalar("/entry/instrument/detector/count_time", 0.2)
-            self.detector = self.master["/entry/instrument/detector/description"][()]
+            self.exposure = read_scalar(det_grp, "count_time", 0.2)
+            
+            desc_val = read_scalar(det_grp, "description", b"")
+            self.detector = desc_val
+
             bit_depth_val = read_scalar(
-                "/entry/instrument/detector/bit_depth_image", default=None, dtype=int
+                det_grp, "bit_depth_image", default=None, dtype=int
             )
             if bit_depth_val is not None and bit_depth_val > 0:
                 self.bit_depth = bit_depth_val
@@ -724,9 +734,16 @@ class HDF5Reader(QtCore.QObject):
             return None
 
         try:
-            if primary_dset_path not in file_handle:
-                raise KeyError(f"Primary dataset '{primary_dset_path}' not found.")
-            dset = file_handle[primary_dset_path]
+            cache_key = (target_file_path, primary_dset_path)
+            if cache_key in self.open_datasets:
+                dset = self.open_datasets[cache_key]
+                self.open_datasets.move_to_end(cache_key)
+            else:
+                if primary_dset_path not in file_handle:
+                    raise KeyError(f"Primary dataset '{primary_dset_path}' not found.")
+                dset = file_handle[primary_dset_path]
+                self.open_datasets[cache_key] = dset
+                
             actual_frames_in_dset = dset.shape[0] if dset.ndim >= 1 else 0
             if not (0 <= local_index < actual_frames_in_dset):
                 logger.error(
@@ -740,7 +757,14 @@ class HDF5Reader(QtCore.QObject):
             for alt_dset_path in self.dset_paths:
                 if alt_dset_path != primary_dset_path and alt_dset_path in file_handle:
                     try:
-                        dset = file_handle[alt_dset_path]
+                        alt_cache_key = (target_file_path, alt_dset_path)
+                        if alt_cache_key in self.open_datasets:
+                            dset = self.open_datasets[alt_cache_key]
+                            self.open_datasets.move_to_end(alt_cache_key)
+                        else:
+                            dset = file_handle[alt_dset_path]
+                            self.open_datasets[alt_cache_key] = dset
+                            
                         if 0 <= local_index < dset.shape[0]:
                             self._update_map_dset_path(target_file_path, alt_dset_path)
                             return dset[local_index]
@@ -774,15 +798,9 @@ class HDF5Reader(QtCore.QObject):
             self.open_file_handles.move_to_end(file_path)
             return self.open_file_handles[file_path]
 
-        if len(self.open_file_handles) >= self.MAX_OPEN_FILES:
-            oldest_path, handle_to_close = self.open_file_handles.popitem(last=False)
-            try:
-                if handle_to_close and handle_to_close.id.valid:
-                    handle_to_close.close()
-            except Exception as e:
-                logger.warning(
-                    f"Warning: Error closing evicted file handle {Path(oldest_path).name}: {e}"
-                )
+        while len(self.open_file_handles) >= self.MAX_OPEN_FILES:
+            oldest_path = next(iter(self.open_file_handles))
+            self._close_specific_handle(oldest_path)
 
         try:
             handle = h5py.File(file_path, "r")
@@ -803,6 +821,12 @@ class HDF5Reader(QtCore.QObject):
             if from_cache
             else self.open_file_handles.get(file_path)
         )
+        
+        # Clean up any cached datasets for this file
+        keys_to_remove = [k for k in self.open_datasets.keys() if k[0] == file_path]
+        for k in keys_to_remove:
+            self.open_datasets.pop(k, None)
+            
         if (
             handle_to_close
             and getattr(handle_to_close, "id", None)

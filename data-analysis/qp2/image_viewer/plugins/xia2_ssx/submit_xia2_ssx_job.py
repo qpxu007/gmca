@@ -170,6 +170,12 @@ class Xia2SSXProcessDatasetWorker(QRunnable):
             if self.kwargs.get("xia2_ssx_d_min"):
                 command_list.extend(["--d_min", str(self.kwargs["xia2_ssx_d_min"])])
             
+            if self.kwargs.get("xia2_ssx_d_max"):
+                command_list.extend(["--d_max", str(self.kwargs["xia2_ssx_d_max"])])
+            
+            if self.kwargs.get("xia2_ssx_native"):
+                command_list.extend(["--native"])
+            
             if self.kwargs.get("xia2_ssx_steps"):
                 command_list.extend(["--steps", self.kwargs["xia2_ssx_steps"]])
 
@@ -178,6 +184,15 @@ class Xia2SSXProcessDatasetWorker(QRunnable):
             
             if self.kwargs.get("xia2_ssx_min_spots"):
                 command_list.extend(["--min_spots", str(self.kwargs["xia2_ssx_min_spots"])])
+
+            if self.kwargs.get("xia2_ssx_override_geometry"):
+                beam_x = self.kwargs.get("xia2_ssx_beam_x")
+                beam_y = self.kwargs.get("xia2_ssx_beam_y")
+                distance = self.kwargs.get("xia2_ssx_distance")
+                if beam_x and beam_y:
+                    command_list.extend(["--beam_x", str(beam_x), "--beam_y", str(beam_y)])
+                if distance:
+                    command_list.extend(["--distance", str(distance)])
 
 
             unit_cell_value = self.kwargs.get("xia2_ssx_unit_cell")                                                                                                                                               
@@ -335,6 +350,8 @@ class Xia2SSXDistributedWorker(QRunnable):
             "walltime": self.kwargs.get("xia2_ssx_walltime", "10:00:00"),
             # xia2 parameters
             "d_min": self.kwargs.get("xia2_ssx_d_min"),
+            "d_max": self.kwargs.get("xia2_ssx_d_max"),
+            "native": self.kwargs.get("xia2_ssx_native", True),
             "max_lattices": self.kwargs.get("xia2_ssx_max_lattices", 3),
             "min_spots": self.kwargs.get("xia2_ssx_min_spots", 10),
             "space_group": self.kwargs.get("xia2_ssx_space_group"),
@@ -342,7 +359,11 @@ class Xia2SSXDistributedWorker(QRunnable):
             "reference_hkl": self.kwargs.get("xia2_ssx_reference_hkl"),
             "steps": self.kwargs.get("xia2_ssx_steps", "find_spots+index+integrate"),
             "model_pdb": self.kwargs.get("xia2_ssx_model"),
-            "setup_cmd": ProgramConfig.get_setup_command('dials')
+            "setup_cmd": ProgramConfig.get_setup_command('dials'),
+            "override_geometry": self.kwargs.get("xia2_ssx_override_geometry", False),
+            "beam_x": self.kwargs.get("xia2_ssx_beam_x"),
+            "beam_y": self.kwargs.get("xia2_ssx_beam_y"),
+            "distance": self.kwargs.get("xia2_ssx_distance"),
         }
         
         # Write config

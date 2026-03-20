@@ -33,6 +33,15 @@ class VolumeManager(QObject):
         self.last_used_shift = 0.0
         self.scan_mode = "row_wise"
 
+    @staticmethod
+    def _detect_scan_pattern(datasets) -> str:
+        """Auto-detect scan index pattern (_R or _C) from filenames."""
+        for candidate in [r"_R(\d+)", r"_C(\d+)"]:
+            if any(re.search(candidate, r.master_file_path, re.IGNORECASE)
+                   for r in datasets):
+                return candidate
+        return r"_R(\d+)"  # fallback
+
     @pyqtSlot(str, str)
     def launch_viewer(self, run_xy_prefix: str, run_xz_prefix: str):
         mw = self.main_window
@@ -268,7 +277,7 @@ class VolumeManager(QObject):
 
         # --- START: NEW SCAN MODE READER FINDING ---
         is_column_scan = "column" in self.scan_mode
-        scan_idx_pattern = r"_C(\d+)" if is_column_scan else r"_R(\d+)"
+        scan_idx_pattern = self._detect_scan_pattern(self.xy_datasets + self.xz_datasets)
 
         # Find the reader for the Y coordinate (XY scan)
         reader_xy = next(
@@ -343,7 +352,8 @@ class VolumeManager(QObject):
 
         # The raw_data_map is keyed by (scan_idx, original_frame_idx).
         is_column_scan = "column" in self.scan_mode
-        scan_idx_pattern = r"_C(\d+)" if is_column_scan else r"_R(\d+)"
+        all_datasets = self.xy_datasets + self.xz_datasets
+        scan_idx_pattern = self._detect_scan_pattern(all_datasets)
 
         match = re.search(scan_idx_pattern, reader.master_file_path, re.IGNORECASE)
         if match:

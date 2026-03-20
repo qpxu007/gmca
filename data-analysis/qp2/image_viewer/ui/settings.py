@@ -142,6 +142,10 @@ class SettingsDialog(SingletonDialog):
         common_proc_group = QtWidgets.QGroupBox("Common Data Processing Parameters")
         common_proc_layout = QtWidgets.QFormLayout(common_proc_group)
 
+        common_info_label = QtWidgets.QLabel("<i>* Note: These parameters are shared with the Data Processing Server.</i>")
+        common_info_label.setStyleSheet("color: gray;")
+        common_proc_layout.addRow(common_info_label)
+
         self.common_mode_combo = QtWidgets.QComboBox()
         self.common_mode_combo.addItems(["Manual", "Spreadsheet"])
         mode = self.current_settings.get("processing_common_mode", "manual")
@@ -191,13 +195,13 @@ class SettingsDialog(SingletonDialog):
         self.common_res_low_spinbox.setRange(0.0, 1000.0)
         # Handle None value for display (use 0 or default if None)
         val_low = self.current_settings.get("processing_common_res_cutoff_low")
-        self.common_res_low_spinbox.setValue(val_low if val_low is not None else 50.0)
+        self.common_res_low_spinbox.setValue(val_low if val_low is not None else 0.0)
         common_proc_layout.addRow("Res Cutoff Low (Å):", self.common_res_low_spinbox)
 
         self.common_res_high_spinbox = QtWidgets.QDoubleSpinBox()
         self.common_res_high_spinbox.setRange(0.0, 100.0)
         val_high = self.current_settings.get("processing_common_res_cutoff_high")
-        self.common_res_high_spinbox.setValue(val_high if val_high is not None else 1.5)
+        self.common_res_high_spinbox.setValue(val_high if val_high is not None else 0.0)
         common_proc_layout.addRow("Res Cutoff High (Å):", self.common_res_high_spinbox)
 
         self.common_native_checkbox = QtWidgets.QCheckBox("Process Native Data")
@@ -211,6 +215,45 @@ class SettingsDialog(SingletonDialog):
         common_proc_layout.addRow(self.refresh_spreadsheet_btn)
 
         right_column.addWidget(common_proc_group)
+
+        # --- Right Column: Pipelines by Mode ---
+        pipelines_group = QtWidgets.QGroupBox("Pipelines by Collection Mode")
+        pipelines_layout = QtWidgets.QGridLayout(pipelines_group)
+        self.pipeline_checkboxes = {}
+        
+        mode_rows = [
+            ("Std/Vec/Site", ["STANDARD", "VECTOR", "SINGLE", "SITE"], ["dozor", "xds", "xia2", "autoproc"]),
+            ("Raster", ["RASTER"], ["dozor", "nxds", "xia2_ssx", "crystfel"]),
+            ("Strategy", ["STRATEGY"], ["dozor", "xds_strategy", "mosflm_strategy"]),
+        ]
+        
+        from qp2.image_viewer.config import DEFAULT_SETTINGS
+        current_pipelines = self.current_settings.get("pipelines_by_mode") or DEFAULT_SETTINGS.get("pipelines_by_mode", {})
+        
+        info_label = QtWidgets.QLabel("<i>* Note: These settings are ONLY for the Data Processing Server.</i>")
+        info_label.setStyleSheet("color: gray;")
+        pipelines_layout.addWidget(info_label, 0, 0, 1, 6)
+        
+        row_idx = 1
+        for label, modes, available_pipes in mode_rows:
+            pipelines_layout.addWidget(QtWidgets.QLabel(f"<b>{label}:</b>"), row_idx, 0)
+            col_idx = 1
+            for pipe in available_pipes:
+                cb = QtWidgets.QCheckBox(pipe)
+                # Take state from first mode in group
+                is_checked = pipe in current_pipelines.get(modes[0], [])
+                cb.setChecked(is_checked)
+                cb.stateChanged.connect(self._on_param_changed)
+                pipelines_layout.addWidget(cb, row_idx, col_idx)
+                
+                for m in modes:
+                    if m not in self.pipeline_checkboxes:
+                        self.pipeline_checkboxes[m] = {}
+                    self.pipeline_checkboxes[m][pipe] = cb
+                col_idx += 1
+            row_idx += 1
+            
+        right_column.addWidget(pipelines_group)
 
         right_column.addStretch()
 
@@ -270,6 +313,10 @@ class SettingsDialog(SingletonDialog):
         self.common_res_low_spinbox.blockSignals(True)
         self.common_res_high_spinbox.blockSignals(True)
         self.common_native_checkbox.blockSignals(True)
+        
+        for m_checks in self.pipeline_checkboxes.values():
+             for cb in m_checks.values():
+                 cb.blockSignals(True)
 
         try:
             self.low_perc_spinbox.setValue(new_settings.get("contrast_low_percentile", 5.0))
@@ -293,12 +340,19 @@ class SettingsDialog(SingletonDialog):
             self.common_proc_root_input.line_edit.setText(new_settings.get("processing_common_proc_dir_root", ""))
             
             val_low = new_settings.get("processing_common_res_cutoff_low")
-            self.common_res_low_spinbox.setValue(val_low if val_low is not None else 50.0)
+            self.common_res_low_spinbox.setValue(val_low if val_low is not None else 0.0)
             
             val_high = new_settings.get("processing_common_res_cutoff_high")
-            self.common_res_high_spinbox.setValue(val_high if val_high is not None else 1.5)
+            self.common_res_high_spinbox.setValue(val_high if val_high is not None else 0.0)
             
             self.common_native_checkbox.setChecked(new_settings.get("processing_common_native", True))
+            
+            from qp2.image_viewer.config import DEFAULT_SETTINGS
+            pipelines = new_settings.get("pipelines_by_mode") or DEFAULT_SETTINGS.get("pipelines_by_mode", {})
+            for mode, checks in self.pipeline_checkboxes.items():
+                active = pipelines.get(mode, [])
+                for pipe, chkbox in checks.items():
+                    chkbox.setChecked(pipe in active)
         finally:
             self.low_perc_spinbox.blockSignals(False)
             self.high_perc_spinbox.blockSignals(False)
@@ -315,6 +369,10 @@ class SettingsDialog(SingletonDialog):
             self.common_res_low_spinbox.blockSignals(False)
             self.common_res_high_spinbox.blockSignals(False)
             self.common_native_checkbox.blockSignals(False)
+            
+            for m_checks in self.pipeline_checkboxes.values():
+                 for cb in m_checks.values():
+                     cb.blockSignals(False)
 
     def _create_file_input(self, initial_text, file_filter):
         widget = QtWidgets.QWidget()
@@ -424,6 +482,11 @@ class SettingsDialog(SingletonDialog):
         self.new_settings["processing_common_res_cutoff_high"] = high_res if high_res > 0 else None
 
         self.new_settings["processing_common_native"] = self.common_native_checkbox.isChecked()
+        
+        self.new_settings["pipelines_by_mode"] = {}
+        for mode, checks in self.pipeline_checkboxes.items():
+            active = [pipe for pipe, cb in checks.items() if cb.isChecked()]
+            self.new_settings["pipelines_by_mode"][mode] = active
 
         # self.settings_changed.emit(self.new_settings.copy())
         # self.settings_manager.update_from_dict(self.new_settings.copy())
@@ -473,6 +536,12 @@ class SettingsDialog(SingletonDialog):
         self.common_res_high_spinbox.setValue(high_res if high_res is not None else 0.0)
 
         self.common_native_checkbox.setChecked(DEFAULT_SETTINGS.get("processing_common_native", True))
+        
+        pipelines = DEFAULT_SETTINGS.get("pipelines_by_mode", {})
+        for mode, checks in self.pipeline_checkboxes.items():
+            active = pipelines.get(mode, [])
+            for pipe, chkbox in checks.items():
+                chkbox.setChecked(pipe in active)
 
         self._emit_settings_changed()
 
@@ -514,6 +583,11 @@ class SettingsDialog(SingletonDialog):
             self.new_settings["processing_common_res_cutoff_high"] = high_res if high_res > 0 else None
 
             self.new_settings["processing_common_native"] = self.common_native_checkbox.isChecked()
+            
+            self.new_settings["pipelines_by_mode"] = {}
+            for mode, checks in self.pipeline_checkboxes.items():
+                active = [pipe for pipe, cb in checks.items() if cb.isChecked()]
+                self.new_settings["pipelines_by_mode"][mode] = active
 
             self.settings_changed.emit(self.new_settings.copy())
             super().accept()

@@ -104,12 +104,20 @@ class Xia2ProcessDatasetWorker(QRunnable):
 
             pipeline_choice = self.kwargs.get("xia2_pipeline", "xia2_dials")
 
+            # Format --data as path:start:end when frame range is specified
+            start_frame = self.kwargs.get("start_frame")
+            end_frame = self.kwargs.get("end_frame")
+            if start_frame is not None and end_frame is not None:
+                data_arg = f"{self.master_file}:{start_frame}:{end_frame}"
+            else:
+                data_arg = self.master_file
+
             command_list = [
                 python_exe,
                 execution_script,
                 "--pipeline", pipeline_choice,
                 "--data",
-                self.master_file,
+                data_arg,
                 "--work_dir",
                 str(proc_dir),
                 "--beamline",
@@ -174,6 +182,15 @@ class Xia2ProcessDatasetWorker(QRunnable):
                 command_list.append("--fast")
             if "xia2_trust_beam_centre" in self.kwargs:
                 command_list.extend(["--trust_beam_centre", str(self.kwargs["xia2_trust_beam_centre"])])
+
+            if self.kwargs.get("xia2_override_geometry"):
+                beam_x = self.kwargs.get("xia2_beam_x")
+                beam_y = self.kwargs.get("xia2_beam_y")
+                distance = self.kwargs.get("xia2_distance")
+                if beam_x and beam_y:
+                    command_list.extend(["--beam_x", str(beam_x), "--beam_y", str(beam_y)])
+                if distance:
+                    command_list.extend(["--distance", str(distance)])
 
             job_name = f"xia2_{master_basename}"
 

@@ -235,54 +235,65 @@ class AIClient:
         self, api_key=os.environ.get("AI_API_KEY", os.environ.get("USER", None))
     ):
         self.api_key = api_key
-        # Use the local AI API proxy base URL
-        self.base_url = ServerConfig.get_ai_server_url()
-        self.chat_completion_url = f"{self.base_url}/chat/completions"  # Still keep for models fetching if needed
-        self.model_name = "argo:gpt-5-mini"  # Default model for proxy
+        self.base_url = ServerConfig.get_ai_server_url()  # None when QP2_ENV=test
+        self.model_name = "gpt5mini"
         self.default_model = self.model_name
 
-        self.openai_client = OpenAI(api_key=self.api_key, base_url=self.base_url)
+        if self.base_url:
+            self.chat_completion_url = f"{self.base_url}/chat/completions"
+            self.openai_client = OpenAI(api_key=self.api_key, base_url=self.base_url)
+        else:
+            self.chat_completion_url = None
+            self.openai_client = None
 
     def set_api_key(self, key):
         self.api_key = key
-        self.openai_client.api_key = key  # Update the client's API key
+        if self.openai_client:
+            self.openai_client.api_key = key
 
     def set_model(self, model_name):
         self.model_name = model_name
 
     def get_available_models(self):
+        if not self.base_url:
+            return []
         try:
-            # Use direct requests for models endpoint, as openai client doesn't have a direct models() call for custom base_url
             headers = {
-                "Authorization": f"Bearer {self.api_key}"  # Models endpoint might require auth too
+                "Authorization": f"Bearer {self.api_key}"
             }
             response = requests.get(f"{self.base_url}/models", headers=headers)
             response.raise_for_status()
             models_data = response.json()
-            model_ids = [model["id"] for model in models_data.get("data", [])]
+            # Argo returns display names as "id" and short names as "internal_id".
+            # The proxy returns usable names directly as "id".
+            # Use internal_id when available, fall back to id.
+            model_ids = []
+            for model in models_data.get("data", []):
+                mid = model.get("internal_id") or model["id"]
+                model_ids.append(mid)
             if self.default_model in model_ids:
                 model_ids.remove(self.default_model)
-                model_ids.insert(
-                    0, self.default_model
-                )  # Ensure default model is listed first
+                model_ids.insert(0, self.default_model)
             return model_ids
         except requests.exceptions.RequestException as e:
             raise Exception(f"Failed to fetch available models: {e}")
 
     def check_health(self):
+        if not self.base_url:
+            return False
         try:
-            # Construct health URL assuming base_url ends with /v1 or similar suffix
-            base = self.base_url.rsplit('/', 1)[0]
-            health_url = f"{base}/health"
-            response = requests.get(health_url, timeout=2)
-            if response.status_code == 200:
-                data = response.json()
-                return data.get("status") == "healthy"
+            headers = {"Authorization": f"Bearer {self.api_key}"} if self.api_key else {}
+            response = requests.get(
+                f"{self.base_url}/models", headers=headers, timeout=5
+            )
+            return response.status_code == 200
         except Exception:
             pass
         return False
 
-    def generate_code(self, messages):  # Now accepts conversation history as messages
+    def generate_code(self, messages):
+        if not self.base_url:
+            raise ValueError("AI server is not configured (QP2_ENV=test).")
         if not self.api_key:
             raise ValueError("API Key is not set.")
 
@@ -305,6 +316,18 @@ class AIClient:
 
 
 class AIAssistantWidget(QtWidgets.QWidget):
+    # --- Centralized color palette ---
+    COLORS = {
+        "user": "#3498db",       # blue
+        "ai": "#e67e22",         # orange
+        "system": "#7f8c8d",     # gray
+        "event": "#95a5a6",      # light gray
+        "healthy": "#2ecc71",    # green
+        "unhealthy": "#e74c3c",  # red
+        "run_btn": "#27ae60",    # green (button)
+        "accent": "#9b59b6",     # purple
+    }
+
     def __init__(self, namespace_provider, parent=None):
         super().__init__(parent)
         self.namespace_provider = namespace_provider  # function returning the dict
@@ -316,6 +339,7 @@ class AIAssistantWidget(QtWidgets.QWidget):
         self.context_file_paths = []  # Track added context files
         self.rag_client = None  # Initialize RAG client
         self.rag_indexed_dir = ""  # Path of currently indexed RAG directory
+        self.rag_enabled = True  # Toggle RAG context injection
         self.rag_dialog = None  # Lazy-loaded RAG settings dialog
 
         # Define System Instruction Templates
@@ -355,6 +379,11 @@ class AIAssistantWidget(QtWidgets.QWidget):
                 "- Answer questions about the loaded image/metadata using the provided variables.\n"
                 "- Do NOT generate Python code unless explicitly asked by the user.\n"
                 "- Be concise and professional."
+            ),
+            "Generic Chat": (
+                "You are a helpful, general-purpose AI assistant. "
+                "Answer questions on any topic clearly and concisely.\n"
+                "{available_vars_desc}"
             ),
         }
 
@@ -467,7 +496,7 @@ class AIAssistantWidget(QtWidgets.QWidget):
             # (history loading already displays old messages)
             if not any(msg.get("msg_id") == join_msg_id for msg in self.messages):
                 self.display_browser.append(
-                    f"<div style='color: #95a5a6; text-align: center;'><i>{join_msg}</i></div>"
+                    f"<div style='color: {self.COLORS['event']}; text-align: center;'><i>{join_msg}</i></div>"
                 )
 
     def stop_listening(self):
@@ -509,20 +538,19 @@ class AIAssistantWidget(QtWidgets.QWidget):
             # Display in UI
             if role == "user":
                 self.display_browser.append(
-                    f"<div style='color: #3498db;'><b>{user}:</b> {content}</div><br>"
+                    f"<div style='color: {self.COLORS['user']};'><b>{user}:</b> {content}</div><br>"
                 )
             elif role == "assistant":
-                # Render markdown for assistant
                 try:
-                    html = markdown.markdown(content, extensions=["fenced_code"])
+                    html = self._render_markdown(content)
                 except Exception:
                     html = content
                 self.display_browser.append(
-                    f"<div style='color: #e67e22;'><b>AI:</b><br>{html}</div><br>"
+                    f"<div style='color: {self.COLORS['ai']};'><b>AI:</b><br>{html}</div><br>"
                 )
             elif role == "event":
                 self.display_browser.append(
-                    f"<div style='color: #95a5a6; text-align: center;'><i>{content}</i></div>"
+                    f"<div style='color: {self.COLORS['event']}; text-align: center;'><i>{content}</i></div>"
                 )
 
         # Scroll to bottom
@@ -537,125 +565,145 @@ class AIAssistantWidget(QtWidgets.QWidget):
         self.generate_btn.setEnabled(False)
         self.generate_btn.setText("Redis Offline")
 
+    def _make_tool_button(self, icon_key, tooltip, callback):
+        """Create a QToolButton with a standard Qt icon."""
+        style = self.style()
+        icon_map = {
+            "settings":  QtWidgets.QStyle.SP_FileDialogDetailedView,
+            "rag":       QtWidgets.QStyle.SP_DirOpenIcon,
+            "attach":    QtWidgets.QStyle.SP_FileIcon,
+            "save":      QtWidgets.QStyle.SP_DialogSaveButton,
+            "clear":     QtWidgets.QStyle.SP_DialogDiscardButton,
+            "mute":      QtWidgets.QStyle.SP_MediaVolume,
+            "unmute":    QtWidgets.QStyle.SP_MediaVolumeMuted,
+            "refresh":   QtWidgets.QStyle.SP_BrowserReload,
+        }
+        btn = QtWidgets.QToolButton()
+        btn.setIcon(style.standardIcon(icon_map[icon_key]))
+        btn.setToolTip(tooltip)
+        btn.setFixedSize(28, 28)
+        btn.clicked.connect(callback)
+        return btn
+
     def _setup_ui(self):
         layout = QtWidgets.QVBoxLayout(self)
+        layout.setContentsMargins(4, 4, 4, 4)
+        layout.setSpacing(4)
 
-        # --- Model Toolbar ---
-        model_layout = QtWidgets.QHBoxLayout()
-        
-        # Status Indicator
-        self.status_label = QtWidgets.QLabel("●")
+        # --- Toolbar ---
+        toolbar = QtWidgets.QToolBar()
+        toolbar.setIconSize(QtCore.QSize(18, 18))
+        toolbar.setMovable(False)
+        toolbar.setStyleSheet("QToolBar { spacing: 2px; }")
+
+        # Status indicator
+        self.status_label = QtWidgets.QLabel("\u25cf")  # ●
         self.status_label.setToolTip("Server Status: Unknown")
-        self.status_label.setStyleSheet("color: gray; font-size: 16px;")
-        model_layout.addWidget(self.status_label)
-        
-        model_layout.addWidget(QtWidgets.QLabel("Model:"))
+        self.status_label.setStyleSheet("color: gray; font-size: 14px; margin: 0 4px;")
+        toolbar.addWidget(self.status_label)
+
+        # Model selector
+        toolbar.addWidget(QtWidgets.QLabel(" Model: "))
         self.model_combo = QtWidgets.QComboBox()
-        # Initial population and selection will be handled by _refresh_models_list()
-
+        self.model_combo.setMinimumWidth(120)
         self.model_combo.currentTextChanged.connect(self._on_model_changed)
-        model_layout.addWidget(self.model_combo)
+        toolbar.addWidget(self.model_combo)
 
-        self.refresh_models_btn = QtWidgets.QPushButton("Refresh")
-        self.refresh_models_btn.clicked.connect(self._refresh_models_list)
-        self.refresh_models_btn.clicked.connect(self._check_server_status) # Also check status on refresh
-        model_layout.addWidget(self.refresh_models_btn)
+        self.refresh_models_btn = self._make_tool_button(
+            "refresh", "Refresh models", self._refresh_models_list)
+        self.refresh_models_btn.clicked.connect(self._check_server_status)
+        toolbar.addWidget(self.refresh_models_btn)
 
-        # Settings Button (for API Key)
-        self.settings_btn = QtWidgets.QPushButton()
-        self.settings_btn.setIcon(self.style().standardIcon(QtWidgets.QStyle.SP_FileDialogDetailedView))
-        self.settings_btn.setToolTip("Settings (API Key)")
-        self.settings_btn.setFixedSize(25, 25)
-        self.settings_btn.clicked.connect(self._open_settings_dialog)
-        model_layout.addWidget(self.settings_btn)
+        toolbar.addSeparator()
 
-        # RAG Settings Button
-        self.rag_settings_btn = QtWidgets.QPushButton()
-        self.rag_settings_btn.setIcon(self.style().standardIcon(QtWidgets.QStyle.SP_FileDialogInfoView))
-        self.rag_settings_btn.setToolTip("RAG / Codebase Indexing")
-        self.rag_settings_btn.setFixedSize(25, 25)
-        self.rag_settings_btn.clicked.connect(self._open_rag_settings_dialog)
-        model_layout.addWidget(self.rag_settings_btn)
+        # Settings group
+        toolbar.addWidget(self._make_tool_button(
+            "settings", "AI Settings", self._open_settings_dialog))
+        toolbar.addWidget(self._make_tool_button(
+            "rag", "RAG / Codebase Indexing", self._open_rag_settings_dialog))
+        toolbar.addWidget(self._make_tool_button(
+            "attach", "Add local files to AI context", self._add_file_context))
 
-        # Context Button
-        self.context_btn = QtWidgets.QPushButton()
-        self.context_btn.setIcon(self.style().standardIcon(QtWidgets.QStyle.SP_FileIcon))
-        self.context_btn.setToolTip("Add local files to AI context")
-        self.context_btn.setFixedSize(25, 25)
-        self.context_btn.clicked.connect(self._add_file_context)
-        model_layout.addWidget(self.context_btn)
+        toolbar.addSeparator()
 
-        # Save Chat Button
-        self.save_chat_btn = QtWidgets.QPushButton()
-        self.save_chat_btn.setIcon(self.style().standardIcon(QtWidgets.QStyle.SP_DialogSaveButton))
-        self.save_chat_btn.setToolTip("Save Chat History")
-        self.save_chat_btn.setFixedSize(25, 25)
-        self.save_chat_btn.clicked.connect(self._save_chat_history)
-        model_layout.addWidget(self.save_chat_btn)
+        # Chat actions group
+        toolbar.addWidget(self._make_tool_button(
+            "save", "Save Chat History", self._save_chat_history))
+        toolbar.addWidget(self._make_tool_button(
+            "clear", "Clear Chat History (for everyone)", self._clear_chat_history))
+        self.mute_ai_btn = self._make_tool_button(
+            "mute", "Toggle AI Mute (local only)", self._toggle_mute)
+        toolbar.addWidget(self.mute_ai_btn)
 
-        # Clear Chat Button
-        self.clear_chat_btn = QtWidgets.QPushButton()
-        self.clear_chat_btn.setIcon(self.style().standardIcon(QtWidgets.QStyle.SP_TrashIcon))
-        self.clear_chat_btn.setToolTip("Clear Chat History (for everyone)")
-        self.clear_chat_btn.setFixedSize(25, 25)
-        self.clear_chat_btn.clicked.connect(self._clear_chat_history)
-        model_layout.addWidget(self.clear_chat_btn)
+        layout.addWidget(toolbar)
 
-        # Mute AI Button
-        self.mute_ai_btn = QtWidgets.QPushButton()
-        self.mute_ai_btn.setIcon(self.style().standardIcon(QtWidgets.QStyle.SP_MediaVolume)) # Unmuted by default
-        self.mute_ai_btn.setToolTip("Toggle AI Mute (local only)")
-        self.mute_ai_btn.setFixedSize(25, 25)
-        self.mute_ai_btn.clicked.connect(self._toggle_mute)
-        model_layout.addWidget(self.mute_ai_btn)
+        # --- Chat Display + Input in a splitter ---
+        splitter = QtWidgets.QSplitter(QtCore.Qt.Vertical)
 
-        layout.addLayout(model_layout)
-
-        # --- Chat History / Display ---
         self.display_browser = QtWidgets.QTextBrowser()
         self.display_browser.setOpenExternalLinks(True)
-        layout.addWidget(self.display_browser)
+        splitter.addWidget(self.display_browser)
 
-        # --- Input Area ---
-        input_layout = QtWidgets.QHBoxLayout()
+        # Input panel (text + send button + progress bar)
+        input_widget = QtWidgets.QWidget()
+        input_vlayout = QtWidgets.QVBoxLayout(input_widget)
+        input_vlayout.setContentsMargins(0, 0, 0, 0)
+        input_vlayout.setSpacing(2)
+
+        input_hlayout = QtWidgets.QHBoxLayout()
         self.prompt_input = QtWidgets.QTextEdit()
-        self.prompt_input.setPlaceholderText(
-            "Ask AI to modify the image (e.g., 'Draw a red circle at the max intensity pixel')..."
-        )
+        self.prompt_input.setPlaceholderText("Type a message\u2026")
         self.prompt_input.setMaximumHeight(60)
-        input_layout.addWidget(self.prompt_input)
+        input_hlayout.addWidget(self.prompt_input)
 
         self.generate_btn = QtWidgets.QPushButton("Send")
         self.generate_btn.clicked.connect(self._start_generation)
         self.generate_btn.setShortcut(QtGui.QKeySequence("Ctrl+Return"))
-        self.generate_btn.setFixedHeight(60) # Set fixed height
-        input_layout.addWidget(self.generate_btn)
-        layout.addLayout(input_layout)
+        self.generate_btn.setFixedHeight(60)
+        self.generate_btn.setFixedWidth(60)
+        input_hlayout.addWidget(self.generate_btn)
+        input_vlayout.addLayout(input_hlayout)
 
-        # --- Code Action Area ---
-        action_layout = QtWidgets.QHBoxLayout()
-        self.run_code_btn = QtWidgets.QPushButton("▶ Run Code")
+        # Progress bar (hidden by default, shown during "Thinking...")
+        self.progress_bar = QtWidgets.QProgressBar()
+        self.progress_bar.setMaximumHeight(3)
+        self.progress_bar.setTextVisible(False)
+        self.progress_bar.setRange(0, 0)  # indeterminate
+        self.progress_bar.hide()
+        input_vlayout.addWidget(self.progress_bar)
+
+        splitter.addWidget(input_widget)
+        splitter.setStretchFactor(0, 1)   # chat display stretches
+        splitter.setStretchFactor(1, 0)   # input stays compact
+
+        layout.addWidget(splitter)
+
+        # --- Code Action Area (hidden until code is available) ---
+        self.code_action_widget = QtWidgets.QWidget()
+        action_layout = QtWidgets.QHBoxLayout(self.code_action_widget)
+        action_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.run_code_btn = QtWidgets.QPushButton("\u25b6 Run Code")
         self.run_code_btn.setStyleSheet(
-            "background-color: #2ecc71; color: white; font-weight: bold;"
+            f"background-color: {self.COLORS['run_btn']}; color: white; font-weight: bold;"
         )
-        self.run_code_btn.setEnabled(False)
         self.run_code_btn.clicked.connect(self._run_generated_code)
 
         self.copy_btn = QtWidgets.QPushButton("Copy Code")
-        self.copy_btn.setEnabled(False)
         self.copy_btn.clicked.connect(self._copy_code)
 
         action_layout.addWidget(self.run_code_btn)
         action_layout.addWidget(self.copy_btn)
-        layout.addLayout(action_layout)
+        self.code_action_widget.hide()
+        layout.addWidget(self.code_action_widget)
 
-        # Active Users Label
+        # --- Status bar ---
         self.active_users_label = QtWidgets.QLabel("Active Users: ")
-        self.active_users_label.setStyleSheet("color: #7f8c8d; font-size: 10px;")
+        self.active_users_label.setStyleSheet(f"color: {self.COLORS['system']}; font-size: 10px;")
         layout.addWidget(self.active_users_label)
 
-        self._refresh_models_list()  # Initial population of models
-        self._check_server_status() # Initial health check
+        self._refresh_models_list()
+        self._check_server_status()
         self._update_active_users_display()
 
     def _check_server_status(self):
@@ -675,14 +723,11 @@ class AIAssistantWidget(QtWidgets.QWidget):
     @QtCore.pyqtSlot(bool)
     def _update_status_label(self, is_healthy):
         if is_healthy:
-            self.status_label.setStyleSheet("color: #2ecc71; font-size: 16px;") # Green
+            self.status_label.setStyleSheet(f"color: {self.COLORS['healthy']}; font-size: 14px; margin: 0 4px;")
             self.status_label.setToolTip("Server Status: Healthy")
         else:
-            self.status_label.setStyleSheet("color: #e74c3c; font-size: 16px;") # Red
+            self.status_label.setStyleSheet(f"color: {self.COLORS['unhealthy']}; font-size: 14px; margin: 0 4px;")
             self.status_label.setToolTip("Server Status: Unreachable/Unhealthy")
-            # Only warn if it was previously considered healthy or unknown (to avoid spamming)
-            # For now, just logging it to system message might be too noisy on every refresh if down.
-            # So we rely on the visual indicator mainly.
 
     def _update_active_users_display(self):
         users_list = ", ".join(sorted(self.active_users))
@@ -690,12 +735,13 @@ class AIAssistantWidget(QtWidgets.QWidget):
 
     def _toggle_mute(self):
         self.is_muted = not self.is_muted
+        style = self.style()
         if self.is_muted:
-            self.mute_ai_btn.setIcon(self.style().standardIcon(QtWidgets.QStyle.SP_MediaVolumeMuted))
+            self.mute_ai_btn.setIcon(style.standardIcon(QtWidgets.QStyle.SP_MediaVolumeMuted))
             self.mute_ai_btn.setToolTip("AI is Muted (local only)")
             self._append_system_message("AI Assistant has been muted. It will not respond to questions.")
         else:
-            self.mute_ai_btn.setIcon(self.style().standardIcon(QtWidgets.QStyle.SP_MediaVolume))
+            self.mute_ai_btn.setIcon(style.standardIcon(QtWidgets.QStyle.SP_MediaVolume))
             self.mute_ai_btn.setToolTip("Toggle AI Mute (local only)")
             self._append_system_message("AI Assistant has been unmuted. It will now respond to questions.")
 
@@ -896,22 +942,7 @@ class AIAssistantWidget(QtWidgets.QWidget):
         dialog.setWindowTitle("AI Assistant Settings")
         layout = QtWidgets.QVBoxLayout(dialog)
 
-        # API Key Input
-        key_layout = QtWidgets.QHBoxLayout()
-        key_layout.addWidget(QtWidgets.QLabel("API Key:"))
-
-        api_key_input = QtWidgets.QLineEdit()
-        api_key_input.setPlaceholderText("Enter API Key")
-        api_key_input.setEchoMode(QtWidgets.QLineEdit.Password)
-
-        # Default to current key or user environment variable
-        current_key = self.client.api_key or os.environ.get("USER", "")
-        api_key_input.setText(current_key)
-
-        key_layout.addWidget(api_key_input)
-        layout.addLayout(key_layout)
-
-        # Assistant Mode Selection
+        # Assistant Mode Selection (top)
         mode_layout = QtWidgets.QHBoxLayout()
         mode_layout.addWidget(QtWidgets.QLabel("Assistant Mode:"))
         mode_combo = QtWidgets.QComboBox()
@@ -919,6 +950,17 @@ class AIAssistantWidget(QtWidgets.QWidget):
         mode_combo.setCurrentText(self.current_mode)
         mode_layout.addWidget(mode_combo)
         layout.addLayout(mode_layout)
+
+        # API Key Input
+        key_layout = QtWidgets.QHBoxLayout()
+        key_layout.addWidget(QtWidgets.QLabel("API Key:"))
+        api_key_input = QtWidgets.QLineEdit()
+        api_key_input.setPlaceholderText("Argonne domain name")
+        api_key_input.setEchoMode(QtWidgets.QLineEdit.Password)
+        current_key = self.client.api_key or os.environ.get("USER", "")
+        api_key_input.setText(current_key)
+        key_layout.addWidget(api_key_input)
+        layout.addLayout(key_layout)
 
         # Dialog Buttons
         buttons = QtWidgets.QDialogButtonBox(
@@ -948,30 +990,40 @@ class AIAssistantWidget(QtWidgets.QWidget):
                 self.system_instruction_template = self.system_templates[
                     self.current_mode
                 ]
+
+                # Generic Chat disables RAG; other modes re-enable it
+                self.rag_enabled = (self.current_mode != "Generic Chat")
+
                 # Rebuild context message
                 self._update_system_message_with_context()
                 self._append_system_message(f"Switched to '{self.current_mode}' mode.")
+
+    def _render_markdown(self, text):
+        """Render markdown with monospace code blocks."""
+        html = markdown.markdown(text, extensions=["fenced_code"])
+        # Wrap <code> blocks in monospace font
+        html = html.replace("<code>", "<code style='font-family: monospace; background: #f4f4f4; padding: 1px 4px; border-radius: 3px;'>")
+        html = html.replace("<pre>", "<pre style='font-family: monospace; background: #f4f4f4; padding: 8px; border-radius: 4px; overflow-x: auto;'>")
+        return html
 
     def _append_user_message(self, text):
         msg_id = str(uuid.uuid4())
         self.seen_msg_ids.add(msg_id)
 
-        self.messages.append({"role": "user", "content": text})  # Add to history
+        self.messages.append({"role": "user", "content": text})
         self.chat_history.add_message("user", text, msg_id=msg_id)
         self.display_browser.append(
-            f"<div style='color: #3498db;'><b>Me:</b> {text}</div><br>"
+            f"<div style='color: {self.COLORS['user']};'><b>Me:</b> {text}</div><br>"
         )
 
     def _append_ai_message(self, html_content):
         self.display_browser.append(
-            f"<div style='color: #e67e22;'><b>AI:</b><br>{html_content}</div><br>"
+            f"<div style='color: {self.COLORS['ai']};'><b>AI:</b><br>{html_content}</div><br>"
         )
         self.display_browser.moveCursor(QtGui.QTextCursor.End)
 
     def _append_system_message(self, text):
-        # System messages are only for display, not added to self.messages directly as they are
-        # managed by _update_system_message_with_context as the first message
-        self.display_browser.append(f"<div style='color: #7f8c8d;'><i>{text}</i></div>")
+        self.display_browser.append(f"<div style='color: {self.COLORS['system']};'><i>{text}</i></div>")
 
     def _start_generation(self):
         user_prompt = self.prompt_input.toPlainText().strip()
@@ -1002,22 +1054,23 @@ class AIAssistantWidget(QtWidgets.QWidget):
         self._append_user_message(user_prompt)  # This now also updates self.messages
         self.prompt_input.clear()
         self.generate_btn.setEnabled(False)
-        self.generate_btn.setText("Sent") # Acknowledge user input immediately
+        self.generate_btn.setText("Sent")
 
         if self.is_muted:
             self._append_system_message("AI Assistant is muted. It will not respond to your question.")
             self.generate_btn.setEnabled(True)
-            self.generate_btn.setText("Send") # Reset to "Send" if muted
+            self.generate_btn.setText("Send")
             return
 
-        self.generate_btn.setText("Thinking...") # AI will process
+        self.generate_btn.setText("Thinking...")
+        self.progress_bar.show()
         # Re-update system message with current context before sending, in case context changed
         self._update_system_message_with_context()
 
         rag_context = None  # Initialize to prevent UnboundLocalError
 
-        # If RAG is enabled, retrieve relevant context for the user's prompt
-        if self.rag_client and self.rag_indexed_dir:
+        # If RAG is enabled and indexed, retrieve relevant context for the user's prompt
+        if self.rag_enabled and self.rag_client and self.rag_indexed_dir:
             try:
                 # Prepend the retrieved RAG context to the user's message
                 rag_context = self.rag_client.build_context_string(user_prompt)
@@ -1031,8 +1084,8 @@ class AIAssistantWidget(QtWidgets.QWidget):
         if rag_context and self.messages:
             self.messages[-1]["content"] = user_prompt
 
-        # Run in thread, passing the messages list directly
-        thread = threading.Thread(target=self._generate_worker, args=(self.messages,))
+        # Run in thread, passing a snapshot to avoid race with main thread
+        thread = threading.Thread(target=self._generate_worker, args=(list(self.messages),))
         thread.start()
 
     def _generate_worker(self, messages):  # Now takes messages
@@ -1085,7 +1138,7 @@ class AIAssistantWidget(QtWidgets.QWidget):
                 self._update_active_users_display()
 
             self.display_browser.append(
-                f"<div style='color: #95a5a6; text-align: center;'><i>{content}</i></div>"
+                f"<div style='color: {self.COLORS['event']}; text-align: center;'><i>{content}</i></div>"
             )
             self._trigger_notification()
             return
@@ -1101,22 +1154,21 @@ class AIAssistantWidget(QtWidgets.QWidget):
         # Display in UI
         if role == "user":
             self.display_browser.append(
-                f"<div style='color: #3498db;'><b>{user}:</b> {content}</div><br>"
+                f"<div style='color: {self.COLORS['user']};'><b>{user}:</b> {content}</div><br>"
             )
         elif role == "assistant":
             try:
-                html = markdown.markdown(content, extensions=["fenced_code"])
+                html = self._render_markdown(content)
             except Exception:
                 html = content
             self.display_browser.append(
-                f"<div style='color: #e67e22;'><b>AI:</b><br>{html}</div><br>"
+                f"<div style='color: {self.COLORS['ai']};'><b>AI:</b><br>{html}</div><br>"
             )
-            
+
             code_match = re.search(r"```python\n(.*?)```", content, re.DOTALL)
             if code_match:
                 self.last_generated_code = code_match.group(1).strip()
-                self.run_code_btn.setEnabled(True)
-                self.copy_btn.setEnabled(True)
+                self.code_action_widget.show()
 
         self.display_browser.moveCursor(QtGui.QTextCursor.End)
         self._trigger_notification()
@@ -1142,29 +1194,26 @@ class AIAssistantWidget(QtWidgets.QWidget):
         self.messages.append({"role": "assistant", "content": text})  # Add to history
         self.chat_history.add_message("assistant", text, msg_id=msg_id)
         self.generate_btn.setEnabled(True)
-        self.generate_btn.setText("Send") # Reset button text to Send
+        self.generate_btn.setText("Send")
+        self.progress_bar.hide()
 
-        # Render Markdown
-        html = markdown.markdown(text, extensions=["fenced_code"])
+        html = self._render_markdown(text)
         self._append_ai_message(html)
 
-        # Extract Code for execution
+        # Extract code for execution — show/hide action buttons
         code_match = re.search(r"```python\n(.*?)```", text, re.DOTALL)
         if code_match:
             self.last_generated_code = code_match.group(1).strip()
-            self.run_code_btn.setEnabled(True)
-            self.copy_btn.setEnabled(True)
+            self.code_action_widget.show()
         else:
-            # Fallback: assume the whole text is code if it starts with import or usual logic,
-            # but safer to require markdown blocks.
             self.last_generated_code = ""
-            self.run_code_btn.setEnabled(False)
-            self.copy_btn.setEnabled(False)
+            self.code_action_widget.hide()
 
     @QtCore.pyqtSlot(str)
     def _handle_error(self, error_msg):
         self.generate_btn.setEnabled(True)
-        self.generate_btn.setText("Send") # Reset button text to Send
+        self.generate_btn.setText("Send")
+        self.progress_bar.hide()
         self._append_system_message(f"<b>Error:</b> {error_msg}")
 
     def _run_generated_code(self):
@@ -1268,9 +1317,6 @@ class AIAssistantWidget(QtWidgets.QWidget):
             return
 
         self.index_code_btn.setEnabled(False)
-        self.rag_indexed_dir_input.setText(
-            f"Indexing '{os.path.basename(directory)}'..."
-        )
         self._append_system_message(f"Starting to index codebase at '{directory}'...")
 
         # Run indexing in a separate thread
@@ -1368,36 +1414,42 @@ class AIAssistantWidget(QtWidgets.QWidget):
 
     @QtCore.pyqtSlot(str)
     def _handle_codebase_index_error(self, error_msg):
-        self.rag_indexed_dir_input.setText("Indexing failed.")
-        self.index_code_btn.setEnabled(True)
+        if hasattr(self, "index_code_btn"):
+            self.index_code_btn.setEnabled(True)
         self._append_system_message(f"<b>Error indexing codebase:</b> {error_msg}")
 
     # Helper method to update the system message with current context
     def _update_system_message_with_context(self):
-        ns = self.namespace_provider()
-        vars_desc = []
-        for k, v in ns.items():
-            if k.startswith("__"):
-                continue
-            type_name = type(v).__name__
-            if k == "image" and hasattr(v, "shape"):
-                desc = f"numpy array with shape {v.shape}"
-            elif k == "params":
-                desc = "dict containing metadata (wavelength, distance, etc)"
-            else:
-                desc = type_name
-            vars_desc.append(f"- {k}: {desc}")
-        context_str = "\n".join(vars_desc)
+        if self.current_mode == "Generic Chat":
+            # Generic Chat: no app context, no RAG, just the model name
+            context_str = f"You are running as model: {self.client.model_name}"
+        else:
+            ns = self.namespace_provider()
+            vars_desc = []
+            for k, v in ns.items():
+                if k.startswith("__"):
+                    continue
+                type_name = type(v).__name__
+                if k == "image" and hasattr(v, "shape"):
+                    desc = f"numpy array with shape {v.shape}"
+                elif k == "params":
+                    desc = "dict containing metadata (wavelength, distance, etc)"
+                else:
+                    desc = type_name
+                vars_desc.append(f"- {k}: {desc}")
+            context_str = "\n".join(vars_desc)
 
-        # Append project file context if available
-        if self.project_context:  # self.project_context is now a dict
-            # Reconstruct the string from the dictionary values
-            project_context_string = "\n".join(self.project_context.values())
-            context_str += "\n\nProject Context Files:\n" + project_context_string
+            # Append project file context if available
+            if self.project_context:
+                project_context_string = "\n".join(self.project_context.values())
+                context_str += "\n\nProject Context Files:\n" + project_context_string
 
-        # Inform AI if a codebase is indexed for RAG
-        if self.rag_indexed_dir:
-            context_str += f"\n\nNote: A codebase at '{os.path.basename(self.rag_indexed_dir)}' has been indexed for Retrieval-Augmented Generation (RAG). When answering questions about the codebase, relevant snippets will be provided to you."
+            # Inform AI if a codebase is indexed for RAG and RAG is enabled
+            if self.rag_enabled and self.rag_indexed_dir:
+                context_str += f"\n\nNote: A codebase at '{os.path.basename(self.rag_indexed_dir)}' has been indexed for Retrieval-Augmented Generation (RAG). When answering questions about the codebase, relevant snippets will be provided to you."
+
+            # Tell the AI which model it is running as
+            context_str += f"\n\nYou are running as model: {self.client.model_name}"
 
         system_content = self.system_instruction_template.format(
             available_vars_desc=context_str

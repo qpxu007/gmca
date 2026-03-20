@@ -39,3 +39,37 @@ class SingletonDialog(QDialog):
         type(self)._instance = None
         type(self)._is_showing = False
         self._initialized = False
+
+    def _apply_common_fallback(self, widget, plugin_value, common_value):
+        """Pre-fill widget with common value if plugin has no override. Show red if overridden."""
+        if plugin_value:
+            widget.setText(plugin_value)
+        elif common_value:
+            widget.setText(common_value)
+        self._style_override(widget, common_value)
+        widget.textChanged.connect(lambda _: self._style_override(widget, common_value))
+
+    def _style_override(self, widget, common_value):
+        """Red text when widget value differs from common setting."""
+        text = widget.text().strip()
+        if text and common_value and text != common_value:
+            widget.setStyleSheet("color: red;")
+        else:
+            widget.setStyleSheet("")
+
+    def _apply_common_spinbox_fallback(self, spinbox, plugin_value, common_value):
+        """Pre-fill spinbox with common value if plugin has no override. Show red if overridden."""
+        effective_common = common_value or 0
+        at_auto = not plugin_value or plugin_value <= spinbox.minimum()
+        if at_auto and effective_common:
+            spinbox.setValue(effective_common)
+        self._style_spinbox_override(spinbox, effective_common)
+        spinbox.valueChanged.connect(lambda _: self._style_spinbox_override(spinbox, effective_common))
+
+    def _style_spinbox_override(self, spinbox, common_value):
+        """Red text when spinbox value differs from common setting."""
+        val = spinbox.value()
+        if val > spinbox.minimum() and common_value and val != common_value:
+            spinbox.setStyleSheet("color: red;")
+        else:
+            spinbox.setStyleSheet("")

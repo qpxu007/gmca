@@ -68,6 +68,42 @@ class Xia2SettingsDialog(SingletonDialog):
         post_proc_layout.addRow("Model for Dimple (PDB):", self.model_pdb)
         form_layout.addRow(post_proc_group)
 
+        # --- Detector Geometry Override ---
+        geom_group = QtWidgets.QGroupBox("Detector Geometry Override")
+        geom_layout = QtWidgets.QFormLayout(geom_group)
+
+        self.override_geometry = QtWidgets.QCheckBox("Override beam centre and distance")
+        self.override_geometry.setChecked(self.new_settings.get("xia2_override_geometry", False))
+        geom_layout.addRow(self.override_geometry)
+
+        self.beam_x = QtWidgets.QDoubleSpinBox()
+        self.beam_x.setRange(0.0, 10000.0)
+        self.beam_x.setDecimals(1)
+        self.beam_x.setValue(self.new_settings.get("xia2_beam_x", 0.0))
+        geom_layout.addRow("Beam X (pixels):", self.beam_x)
+
+        self.beam_y = QtWidgets.QDoubleSpinBox()
+        self.beam_y.setRange(0.0, 10000.0)
+        self.beam_y.setDecimals(1)
+        self.beam_y.setValue(self.new_settings.get("xia2_beam_y", 0.0))
+        geom_layout.addRow("Beam Y (pixels):", self.beam_y)
+
+        self.distance = QtWidgets.QDoubleSpinBox()
+        self.distance.setRange(0.0, 2000.0)
+        self.distance.setDecimals(1)
+        self.distance.setValue(self.new_settings.get("xia2_distance", 0.0))
+        geom_layout.addRow("Distance (mm):", self.distance)
+
+        def _update_geom_enabled(checked):
+            self.beam_x.setEnabled(checked)
+            self.beam_y.setEnabled(checked)
+            self.distance.setEnabled(checked)
+
+        self.override_geometry.toggled.connect(_update_geom_enabled)
+        _update_geom_enabled(self.override_geometry.isChecked())
+
+        form_layout.addRow(geom_group)
+
         # --- Job Control ---
         job_group = QtWidgets.QGroupBox("Job Control")
         job_layout = QtWidgets.QFormLayout(job_group)
@@ -85,6 +121,29 @@ class Xia2SettingsDialog(SingletonDialog):
         form_layout.addRow(job_group)
 
         layout.addLayout(form_layout)
+
+        # Apply common setting fallbacks
+        self._apply_common_fallback(
+            self.space_group,
+            self.new_settings.get("xia2_space_group", ""),
+            self.new_settings.get("processing_common_space_group", ""),
+        )
+        self._apply_common_fallback(
+            self.unit_cell,
+            self.new_settings.get("xia2_unit_cell", ""),
+            self.new_settings.get("processing_common_unit_cell", ""),
+        )
+        self._apply_common_fallback(
+            self.model_pdb.line_edit,
+            self.new_settings.get("xia2_model", ""),
+            self.new_settings.get("processing_common_model_file", ""),
+        )
+        self._apply_common_spinbox_fallback(
+            self.highres,
+            self.new_settings.get("xia2_highres"),
+            self.new_settings.get("processing_common_res_cutoff_high"),
+        )
+
         button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
         )
@@ -174,5 +233,9 @@ class Xia2SettingsDialog(SingletonDialog):
         self.new_settings["xia2_nproc"] = self.nproc.value()
         self.new_settings["xia2_njobs"] = self.njobs.value()
         self.new_settings["xia2_fast"] = self.fast_mode.isChecked()
+        self.new_settings["xia2_override_geometry"] = self.override_geometry.isChecked()
+        self.new_settings["xia2_beam_x"] = self.beam_x.value()
+        self.new_settings["xia2_beam_y"] = self.beam_y.value()
+        self.new_settings["xia2_distance"] = self.distance.value()
         self.settings_changed.emit(self.new_settings)
         super().accept()
