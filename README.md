@@ -7,7 +7,7 @@ Crystallographic data processing and visualization platform for synchrotron beam
 - **Processing server** — manages XDS, CrystFEL, DIALS, autoproc, xia2 pipeline jobs
 - **Web app** — browser-based interface for remote access
 
-The code lives in [`data-analysis/qp2/`](data-analysis/qp2/).
+The code lives in [`data-analysis/qp2/`](data-analysis/qp2/). Full documentation is at **[qpxu007.github.io/gmca](https://qpxu007.github.io/gmca)**.
 
 ---
 
