@@ -1,0 +1,398 @@
+---
+title: "Data Viewer (dv)"
+format:
+  html:
+    toc: true
+---
+
+# Quick Start
+
+- [Back to launcher overview](index.qmd)
+- [See screenshot and diagram ideas](screenshots.qmd#dv)
+- Open the dashboard with `qp2/bin/dv`.
+
+- Use `Datasets` to browse raw acquisitions and submit them with `right-click -> Process Selected Datasets...`.
+- Use `Processing` to rerun a job with `right-click -> Re-process Selected...`.
+- Use `Processing` to review reports, open folders, and mark rows.
+- Use `Strategy` to review strategy results and export collection strategy when the export action is present.
+- For one dataset, reprocess from `Processing`; for several raw datasets, process from `Datasets`; for several old jobs, reprocess from `Processing` with multi-selection.
+
+# Overview
+
+`dv` is the table-based viewer for datasets and for processing job status and results. Use the `Datasets` tab to inspect collected datasets, and the `Processing` and `Strategy` tabs to review processing state and results. The launcher script `qp2/bin/dv` starts `qp2.data_viewer.main`.
+
+![`dv` main window: datasets, processing results, and strategy review.](images/dv-main-window.jpg){width=90% fig-align="center"}
+
+![XDS HTML report reached from the `Processing` tab.](images/dv-xds-html-output.jpg){width=85% fig-align="center"}
+
+The application organizes information into three tabs:
+
+- `Datasets`
+- `Processing`
+- `Strategy`
+
+It also scopes visible content to the current user and active group or ESAF. The top menu lets you switch primary group when you have access to multiple groups.
+
+# ESAFs and Group Scope
+
+The top menu is `ESAFs`.
+
+Typical use:
+
+- switch the primary group when you belong to more than one ESAF or working group
+- refresh the visible dataset and processing tables under that group
+
+Important note:
+
+- staff users can also use `Enter ESAF...` for manual entry
+- non-staff users only see the groups QP2 can determine for them
+
+# Tab Reference
+
+## `Datasets`
+
+Purpose:
+
+- browse collected datasets before or independent of processing
+- inspect metadata and source paths
+- launch processing jobs from selected raw datasets
+
+Typical visible columns:
+
+- `User`
+- `Run Prefix`
+- `Frames`
+- `Collection Type`
+- `Metadata`
+- `Created`
+
+Hidden or supporting fields may include:
+
+- `Masterfiles`
+- spreadsheet metadata
+- mounted state
+
+Use this tab when:
+
+- you want to inspect raw acquisitions
+- you want to open images or the containing folder
+- you want to submit one or more datasets for processing
+
+## `Processing`
+
+Purpose:
+
+- review non-strategy processing jobs and results
+- open reports, output files, and working directories
+- reprocess existing jobs
+
+Typical visible columns:
+
+- `Sample`
+- `Pipeline`
+- `Image Set`
+- `State`
+- `Report`
+- `Space Group`
+- `Res.`
+- `Rsym`
+- `I/sig(I)`
+- `Mult.`
+- `Compl. %`
+- `Table1`
+- `MTZ File`
+
+Hidden or supporting fields may include:
+
+- `Log File`
+- `Image Dir`
+- `Work Dir`
+- `Run Stats`
+- `Reprocess ID`
+- `Solve`
+
+Use this tab when:
+
+- you want to check whether processing succeeded
+- you want to inspect reports and MTZ outputs
+- you want to rerun one or more jobs from existing entries
+
+## `Strategy`
+
+Purpose:
+
+- review strategy or screening outputs
+- inspect angle range, score, and related planning information
+- export strategy values for downstream collection use
+
+Typical visible columns:
+
+- `Sample`
+- `Pipeline`
+- `Image Set`
+- `State`
+- `Exp. Strategy`
+- `Space Group`
+- `Res.`
+- `Score`
+- `Start (deg)`
+- `End (deg)`
+- `ASU (a.a.)`
+
+Hidden or supporting fields may include:
+
+- `Cell`
+- `Lattice`
+- `Index Table`
+- `XPlan Log`
+- `Point Group Choices`
+- `Reference Data`
+
+Use this tab when:
+
+- you want to inspect strategy results
+- you want to export a strategy when the row contains the required values
+- you want to compare strategy outcomes across runs
+
+Important note:
+
+- this tab does not expose the same `Re-process Selected...` action found in `Processing`
+
+# Context Menus
+
+Right-click menus are table-specific. Most actions need at least one selected row.
+
+## Shared actions across all tabs
+
+### `View Images`
+
+Open the selected dataset or job in the image viewer.
+
+Typical use:
+
+- jump directly from a table entry back to diffraction images
+
+### `ADXV`
+
+Open the selected item in ADXV.
+
+Important note:
+
+- enabled only when exactly one row is selected
+
+### `Open Image Folder`
+
+Open the source image directory for the selected row or rows.
+
+### `Open Terminal Here`
+
+Open a terminal rooted at the image directory.
+
+## `Datasets` tab context menu
+
+Visible structure:
+
+- `View Images`
+- `ADXV`
+- `Open Image Folder`
+- `Open Terminal Here`
+- separator
+- `Process Selected Datasets...`
+
+### `Process Selected Datasets...`
+
+Gather the master files from the selected dataset rows and open the processing launcher dialog.
+
+Use it for:
+
+- starting jobs from raw datasets
+- processing one or several datasets
+- using the same dialog as `dp` without leaving `dv`
+
+## `Processing` tab context menu
+
+Visible structure:
+
+- `View Images`
+- `ADXV`
+- `Open Image Folder`
+- `Open Terminal Here`
+- separator
+- `Re-process Selected...`
+- `Delete Selected`
+- `Mark with Color...`
+
+### `Re-process Selected...`
+
+Recover the original dataset path or paths from the selected processing rows and open the processing launcher dialog.
+
+Use it for:
+
+- rerunning one job with different settings
+- rerunning multiple old jobs together
+
+### `Delete Selected`
+
+Delete the selected processing entries from the table's backing data source.
+
+Caution:
+
+- use carefully, because deletion is presented as permanent
+
+### `Mark with Color...`
+
+Apply row coloring for visual organization.
+
+Use it for:
+
+- highlighting good, bad, or interesting results while reviewing many jobs
+
+## `Strategy` tab context menu
+
+Visible structure:
+
+- `View Images`
+- `ADXV`
+- `Open Image Folder`
+- `Open Terminal Here`
+- separator
+- `Delete Selected`
+
+Use this tab mainly for review and export, not for the same reprocess flow used by `Processing`.
+
+# How To Reprocess One Dataset
+
+Use this when you already have a processing entry and want to run it again.
+
+Steps:
+
+1. Open `dv`.
+2. Go to `Processing`.
+3. Select exactly one row.
+4. Right-click and choose `Re-process Selected...`.
+5. Wait for QP2 to recover the original master file and open the processing dialog.
+6. Review the dataset list, output root, and selected pipeline.
+7. Adjust any job parameters.
+8. Click `Submit Jobs to Cluster`.
+
+What QP2 does behind the scenes:
+
+- first it looks for stored dataset paths in the processing record
+- if needed, it falls back to run statistics
+- if needed, it attempts to reconstruct the master-file path from image-directory information
+
+What to expect:
+
+- if the original source file still exists and can be determined, the dialog opens normally
+- if not, QP2 warns that it cannot determine or find the original master file
+
+# How To Reprocess Multiple Datasets
+
+There are two common multi-dataset cases.
+
+## Reprocess multiple old jobs from `Processing`
+
+Use this when:
+
+- you already have several processing entries and want to rerun them together
+
+Steps:
+
+1. Open `dv`.
+2. Go to `Processing`.
+3. Multi-select the rows you want.
+4. Right-click and choose `Re-process Selected...`.
+5. Wait for QP2 to recover the source master files from each selected row.
+6. Review the combined dataset list in the processing dialog.
+7. Decide whether to merge or submit separate jobs based on the pipeline.
+8. Submit.
+
+What to expect:
+
+- QP2 combines all recoverable master files into one launcher dialog
+- only datasets whose source files can still be found will make it into the final job list
+
+## Process multiple raw datasets from `Datasets`
+
+Use this when:
+
+- you want to submit jobs directly from newly collected data, not from existing processing rows
+
+Steps:
+
+1. Open `dv`.
+2. Go to `Datasets`.
+3. Multi-select the dataset rows you want.
+4. Right-click and choose `Process Selected Datasets...`.
+5. Review the dataset list in the processing dialog.
+6. Choose the pipeline.
+7. Enable merge mode if appropriate.
+8. Submit.
+
+What to expect:
+
+- QP2 gathers the `master_files` list from each selected dataset row
+- this is the fastest path from raw acquisition rows to new processing jobs
+
+# Opening Data and Results from `dv`
+
+## Open images in `iv`
+
+Use `View Images` when you want the QP2 viewer rather than the table display.
+
+## Open a single row in ADXV
+
+Use `ADXV` when you want a quick external image inspection path.
+
+Reminder:
+
+- this only works when exactly one row is selected
+
+## Open folders and terminals
+
+Use `Open Image Folder` or `Open Terminal Here` when you need to inspect files directly on disk.
+
+# Strategy Export
+
+The `Strategy` tab uses the `Exp. Strategy` column for export.
+
+What to expect:
+
+- the export link appears only when the row contains a valid record id and a non-empty `osc_start` value
+- not every strategy row will display an export action
+
+Use this when:
+
+- you want to take a strategy result and turn it into a downstream run or collection configuration
+
+# Refresh and Monitoring Behavior
+
+`dv` is not just a static table viewer.
+
+Behavior to expect:
+
+- the active `Processing` or `Strategy` tab can refresh as pipeline state changes are detected
+- the `Datasets` tab can refresh when new datasets appear
+- switching the primary group refreshes the visible data set for all tabs
+
+Practical effect:
+
+- you may see rows update while monitoring jobs
+- a job that was previously running may change state without manual reload
+
+# Caveats
+
+- Most actions require one or more selected rows.
+- `ADXV` is single-selection only.
+- Reprocessing depends on QP2 being able to recover the original master-file path.
+- Reprocessing can fail if the original dataset was moved or deleted.
+- The visible data is filtered by the current user and active group or ESAF.
+- Staff users have an extra `Enter ESAF...` menu item that normal users may not see.
+- `Strategy` is mainly a review and export tab; it does not expose the same reprocess action as `Processing`.
+
+# Related Pages
+
+- [Launcher overview](index.qmd)
+- [Image Viewer (`iv`)](iv.qmd)
+- [Data Processing Launcher (`dp`)](dp.qmd)
+- [Dose Planner](dose_planner.qmd)

@@ -1,0 +1,338 @@
+---
+title: "Data Processing Launcher (dp)"
+format:
+  html:
+    toc: true
+---
+
+# Quick Start
+
+- [Back to launcher overview](index.qmd)
+- [See screenshot and diagram ideas](screenshots.qmd#dp)
+- Open the launcher with `qp2/bin/dp`.
+- Add data with `Add Files...`, `Add Directories...`, or `Add from List...`.
+- Choose a pipeline.
+- Review the auto-generated output root.
+- Enable `Merge all datasets into ONE job` if appropriate.
+- Click `Submit Jobs to Cluster`.
+
+# Overview
+
+`dp` is the standalone processing launcher dialog. It starts the same core processing dialog that `iv` and `dv` can open from inside their own interfaces.
+
+![`dp` main dialog: dataset list on the left, processing parameters on the right.](images/dp-main-dialog.jpg){width=90% fig-align="center"}
+
+Use `dp` when:
+
+- you want to submit jobs without opening `iv` or `dv`
+- you already know which master files to process
+- you want explicit control over pipeline, merge behavior, output root, and advanced options
+
+The launcher script is `qp2/bin/dp`, which starts `qp2.data_proc.client.dataset_processor_dialog`.
+
+# Main Layout
+
+The dialog is split into two main panels.
+
+## Left panel: dataset management
+
+Main elements:
+
+- dataset table with columns:
+  - `Master File Path`
+  - `Start`
+  - `End`
+- action buttons:
+  - `Add Files...`
+  - `Add Directories...`
+  - `Add from List...`
+  - `Remove Selected`
+- merge controls:
+  - `Merge all datasets into ONE job`
+  - merge method selector for XDS-oriented merge behavior
+
+Use this panel for:
+
+- collecting input datasets
+- trimming frame ranges
+- removing paths you do not want to submit
+- enabling multi-dataset merge mode
+
+## Right panel: job parameters
+
+Main elements:
+
+- `Pipeline`
+- `Output Root`
+- `Process Native Data`
+- `Space Group`
+- `Unit Cell`
+- `High Res (A)`
+- `Model PDB`
+- `Reference HKL`
+- `Cores/Job`
+- `Nodes/Job`
+- `Fast Mode`
+- `Trust Beam Centre`
+- `Force Rerun (Clear Status)`
+
+Use this panel for:
+
+- choosing the processing engine
+- steering crystallographic constraints
+- controlling job size and output placement
+- forcing reruns when old state should be cleared
+
+# Adding Datasets
+
+## `Add Files...`
+
+Use this when:
+
+- you know the exact HDF5 master files you want
+
+Behavior:
+
+- opens a file picker filtered to `*_master.h5`
+- each selected path is added to the dataset list
+
+## `Add Directories...`
+
+Use this when:
+
+- you want QP2 to scan one or more directories for valid master files
+
+Behavior:
+
+- supports selecting multiple directories
+- offers a scan-options dialog before searching
+- scans in the background and adds matching datasets to the list
+
+Typical benefit:
+
+- useful for batch submission from a collection folder
+
+## `Add from List...`
+
+Use this when:
+
+- you already have a text file with one dataset path per line
+
+Behavior:
+
+- ignores empty lines and comment-like lines
+- strips surrounding quotes if present
+- adds only paths that exist on disk
+
+## `Remove Selected`
+
+Remove highlighted dataset rows from the submission list.
+
+# Dataset Table Behavior
+
+Each dataset row stores:
+
+- full master-file path
+- start frame
+- end frame
+
+What to expect:
+
+- QP2 tries to read the HDF5 file and determine the total frame count
+- if that fails, it falls back to a default frame count for the table row
+- adding more than one dataset automatically turns on the merge checkbox
+
+# Pipeline Selection
+
+The `Pipeline` combo controls which backend will be used.
+
+Common pipelines exposed in the dialog include:
+
+- `XDS`
+- `nXDS`
+- `autoPROC`
+- `xia2`
+- `xia2_ssx`
+- `CrystFEL`
+
+Practical guidance:
+
+- use `XDS`, `autoPROC`, or `xia2` for standard rotation datasets
+- use `nXDS`, `xia2_ssx`, or `CrystFEL` for serial or multi-hit workflows depending on your experiment
+
+# Merge Behavior
+
+## `Merge all datasets into ONE job`
+
+Use this when:
+
+- several selected datasets should be treated as one merged job
+
+Typical supported pipelines:
+
+- `xia2`
+- `autoPROC`
+- `xia2_ssx`
+- `XDS`
+- `nXDS`
+
+Important note:
+
+- merge behavior is pipeline-specific; some pipelines launch one job per dataset before an additional merge step
+
+## Merge method selector
+
+Visible when relevant for XDS-oriented workflows.
+
+Typical values:
+
+- `xscale`
+- `xia2_multiplex`
+
+# Output Root Behavior
+
+The `Output Root` field is auto-populated from the first dataset.
+
+Typical behavior:
+
+- if the source path contains `/data/` or `/DATA/`, QP2 rewrites it toward `/processing/` or `/PROCESSING/`
+- otherwise QP2 creates a sibling `PROCESSING` directory under the dataset location
+
+Practical tip:
+
+- leave the auto-generated value when it matches the beamline layout
+- override it manually when you want to isolate a test or custom run
+
+# Common Job Parameters
+
+## `Process Native Data`
+
+Use this checkbox to mark the run as native rather than anomalous-style processing.
+
+## `Space Group` and `Unit Cell`
+
+Use these when you want to constrain processing with known crystallographic values.
+
+## `High Res (A)`
+
+Use this to set a high-resolution cutoff.
+
+## `Model PDB`
+
+Supply a model file when downstream steps or reference-aware workflows need it.
+
+## `Reference HKL`
+
+Supply a reflection or reference file when the chosen workflow supports it.
+
+## `Cores/Job` and `Nodes/Job`
+
+Use these to control how many cluster resources QP2 requests per job.
+
+## `Fast Mode`
+
+Use this when you want a faster but potentially less exhaustive run where supported.
+
+## `Trust Beam Centre`
+
+Relevant mainly to xia2-oriented workflows.
+
+## `Force Rerun (Clear Status)`
+
+Use this when you want to clear old state before submitting again.
+
+# Advanced CrystFEL Settings
+
+The CrystFEL section is collapsible and only relevant when you are running a CrystFEL workflow.
+
+Typical settings include:
+
+- peak algorithm
+- minimum peaks per frame
+- minimum SNR
+- local background radius
+- threshold estimation or manual threshold
+- peak pixel limits
+- optimization toggles such as:
+  - `Use peakfinder8-fast`
+  - `Use asdf-fast`
+  - `Disable retry on failure`
+  - `Disable multi-indexing`
+  - `Disable refinement`
+  - `Disable peak checking`
+  - `Reject Non-Hits`
+  - `Include Bad Pixel Mask`
+- indexing methods such as:
+  - `xgandalf`
+  - `mosflm`
+  - `asdf`
+  - `dirax`
+  - `taketwo`
+  - `smallcell`
+  - `xds`
+  - `pinkindexer`
+  - `ffbidx`
+  - `felix`
+- integration settings and extra options
+
+Use this section when:
+
+- you need tighter control over hit finding and indexing behavior for serial data
+
+# Submission Workflow
+
+1. Build the dataset list.
+2. Review or adjust frame ranges.
+3. Choose the pipeline.
+4. Review output root and key crystallographic parameters.
+5. Enable merge mode if needed.
+6. Open advanced CrystFEL settings if using CrystFEL.
+7. Click `Submit Jobs to Cluster`.
+
+What to expect:
+
+- QP2 validates and prepares the submission payload
+- the final submission uses the configured backend job-submission logic
+- successful submission shows a confirmation message
+- submission failure shows an error message and leaves the dialog open
+
+# Typical Workflows
+
+## Process one dataset
+
+1. `Add Files...`
+2. choose one master file
+3. choose the pipeline
+4. adjust parameters if needed
+5. submit
+
+## Process several datasets
+
+1. add several files, directories, or a list file
+2. confirm all rows in the table
+3. decide whether to merge
+4. set output root and pipeline
+5. submit
+
+## Run CrystFEL with custom indexing options
+
+1. add the serial datasets
+2. choose `CrystFEL`
+3. expand `Show Advanced CrystFEL Settings`
+4. review threshold, indexing, and optimization settings
+5. submit
+
+# Caveats
+
+- `dp` assumes a working cluster-oriented processing environment; a local Python install alone may not be enough for real job submission.
+- The output root is auto-derived from the first dataset, so mixed-source dataset sets may need manual cleanup.
+- Multi-dataset behavior varies by pipeline.
+- Some advanced controls are meaningful only for specific backends such as CrystFEL or xia2.
+- `Force Rerun (Clear Status)` is useful but should be used deliberately when rerunning prior work.
+
+# Related Pages
+
+- [Launcher overview](index.qmd)
+- [Image Viewer (`iv`)](iv.qmd)
+- [Data Viewer (`dv`)](dv.qmd)
+- [Dose Planner](dose_planner.qmd)

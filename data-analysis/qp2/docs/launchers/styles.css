@@ -1,0 +1,270 @@
+/* ── QP2 Launcher Docs custom styles ── */
+
+:root {
+  --qp2-accent: #0f6d78;
+  --qp2-accent-light: #1a8a97;
+  --qp2-accent-soft: #e6f3f5;
+  --qp2-ink: #1e2d32;
+  --qp2-muted: #5a6d74;
+  --qp2-border: #d6e7ea;
+  --qp2-bg-alt: #f7fafb;
+}
+
+/* ── Body ── */
+body {
+  color: var(--qp2-ink);
+  font-size: 0.98rem;
+}
+
+/* ── Navbar ── */
+.navbar {
+  border-bottom: 3px solid var(--qp2-accent);
+  font-size: 0.92rem;
+}
+
+.navbar .navbar-brand {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* ── Sidebar ── */
+.sidebar .sidebar-item.active > .sidebar-link,
+.sidebar .sidebar-item .sidebar-link:hover {
+  color: var(--qp2-accent);
+  border-left-color: var(--qp2-accent);
+}
+
+.sidebar .sidebar-section .sidebar-title {
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--qp2-muted);
+  margin-top: 1rem;
+}
+
+/* ── Main content ── */
+main.content {
+  line-height: 1.7;
+}
+
+main.content h1 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-top: 2rem;
+  margin-bottom: 0.8rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 2px solid var(--qp2-border);
+  scroll-margin-top: 5rem;
+}
+
+main.content h2 {
+  font-size: 1.35rem;
+  font-weight: 600;
+  margin-top: 1.8rem;
+  margin-bottom: 0.6rem;
+  color: var(--qp2-accent);
+  scroll-margin-top: 5rem;
+}
+
+main.content h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-top: 1.4rem;
+  margin-bottom: 0.4rem;
+  scroll-margin-top: 5rem;
+}
+
+main.content p {
+  margin-bottom: 0.6rem;
+}
+
+main.content ul li,
+main.content ol li {
+  margin-bottom: 0.25rem;
+}
+
+/* ── Images ── */
+main.content img {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--qp2-border);
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-top: 0.8rem;
+  margin-bottom: 0.4rem;
+}
+
+main.content .quarto-figure {
+  margin-top: 1rem;
+  margin-bottom: 1.2rem;
+}
+
+main.content .figure-caption,
+main.content figcaption {
+  font-size: 0.88rem;
+  color: var(--qp2-muted);
+  font-style: italic;
+  margin-top: 0.3rem;
+}
+
+/* ── Tables ── */
+.table {
+  font-size: 0.92rem;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.table thead th {
+  background-color: var(--qp2-accent);
+  color: white;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.6rem 0.8rem;
+  border: none;
+}
+
+.table tbody td {
+  padding: 0.5rem 0.8rem;
+  border-bottom: 1px solid var(--qp2-border);
+  vertical-align: top;
+}
+
+.table tbody tr:hover {
+  background-color: var(--qp2-accent-soft);
+}
+
+.table code {
+  font-size: 0.88rem;
+  background-color: var(--qp2-bg-alt);
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.25rem;
+}
+
+/* ── Panel tabset (I want to...) ── */
+.panel-tabset {
+  border: 1px solid var(--qp2-border);
+  border-radius: 0.6rem;
+  margin-top: 1rem;
+  margin-bottom: 1.5rem;
+  background: var(--qp2-bg-alt);
+}
+
+.panel-tabset .nav-tabs {
+  border-bottom: 2px solid var(--qp2-border);
+  padding: 0.4rem 0.6rem 0;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+}
+
+.panel-tabset .nav-tabs .nav-link {
+  font-size: 0.82rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 0.4rem 0.4rem 0 0;
+  color: var(--qp2-muted);
+  border: 1px solid transparent;
+}
+
+.panel-tabset .nav-tabs .nav-link.active {
+  color: var(--qp2-accent);
+  background: white;
+  border-color: var(--qp2-border) var(--qp2-border) white;
+  font-weight: 600;
+}
+
+.panel-tabset .tab-content {
+  padding: 0.8rem 1rem;
+}
+
+/* ── Code blocks ── */
+pre.sourceCode {
+  background-color: var(--qp2-bg-alt);
+  border: 1px solid var(--qp2-border);
+  border-radius: 0.4rem;
+  padding: 0.8rem 1rem;
+  font-size: 0.88rem;
+}
+
+code {
+  color: var(--qp2-accent);
+}
+
+/* ── Quick Start bullets ── */
+main.content > ul:first-of-type li,
+#quick-start + ul li {
+  line-height: 1.6;
+}
+
+/* ── Listing grid (featured launchers) ── */
+.quarto-listing-container-grid .card {
+  border: 1px solid var(--qp2-border);
+  border-radius: 0.6rem;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.quarto-listing-container-grid .card:hover {
+  box-shadow: 0 4px 12px rgba(15, 109, 120, 0.12);
+  border-color: var(--qp2-accent);
+}
+
+.quarto-listing-container-grid .card .listing-title {
+  font-weight: 600;
+  color: var(--qp2-accent);
+}
+
+/* ── Section separators ── */
+main.content hr {
+  border: none;
+  border-top: 1px solid var(--qp2-border);
+  margin: 2rem 0;
+}
+
+/* ── Footer ── */
+.nav-footer {
+  font-size: 0.82rem;
+  color: var(--qp2-muted);
+  border-top: 1px solid var(--qp2-border);
+  padding: 0.8rem 0;
+}
+
+/* ── TOC (right-hand) ── */
+nav[role="doc-toc"] h2 {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--qp2-muted);
+}
+
+nav[role="doc-toc"] .nav-link {
+  font-size: 0.82rem;
+  padding: 0.15rem 0;
+}
+
+nav[role="doc-toc"] .nav-link.active {
+  color: var(--qp2-accent);
+  font-weight: 600;
+}
+
+/* ── Mermaid diagrams ── */
+.mermaid {
+  margin: 1rem 0;
+  padding: 0.5rem;
+  background: var(--qp2-bg-alt);
+  border: 1px solid var(--qp2-border);
+  border-radius: 0.5rem;
+}
+
+/* ── Responsive: narrower sidebar on small screens ── */
+@media (max-width: 991.98px) {
+  main.content h1 {
+    font-size: 1.5rem;
+  }
+  main.content h2 {
+    font-size: 1.2rem;
+  }
+  .panel-tabset .nav-tabs .nav-link {
+    font-size: 0.78rem;
+    padding: 0.25rem 0.5rem;
+  }
+}

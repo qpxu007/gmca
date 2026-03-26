@@ -1,0 +1,78 @@
+project:
+  type: website
+  output-dir: _site
+
+website:
+  title: "QP2 Guide"
+  site-url: "https://qpxu007.github.io/gmca"
+  page-navigation: true
+  search: true
+  reader-mode: true
+  page-footer:
+    left: "QP2 Beamline Launcher Documentation"
+    right: "Built with [Quarto](https://quarto.org)"
+  navbar:
+    background: dark
+    left:
+      - href: index.qmd
+        text: Start Here
+      - href: iv.qmd
+        text: Image Viewer
+      - href: dv.qmd
+        text: Data Viewer
+      - href: dp.qmd
+        text: Processing
+      - href: dose_planner.qmd
+        text: Dose Planner
+  sidebar:
+    style: docked
+    search: true
+    collapse-level: 2
+    contents:
+      - section: Start Here
+        contents:
+          - href: index.qmd
+            text: Overview and Common Tasks
+      - section: Main Applications
+        contents:
+          - href: iv.qmd
+            text: Image Viewer (iv)
+          - href: dv.qmd
+            text: Data Viewer (dv)
+          - href: dp.qmd
+            text: Processing Launcher (dp)
+          - href: dose_planner.qmd
+            text: Dose Planner
+      - section: Supporting Tools
+        contents:
+          - href: collection_simulator.qmd
+            text: Collection Simulator
+          - href: hdf5combiner.qmd
+            text: HDF5 Combiner
+          - href: h5_to_cbf.qmd
+            text: H5 to CBF
+          - href: xtallife.qmd
+            text: XtalLife
+          - href: strategy.qmd
+            text: Strategy
+          - href: spreadsheet_editor.qmd
+            text: Spreadsheet Editor
+      - section: Visual Guide
+        contents:
+          - href: screenshots.qmd
+            text: Screenshots and Diagrams
+
+format:
+  html:
+    theme:
+      light: flatly
+    css: styles.css
+    toc: true
+    toc-depth: 3
+    toc-title: "On this page"
+    code-copy: true
+    smooth-scroll: true
+    grid:
+      sidebar-width: 280px
+      body-width: 900px
+      margin-width: 200px

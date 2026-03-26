@@ -1,0 +1,184 @@
+---
+title: "Batch Beam Center"
+format:
+  html:
+    toc: true
+---
+
+# Quick Start
+
+- [Back to launcher overview](index.qmd)
+- [See screenshot and diagram ideas](screenshots.qmd#batch-beam-center)
+- Run `qp2/bin/batch_beam_center DIRECTORY NEW_X NEW_Y` to update many master files at once.
+- Add `--recursive` if your files are spread across subdirectories.
+- Add `--wavelength` and `--det_dist` when you also want to rewrite those values.
+- Add `--remove-correction` only when you want flatfield correction removed from every updated file.
+- Expect in-place edits with `.bak` backups.
+
+# Overview
+
+`batch_beam_center` is the batch version of the beam-center update workflow.
+
+Launcher target:
+
+- `qp2/bin/batch_beam_center` -> `python -m qp2.image_viewer.beamcenter.batch_update_beam_center`
+
+Use this tool when:
+
+- you want to apply the same beam-center correction to many HDF5 master files
+- you want a non-interactive CLI workflow instead of editing one file at a time in `iv`
+- you need optional wavelength and detector-distance correction during the same pass
+
+# Command-Line Interface
+
+Required positional arguments:
+
+- `directory`
+- `new_x`
+- `new_y`
+
+Common optional arguments:
+
+- `--wavelength`
+- `--det_dist`
+- `--remove-correction`
+- `--pattern` default `*master.h5`
+- `--recursive`
+
+Example:
+
+```bash
+qp2/bin/batch_beam_center /data/experiment 1544.2 1638.7 --recursive --pattern "*master.h5"
+```
+
+Example with wavelength and detector distance:
+
+```bash
+qp2/bin/batch_beam_center /data/experiment 1544.2 1638.7 --wavelength 0.979 --det_dist 250.0 --recursive
+```
+
+# What It Does
+
+The workflow is straightforward:
+
+1. validate the target directory
+2. search for matching master files
+3. update each file in place
+4. report per-file success or failure
+5. print a final success/failure summary
+
+Important behavior:
+
+- matching files are found with `glob`
+- recursive searching is optional
+- each file is updated with backup enabled
+- the tool does not create a separate Nexus copy in this batch mode
+
+# Common Workflows
+
+## Update beam center across one directory
+
+Use this when:
+
+- all of your target files live in one directory
+
+Example:
+
+```bash
+qp2/bin/batch_beam_center /data/runset 1544.2 1638.7
+```
+
+## Update beam center across nested subdirectories
+
+Use this when:
+
+- your master files are spread across many run folders
+
+Example:
+
+```bash
+qp2/bin/batch_beam_center /data/runset 1544.2 1638.7 --recursive
+```
+
+## Update beam center plus geometry values
+
+Use this when:
+
+- you also want to correct wavelength or detector distance
+
+Example:
+
+```bash
+qp2/bin/batch_beam_center /data/runset 1544.2 1638.7 --wavelength 1.033 --det_dist 220.0 --recursive
+```
+
+## Remove flatfield correction during update
+
+Use this when:
+
+- you intentionally want the updater to strip flatfield correction data from each file
+
+Example:
+
+```bash
+qp2/bin/batch_beam_center /data/runset 1544.2 1638.7 --remove-correction --recursive
+```
+
+# Important Output Behavior
+
+## In-place editing
+
+The batch tool updates master files in place.
+
+What to expect:
+
+- this is not a copy-first workflow
+- existing data files are modified directly
+- `.bak` backups are preserved to protect the original version from the first run
+
+## Detector distance units
+
+`--det_dist` is entered in millimeters.
+
+What to expect:
+
+- QP2 converts it to meters before writing the HDF5 detector-distance field
+
+## Translation-path updates
+
+The updater also attempts to update detector translation information so downstream tools such as DIALS or xia2 can see the corrected geometry.
+
+# Diagram
+
+```mermaid
+flowchart LR
+  A[Target directory] --> B[Match master files]
+  B --> C[Create or preserve .bak backup]
+  C --> D[Update beam center]
+  D --> E[Optional wavelength and distance update]
+  E --> F[Optional flatfield removal]
+  F --> G[Per-file success or failure]
+  G --> H[Batch summary]
+```
+
+# Suggested Screenshot
+
+If you add screenshots later, the most useful companion image is not this CLI itself but the related interactive beam-center dialog in `iv`, especially the section with:
+
+- `Save Nexus compatible copy`
+- `Remove Flatfield`
+- `Update Master File`
+
+# Caveats
+
+- This tool modifies files in place.
+- There is no batch option here to create a separate Nexus output copy.
+- Missing or nonstandard NeXus geometry paths can limit how completely the beam-center update propagates.
+- `--remove-correction` removes flatfield data, so use it only when that change is intended.
+- Existing `.bak` files are preserved rather than overwritten.
+
+# Related Pages
+
+- [Launcher overview](index.qmd)
+- [Beam Center](beam_center.qmd)
+- [Image Viewer (`iv`)](iv.qmd)

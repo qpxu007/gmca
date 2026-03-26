@@ -1,0 +1,533 @@
+---
+title: "QP2 Launcher Guide"
+subtitle: "Beamline tools for diffraction data, processing, and analysis"
+format:
+  html:
+    toc: true
+---
+
+# Start Here
+
+::: {.grid}
+
+::: {.g-col-6}
+**[Image Viewer (`iv`)](iv.qmd)**
+Live diffraction review, dataset browsing, heat maps, plugins, and processing launch.
+:::
+
+::: {.g-col-6}
+**[Data Viewer (`dv`)](dv.qmd)**
+View datasets, processing job status, and results in `Datasets`, `Processing`, and `Strategy` tabs.
+:::
+
+::: {.g-col-6}
+**[Processing Launcher (`dp`)](dp.qmd)**
+Manual processing submission for one or more master files.
+:::
+
+::: {.g-col-6}
+**[Dose Planner](dose_planner.qmd)**
+Dose planning, RADDOSE-3D, and strategy export.
+:::
+
+:::
+
+::: {.panel-tabset}
+## I want to view diffraction images
+Use [Image Viewer (`iv`)](iv.qmd); run `iv` at the command line, or launch `iv` for a particular dataset from the context menu in [Data Viewer (`dv`)](dv.qmd).
+
+## I want to view auto processing results
+Use [Data Viewer (`dv`)](dv.qmd) and inspect the `Processing` tab, or use [Image Viewer (`iv`)](iv.qmd), load the dataset, then select the plugin to view results from the pipeline.
+
+## I want to reprocess a dataset
+Use [Data Viewer (`dv`)](dv.qmd), then `Processing -> right-click -> Re-process Selected...`.
+
+## I want to process serial data
+Use [Image Viewer (`iv`)](iv.qmd), then dataset tree -> right-click -> `Serial Processing`.
+
+## I want to modify HDF5 metadata
+Use [Beam Center](beam_center.qmd), preferably through `iv -> Tools -> Update Master File (to correct geometry)`.
+
+## I want to combine multiple HDF5 datasets
+Use [HDF5 Combiner](hdf5combiner.qmd), typically from `iv -> Serial Processing -> Hits Combiner`.
+
+## I want to index an image
+Use [Image Viewer (`iv`)](iv.qmd), then choose a processing plugin such as `XDS`, `nXDS`, or `Crystfel`, or use `Analysis -> Index/Strategy` for indexing-related workflows.
+
+## I want to change or lock contrast
+Use [Image Viewer (`iv`)](iv.qmd), then adjust display behavior with the right-hand color bar and `View -> Lock Contrast/Colormap` or `View -> Auto-Contrast on Zoom/Pan/Frame change`.
+
+## I want to view pixel values
+Use [Image Viewer (`iv`)](iv.qmd); zoom in on the image for precise inspection, and use the `Viewer Controls` area to see the live pixel-information readout while you inspect the image.
+
+## I want to submit jobs manually
+Use [Data Processing Launcher (`dp`)](dp.qmd).
+
+## I want to plan exposure and dose
+Use [Dose Planner](dose_planner.qmd).
+:::
+
+# Quick Start
+
+- [See screenshot and diagram ideas](screenshots.qmd)
+- Launch the main image viewer with `qp2/bin/iv`; use it for live diffraction review, dataset browsing, processing launches, heat maps, and 3D volume tools.
+- Launch `qp2/bin/dv` to view datasets in `Datasets`, and processing job status and results in `Processing` and `Strategy`.
+- Launch the manual processing dialog with `qp2/bin/dp`; add one or more master files, choose a pipeline, then click `Submit Jobs to Cluster`.
+- Launch the dose workflow with `qp2/bin/dose_planner`; load beamline defaults, optionally pull strategy results, then run `Find Best Parameters`.
+- Reprocess one dataset quickly in `dv`: `Processing` -> select one row -> right-click -> `Re-process Selected...`.
+- Reprocess several datasets quickly in `dv`: `Processing` -> multi-select rows -> right-click -> `Re-process Selected...`.
+- Process several raw datasets quickly in `dv`: `Datasets` -> multi-select rows -> right-click -> `Process Selected Datasets...`.
+- Run serial workflows quickly in `iv`: dataset tree -> right-click -> `Serial Processing` -> choose `nXDS`, `CrystFEL`, or `xia2.ssx`.
+- Make a 2D heat map quickly in `iv`: select one raster run -> right-click -> `Show 2D Grid Heatmap...`.
+- Build a 3D reconstruction quickly in `iv`: select two orthogonal raster runs -> right-click -> `Construct 3D Volume...`.
+
+# Overview
+
+QP2 ships several launcher scripts under `qp2/bin/`. A few of them are everyday user tools, while others are beamline utilities, batch helpers, or administrative scripts.
+
+The main user-facing launchers are:
+
+- `iv`: diffraction image viewer and live analysis workspace
+- `dv`: view datasets in `Datasets`, and processing job status and results in `Processing` and `Strategy`
+- `dp`: manual processing job launcher
+- `dose_planner`: dose and exposure planning tool
+- `beam_center`: rewrite HDF5 geometry metadata and estimate beam center
+- `batch_beam_center`: batch beam-center correction for many master files
+- `mock_collect` / `mock_streamer`: replay HDF5 datasets as synthetic Redis detector streams
+- `hdf5combiner`: combine selected frames from many datasets into one HDF5 output
+- `h5_to_cbf`: HDF5-to-CBF conversion helper
+- `xtallife`: crystal lifetime calculator
+- `strategy`: scriptable strategy CLI for XDS or MOSFLM
+- `spreadsheet_editor`: puck spreadsheet editor and upload utility
+
+---
+
+# Common Tasks
+
+## Reprocess a dataset
+
+When to use this:
+
+- You already have a processing entry in `dv` and want to run it again with different settings.
+
+Where to do it:
+
+- `qp2/bin/dv`
+
+Steps:
+
+1. Open `dv`.
+2. Go to the `Processing` tab.
+3. Select one result row.
+4. Right-click and choose `Re-process Selected...`.
+5. Review the preloaded dataset list and job settings in the processing dialog.
+6. Adjust the pipeline or parameters if needed.
+7. Click `Submit Jobs to Cluster`.
+
+What to expect:
+
+- QP2 attempts to recover the original master file from the processing record.
+- If the source file can be found, the `dp`-style dialog opens preloaded with that dataset.
+- If QP2 cannot recover or locate the original master file, reprocessing stops with a warning.
+
+Related pages:
+
+- [Data Viewer (`dv`)](dv.qmd)
+- [Data Processing Launcher (`dp`)](dp.qmd)
+
+## Process several datasets
+
+When to use this:
+
+- You want to process several related runs, or you want to merge multiple compatible datasets.
+
+Where to do it:
+
+- `qp2/bin/dv`
+- `qp2/bin/iv`
+- `qp2/bin/dp`
+
+Steps from `dv`:
+
+1. Open `dv`.
+2. Go to `Datasets` if you are starting from raw data, or `Processing` if you are rerunning previous jobs.
+3. Multi-select the rows you want.
+4. Right-click and choose `Process Selected Datasets...` or `Re-process Selected...`.
+5. In the launcher dialog, confirm the dataset list.
+6. Enable merge behavior if the selected pipeline supports it.
+7. Submit the jobs.
+
+Steps from `dp`:
+
+1. Open `dp`.
+2. Use `Add Files...`, `Add Directories...`, or `Add from List...`.
+3. Confirm the dataset table.
+4. Choose the pipeline.
+5. Enable `Merge all datasets into ONE job` if appropriate.
+6. Submit.
+
+What to expect:
+
+- Merge-friendly pipelines include `xia2`, `autoPROC`, `xia2_ssx`, `XDS`, and `nXDS`.
+- The output root is auto-derived from the first dataset unless you override it.
+
+Related pages:
+
+- [Data Viewer (`dv`)](dv.qmd)
+- [Data Processing Launcher (`dp`)](dp.qmd)
+- [Image Viewer (`iv`)](iv.qmd)
+
+## Run serial data
+
+When to use this:
+
+- You are working with serial crystallography, hit finding, or multi-dataset serial processing.
+
+Where to do it:
+
+- `qp2/bin/iv`
+
+Steps:
+
+1. Open `iv` and load the relevant datasets.
+2. In the dataset tree, select one serial dataset or a group of related datasets.
+3. Right-click and open `Serial Processing`.
+4. Choose one of the serial workflows:
+   - `Run xia2.ssx...`
+   - `Run CrystFEL Batch ...`
+   - result-driven analysis actions for `nXDS` or `CrystFEL`
+5. Review the settings dialog if one appears.
+6. Submit the job.
+
+What to expect:
+
+- `xia2.ssx` is the direct route for many serial jobs.
+- `CrystFEL` and `nXDS` are also exposed through the same context menu.
+- Some serial analysis actions only become useful after results already exist.
+
+Related pages:
+
+- [Image Viewer (`iv`)](iv.qmd)
+
+## Make a 2D heat map
+
+When to use this:
+
+- You want a raster-style 2D view of a grid scan in the image viewer.
+
+Where to do it:
+
+- `qp2/bin/iv`
+
+Steps:
+
+1. Open `iv`.
+2. In the dataset tree, select a single raster run.
+3. Right-click and choose `Show 2D Grid Heatmap...`.
+4. Inspect the heat map and change the active plugin or metric as needed.
+
+What to expect:
+
+- The action appears only for runs QP2 recognizes as raster-like.
+- The viewer uses run naming and dataset-path hints to determine when this option is valid.
+
+Related pages:
+
+- [Image Viewer (`iv`)](iv.qmd)
+
+## Build a 3D reconstruction
+
+When to use this:
+
+- You have two compatible raster runs collected at roughly orthogonal orientations and want a 3D volume view.
+
+Where to do it:
+
+- `qp2/bin/iv`
+
+Steps:
+
+1. Open `iv`.
+2. In the dataset tree, select exactly two raster runs.
+3. Right-click and choose `Construct 3D Volume...`.
+4. Review the generated volume view.
+
+What to expect:
+
+- The action appears only when QP2 detects two runs with compatible geometry, typically close to 90 degrees apart.
+- If the run pair does not match those conditions, the option does not appear.
+
+Related pages:
+
+- [Image Viewer (`iv`)](iv.qmd)
+
+## Simulate a live collection
+
+When to use this:
+
+- You want to test live-mode behavior, Redis-triggered processing, or beamline workflows without a real detector stream.
+
+Where to do it:
+
+- `qp2/bin/mock_collect`
+- `qp2/bin/mock_streamer`
+
+Quick GUI steps:
+
+1. Open `mock_collect`.
+2. Set Redis host, port, and stream name.
+3. Add one or more `*_master.h5` files or a directory containing them.
+4. Optionally set `Collect Mode`, `Artificial Lag`, or `File Arrival Delay`.
+5. Click `Start Streaming`.
+
+Quick CLI example:
+
+```bash
+qp2/bin/mock_streamer /data/test_collection --rate 50 --mode RASTER --loop
+```
+
+What to expect:
+
+- QP2 replays existing HDF5 data as synthetic Eiger-style Redis events.
+- The default Redis stream is `eiger`.
+- `--reset` deletes the chosen stream before starting, so use it carefully.
+
+Related pages:
+
+- [Collection Simulator](collection_simulator.qmd)
+- [Image Viewer (`iv`)](iv.qmd)
+
+## Reprocess from a plugin in `iv`
+
+When to use this:
+
+- You are already in `iv` and want to re-run processing or analysis from the selected plugin instead of going back to the dataset-tree context menu.
+
+Where to do it:
+
+- `qp2/bin/iv`
+
+Steps:
+
+1. Open `iv` and load the dataset.
+2. Select the processing plugin you want in the analysis pane, such as `XDS`, `nXDS`, `Crystfel`, `autoPROC`, `xia2`, or `xia2 SSX`.
+3. Open the plugin `Actions` menu.
+4. Choose `Clear and Re-run`.
+5. Wait for the plugin to clear stored result state and submit the processing again.
+
+What to expect:
+
+- In live mode, a selected processing plugin can auto-run if QP2 does not detect a previous run for that dataset.
+- In review mode, `Clear and Re-run` is the usual plugin-driven reprocessing path.
+- `Refresh` only reloads displayed results; it does not submit a new job.
+
+Related pages:
+
+- [Image Viewer (`iv`)](iv.qmd)
+
+## How plugin auto-run works in live mode
+
+When to use this:
+
+- You want to understand why a selected processing plugin sometimes starts work automatically in `iv` during live data collection.
+
+Where to do it:
+
+- `qp2/bin/iv`
+
+What to do:
+
+1. Open `iv` in live mode.
+2. Load or follow a dataset through Redis.
+3. Select a processing plugin such as `XDS`, `nXDS`, `Crystfel`, `autoPROC`, `xia2`, or `xia2 SSX`.
+4. Let the dataset finish collecting.
+
+What to expect:
+
+- If the selected plugin does not detect a previous run for that dataset, it can auto-submit the first processing run.
+- This behavior is tied to live mode and dataset-completion events.
+- If prior results already exist, the plugin is more likely to switch into result-display or refresh behavior instead of launching a fresh run.
+
+Related pages:
+
+- [Image Viewer (`iv`)](iv.qmd)
+
+## How to tell refresh from rerun
+
+When to use this:
+
+- You are in a plugin pane in `iv` and want to avoid confusing a result refresh with real reprocessing.
+
+Where to do it:
+
+- `qp2/bin/iv`
+
+Quick rule:
+
+- `Refresh` reloads current results.
+- `Clear and Re-run` triggers new processing or analysis.
+
+What to expect:
+
+- `Refresh` reads existing files or Redis-backed results and redraws the plugin display.
+- `Refresh` does not submit a new job.
+- `Clear and Re-run` clears the stored plugin result state first, then submits analysis or processing again.
+- In review mode, `Clear and Re-run` is usually the main plugin-driven reprocessing path.
+
+Related pages:
+
+- [Image Viewer (`iv`)](iv.qmd)
+
+## Launch QP2 programs
+
+When to use this:
+
+- You want the shortest possible reminder of which launcher to use.
+
+Common launch commands:
+
+- `qp2/bin/iv`: open the image viewer
+- `qp2/bin/dv`: open the dataset and processing-results viewer
+- `qp2/bin/dp`: open the processing launcher
+- `qp2/bin/dose_planner`: open the dose planning tool
+
+Notes:
+
+- These wrappers set up the runtime environment before calling the Python module.
+- `qp2/bin/iv` may force `--nolive` for users who are not in an authorized group.
+- `qp2/bin/dose_planner` also loads CCP4 before launching.
+
+## Install QP2
+
+When to use this:
+
+- You need a local editable install for development, testing, or workstation use.
+
+Steps:
+
+1. Open a shell in `qp2/`.
+2. Install the package:
+
+```bash
+pip install -e .
+```
+
+3. If you need development tools, install the optional extras:
+
+```bash
+pip install -e .[dev]
+```
+
+What to expect:
+
+- QP2 requires Python `>=3.9`.
+- The package depends on GUI, Redis, database, and beamline-adjacent tooling, so a plain Python install may still need local system libraries.
+- Some workflows also expect facility services such as Redis, MySQL/PostgreSQL access, CCP4, or cluster submission tools.
+
+# Main Applications
+
+For the four most-used tools, start with these detailed pages:
+
+- [Image Viewer (`iv`)](iv.qmd): live diffraction review, dataset browsing, plugins, heat maps, and plugin-driven processing
+- [Data Viewer (`dv`)](dv.qmd): datasets in `Datasets`, and processing job status and results in `Processing` and `Strategy`
+- [Data Processing Launcher (`dp`)](dp.qmd): manual processing submission for one or more master files
+- [Dose Planner](dose_planner.qmd): dose planning, RADDOSE-3D, and strategy export
+
+# Launcher Catalog
+
+## User-facing applications
+
+| Launcher | Purpose | Typical use | Detailed page |
+|---|---|---|---|
+| `iv` | Diffraction image viewer | Live viewing, processing launch, plugins, heat maps | [Yes](iv.qmd) |
+| `dv` | Dataset and results viewer | View datasets, processing job status, and results | [Yes](dv.qmd) |
+| `dp` | Processing launcher dialog | Manual job submission | [Yes](dp.qmd) |
+| `dose_planner` | Dose planning GUI | Exposure planning and RADDOSE-3D | [Yes](dose_planner.qmd) |
+| `beam_center` | Beam-center utility | Rewrite HDF5 geometry metadata and estimate beam center | [Yes](beam_center.qmd) |
+| `batch_beam_center` | Batch beam-center utility | Apply one correction across many master files | [Yes](batch_beam_center.qmd) |
+| `mock_collect` / `mock_streamer` | Mock collection workflow | Replay HDF5 datasets as synthetic Redis detector streams | [Yes](collection_simulator.qmd) |
+| `hdf5combiner` | HDF5 combiner workflow | Combine selected frames into one HDF5 dataset | [Yes](hdf5combiner.qmd) |
+| `h5_to_cbf` | Conversion helper | Convert master files into numbered CBF images | [Yes](h5_to_cbf.qmd) |
+| `xtallife` | Crystal lifetime calculator | Lightweight lifetime and wedge estimation | [Yes](xtallife.qmd) |
+| `strategy` | Strategy CLI | Scripted XDS or MOSFLM strategy runs | [Yes](strategy.qmd) |
+| `spreadsheet_editor` | Spreadsheet metadata editor | Edit puck spreadsheets and upload to pyBluice | [Yes](spreadsheet_editor.qmd) |
+| `chat` | Chat-style interface | Separate chat-style helper workflow | No |
+
+## Processing and analysis launchers
+
+| Launcher | Purpose | Typical use |
+|---|---|---|
+| `strategy` | Strategy CLI | Run XDS or MOSFLM strategy jobs |
+| `beam_center` | Metadata rewrite utility | Rewrite HDF5 geometry metadata or estimate beam center |
+| `batch_beam_center` | Batch metadata rewrite utility | Apply one beam-center correction across many master files |
+| `h5_to_cbf` | HDF5-to-CBF converter | Convert detector master files for downstream tools |
+| `serial_xds` | Serial processing helper | Run serial or SSX-oriented XDS workflows |
+| `index_crystfel` | CrystFEL indexing helper | Run CrystFEL-oriented indexing jobs |
+| `raster3d` | Raster-volume helper | Build raster-derived 3D workflows |
+| `crystfel_geometry` | Geometry helper | Generate or inspect CrystFEL geometry |
+| `dps` | Processing shortcut | Open a secondary processing entrypoint |
+| `xprocess` | Processing helper | Run pipeline or processing utility workflows |
+| `qp2-pipeline` | Pipeline runner | Execute a pipeline directly |
+
+## Utility and support launchers
+
+| Launcher | Purpose | Typical use |
+|---|---|---|
+| `gmca_search` | Search helper | Search GMCA-related data |
+| `backup_tool` | Backup helper | Run backup or archive tasks |
+| `slurm_check` | Cluster-status helper | Check queue or Slurm state |
+| `show_analysis.sh` | Shell helper | Display current analysis state quickly |
+| `dose_server` | Dose service helper | Run the dose-related service process |
+| `alcf` | ALCF helper | Run ALCF integration tasks |
+| `mock_collect` | Collection-simulator GUI | Simulate live collection through the GUI |
+| `mock_streamer` | Collection-simulator CLI | Simulate live collection from the command line |
+
+## Admin and environment scripts
+
+| Launcher | Purpose | Typical use |
+|---|---|---|
+| `qp2_env.sh` | Environment wrapper | Set up the shared launcher environment |
+| `apply_migration_v5.sh` | Migration script | Apply schema or data migration |
+| `update_all_installs.sh` | Update helper | Refresh multiple QP2 installs |
+
+# Search Keywords
+
+Use these terms when searching the docs or site:
+
+- image viewer
+- diffraction viewer
+- live mode
+- review mode
+- Redis
+- heat map
+- 2D grid heat map
+- 3D volume
+- reprocess dataset
+- process selected datasets
+- serial processing
+- nXDS
+- CrystFEL
+- xia2
+- xia2.ssx
+- XDS
+- autoPROC
+- Dozor
+- strategy
+- dose planner
+- RADDOSE-3D
+- ESAF
+
+# Related Pages
+
+- [Image Viewer (`iv`)](iv.qmd)
+- [Data Viewer (`dv`)](dv.qmd)
+- [Data Processing Launcher (`dp`)](dp.qmd)
+- [Dose Planner](dose_planner.qmd)
+- [Beam Center](beam_center.qmd)
+- [Batch Beam Center](batch_beam_center.qmd)
+- [Collection Simulator](collection_simulator.qmd)
+- [HDF5 Combiner](hdf5combiner.qmd)
+- [H5 to CBF](h5_to_cbf.qmd)
+- [XtalLife](xtallife.qmd)
+- [Strategy](strategy.qmd)
+- [Spreadsheet Editor](spreadsheet_editor.qmd)

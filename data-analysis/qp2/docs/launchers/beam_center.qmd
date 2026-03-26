@@ -1,0 +1,186 @@
+---
+title: "Beam Center"
+format:
+  html:
+    toc: true
+---
+
+# Quick Start
+
+- [Back to launcher overview](index.qmd)
+- [See screenshot and diagram ideas](screenshots.qmd#beam_center)
+- Use beam center primarily to rewrite HDF5 geometry metadata for a master file.
+- In `iv`, open `Tools -> Update Master File (to correct geometry)` for the main interactive metadata-rewrite workflow.
+- Review or estimate `Beam Center X`, `Beam Center Y`, `Wavelength`, and `Detector Distance`, then click `Update Master File`.
+- Use `Save Nexus compatible copy` when you want a safer output file instead of modifying the original in place.
+- The standalone launcher path is secondary; it runs ring finding from the command line and helps estimate values before rewriting metadata.
+
+# Overview
+
+The main purpose of `beam_center` is to rewrite HDF5 metadata for detector geometry.
+
+In practice, that means:
+
+- updating stored beam-center coordinates
+- optionally updating wavelength and detector distance
+- optionally writing a Nexus-compatible output copy
+- optionally removing flatfield metadata during rewrite
+
+QP2 exposes this in two related forms:
+
+- the main interactive geometry-update dialog used from inside `iv`
+- a standalone command-line ring finder that helps estimate beam-center values
+
+The metadata-rewrite workflow is the primary user-facing purpose. The direct launcher itself is mainly an estimation helper, while the actual file rewrite happens through the beam-center update dialog and updater logic.
+
+Launcher target:
+
+- `qp2/bin/beam_center` -> `python -m qp2.image_viewer.workers.find_rings` in the wrapper, corresponding to the ring-finding implementation under `qp2/image_viewer/beamcenter/find_rings.py`
+
+# Standalone Estimation Launcher
+
+The standalone launcher is CLI-oriented.
+
+Required input:
+
+- `--image PATH`
+
+Optional input:
+
+- `--debug`
+
+Example:
+
+```bash
+qp2/bin/beam_center --image /path/to/dataset_master.h5
+```
+
+What it does:
+
+1. opens the supplied image or HDF5 master file
+2. reads the last frame if possible, otherwise falls back to the first frame
+3. runs the ring-finding logic
+4. prints the result dictionary to stdout
+
+What to expect:
+
+- if rings are found, the command prints a small text report with the detected values
+- if no rings are found, the command exits with an error status
+
+# Main Metadata-Rewrite Workflow in `iv`
+
+The interactive geometry tool is the main beam-center workflow for most users because it is the path that actually rewrites HDF5 metadata.
+
+Where to access it:
+
+- `iv -> Tools -> Beam Center Calibration (Rings)...`
+- `iv -> Tools -> Update Master File (to correct geometry)`
+
+Window title:
+
+- `Master File Geometry Update`
+
+Use this workflow when:
+
+- you already have a dataset open in `iv`
+- you want to estimate or refine beam-center values from visible ring patterns
+- you want to rewrite corrected geometry metadata into the master file or into a Nexus-style copy
+
+# Interactive Dialog Layout
+
+Main editable fields:
+
+- `Beam Center X`
+- `Beam Center Y`
+- `Wavelength`
+- `Detector Distance`
+
+Refinement and estimation area:
+
+- method selector
+- search limit
+- minimum radius
+- center-of-mass display
+- `Estimate` button
+
+Save and output options:
+
+- `Save Nexus compatible copy`
+- `Remove Flatfield`
+- `Update Master File`
+
+Status feedback:
+
+- progress and result messaging in the dialog
+
+# Common Workflows
+
+## Estimate the beam center from a loaded image
+
+1. Open the dataset in `iv`.
+2. Open the beam-center update dialog.
+3. Click `Estimate`.
+4. Let QP2 remove bright spots, apply the saturation mask, and search for ring-centered geometry.
+5. Review the proposed center values.
+6. Compare the overlay in the image viewer.
+
+What to expect:
+
+- QP2 computes a center of mass and then performs ring-based optimization
+- the proposed center is pushed back into the dialog fields
+- the viewer can show the proposed center as an overlay marker
+
+## Rewrite HDF5 geometry metadata
+
+1. Open the geometry-update dialog from `iv`.
+2. Review or edit beam center, wavelength, and detector distance.
+3. Choose whether to save a Nexus-compatible copy.
+4. Optionally enable `Remove Flatfield`.
+5. Click `Update Master File`.
+6. Confirm the write operation.
+
+What to expect:
+
+- QP2 removes the dataset from the viewer first so file locks do not block the rewrite
+- HDF5 geometry metadata is updated in place or written into a new `.nxs` copy
+- the resulting file is reloaded into the viewer
+
+## Batch update many files
+
+For batch work, QP2 also includes a separate batch helper in the beam-center package.
+
+Use this when:
+
+- you need to update many master files in one pass rather than working interactively in `iv`
+
+# Metadata Rewrite Behavior
+
+## Update in place
+
+If `Save Nexus compatible copy` is not enabled:
+
+- QP2 updates the original file in place
+- the updater can create a `.bak` backup
+
+## Save Nexus-compatible copy
+
+If `Save Nexus compatible copy` is enabled:
+
+- QP2 writes a new `.nxs` file
+- the new file includes Nexus/NXmx compatibility adjustments
+
+# Important Caveats
+
+- The main operational purpose is HDF5 metadata rewrite, not just ring detection.
+- The launcher name suggests a GUI utility, but the direct launcher behavior is command-line ring finding.
+- The main metadata-rewrite workflow lives inside `iv`, not in the standalone launcher.
+- `Detector Distance` is shown in millimeters in the UI but is written to HDF5 in meters.
+- Updating in place modifies the original dataset file, so use the Nexus-copy option when you want a safer output path.
+- `Remove Flatfield` deletes detector flatfield data to reduce file size; use it only when that is acceptable for your workflow.
+- `h5repack` is optional; if missing, the update can still work but file-size reclamation may be limited.
+
+# Related Pages
+
+- [Launcher overview](index.qmd)
+- [Image Viewer (`iv`)](iv.qmd)
+- [Data Viewer (`dv`)](dv.qmd)

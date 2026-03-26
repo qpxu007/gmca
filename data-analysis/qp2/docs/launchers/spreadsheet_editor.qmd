@@ -1,0 +1,208 @@
+---
+title: "Spreadsheet Editor"
+format:
+  html:
+    toc: true
+---
+
+# Quick Start
+
+- [Back to launcher overview](index.qmd)
+- [See screenshot and diagram ideas](screenshots.qmd#spreadsheet_editor)
+- Open the editor with `qp2/bin/spreadsheet_editor`.
+- Use `New Spreadsheet` to create an empty puck layout.
+- Use `Load Spreadsheet` to import CSV, XLS, or XLSX puck data.
+- Double-click a puck to edit its 16 sample rows.
+- Drag and drop pucks between slots to rearrange them.
+- Use `Export New Spreadsheet` to save the updated layout.
+- Use `Send to pyBluice` only if you have permission and the RPC server can access the generated temp file.
+
+# Overview
+
+`spreadsheet_editor` is a GUI tool for editing puck-based spreadsheet metadata used in beamline workflows.
+
+Launcher target:
+
+- `qp2/bin/spreadsheet_editor` -> `python -m qp2.spreadsheet_editor.main`
+
+Window title:
+
+- `Spreadsheet Puck Editor`
+
+Use this tool when:
+
+- you need to prepare or correct puck/sample spreadsheet data
+- you want to rearrange pucks visually before export
+- you want to upload a spreadsheet to pyBluice through the RPC workflow
+
+# Main Window Layout
+
+## Top controls
+
+Visible buttons:
+
+- `New Spreadsheet`
+- `Load Spreadsheet`
+- `Export New Spreadsheet`
+- `Send to pyBluice`
+- `Configure Pucks`
+
+Additional elements:
+
+- filename label showing the active file state
+- status bar for progress and messages
+
+## Main content area
+
+The central view is a scrollable grid of puck slots.
+
+Behavior:
+
+- each slot can hold one puck widget
+- pucks are shown in the configured slot order
+- pucks can be dragged and dropped between slots
+
+# Common Workflows
+
+## Create a new empty spreadsheet
+
+1. Open `spreadsheet_editor`.
+2. Click `New Spreadsheet`.
+3. Review the empty puck grid.
+4. Double-click a puck to edit its rows.
+5. Export when ready.
+
+What QP2 creates:
+
+- one puck per configured slot name
+- 16 rows per puck
+- default values for `Port`, `CrystalID`, and `Directory`
+
+## Load an existing spreadsheet
+
+1. Click `Load Spreadsheet`.
+2. Choose a `.csv`, `.xls`, or `.xlsx` file.
+3. Let QP2 validate and map the puck data into the visible slots.
+4. Review warnings or errors if the file does not pass validation.
+
+What to expect:
+
+- matching puck labels are loaded into matching slots
+- the filename label is updated
+- export and upload actions become available when the load succeeds
+
+## Rearrange pucks
+
+1. Drag a puck from one slot.
+2. Drop it onto another slot.
+3. QP2 swaps the two puck positions visually.
+
+Use this when:
+
+- you want the final exported file to reflect a different puck order than the input file
+
+## Edit a puck
+
+1. Double-click the puck.
+2. Edit the table rows in the puck dialog.
+3. Click `OK` to save the changes back into the puck.
+
+What to expect:
+
+- the `Port` column is read-only
+- edited rows are saved back into the main grid
+- missing `Directory` values may default from `CrystalID`
+
+## Export a new spreadsheet
+
+1. Click `Export New Spreadsheet`.
+2. Choose a target `.csv`, `.xls`, or `.xlsx` path.
+3. Let QP2 regenerate the file in the current slot order.
+
+What to expect:
+
+- ports are rewritten to standard slot-plus-row numbering during export
+- the saved file reflects the current puck arrangement, not necessarily the original input arrangement
+
+## Send to pyBluice
+
+1. Prepare or load the puck data.
+2. Click `Send to pyBluice`.
+3. Confirm or enter the RPC URL if prompted.
+4. Let QP2 save a temporary `.xlsx` file and submit the RPC request.
+
+What to expect:
+
+- the upload sends a path to a temp file, not the file contents themselves
+- the server must be able to access that path on a shared filesystem
+
+# Configure Pucks
+
+`Configure Pucks` lets you redefine the visible puck names.
+
+Use it when:
+
+- your beamline or experiment uses a different puck naming scheme
+
+Behavior:
+
+- QP2 asks for a comma-separated list of puck names
+- the grid is rebuilt immediately from that list
+
+# Permissions and Upload Access
+
+The `Send to pyBluice` action is permission-gated.
+
+It is enabled only for:
+
+- staff users
+- users in `bl1-first-day`
+- users in `bl2-first-day`
+
+Practical effect:
+
+- some users can edit and export spreadsheets but will not be allowed to upload them through this button
+
+# Validation Rules
+
+QP2 validates spreadsheet input strictly.
+
+Important checks include:
+
+- required headers must exist
+- total rows must be a multiple of 16
+- all expected ports must be present
+- duplicate `CrystalID` values are rejected
+- duplicate `Port` values are rejected
+- `CrystalID` length is limited
+- `CrystalID` and `Directory` values must match accepted character rules
+
+Practical effect:
+
+- malformed spreadsheets usually fail at load time rather than producing a silent bad export
+
+# File Format Notes
+
+Supported input and output formats:
+
+- `.csv`
+- `.xls`
+- `.xlsx`
+
+Important note:
+
+- saving legacy `.xls` may require additional writer support; `.xlsx` is the safer modern choice
+
+# Caveats
+
+- This tool is GUI-based and depends on PyQt5.
+- Upload to pyBluice depends on both permission checks and a shared-filesystem assumption for the temp file path.
+- Validation is intentionally strict, so partially correct spreadsheets may still be rejected.
+- Reordering pucks changes the exported layout even if the original input file used a different arrangement.
+- `.xlsx` is generally the safest export format for current workflows.
+
+# Related Pages
+
+- [Launcher overview](index.qmd)
+- [Data Viewer (`dv`)](dv.qmd)
+- [Data Processing Launcher (`dp`)](dp.qmd)

@@ -1,0 +1,153 @@
+---
+title: "H5 to CBF"
+format:
+  html:
+    toc: true
+---
+
+# Quick Start
+
+- [Back to launcher overview](index.qmd)
+- [See screenshot and diagram ideas](screenshots.qmd#h5_to_cbf-conversion-workflow)
+- Run `qp2/bin/h5_to_cbf --h5 file1_master.h5` for a single-file conversion.
+- Use multiple files after `--h5` when you want a combined conversion pass.
+- Add `--run_prefix` when you want predictable output naming.
+- Add `--processing_dir` to choose where the `cbf_files` directory is created.
+- Expect numbered `.cbf` files plus a `filelist.txt` manifest.
+
+# Overview
+
+`h5_to_cbf` is a command-line conversion helper for turning HDF5 master files into CBF images.
+
+Launcher target:
+
+- `qp2/bin/h5_to_cbf` -> `python -m qp2.xio.hdf5_to_cbf`
+
+Use this tool when:
+
+- downstream tools require CBF instead of HDF5
+- you want a quick conversion step for strategy-style workflows
+- you need a simple `cbf_files` output directory and manifest file
+
+# Command-Line Interface
+
+Required argument:
+
+- `--h5` followed by one or more master files
+
+Optional arguments:
+
+- `--run_prefix`
+- `--processing_dir`
+
+Example:
+
+```bash
+qp2/bin/h5_to_cbf --h5 /data/run1_master.h5 --processing_dir /tmp/convert
+```
+
+Example with multiple files:
+
+```bash
+qp2/bin/h5_to_cbf --h5 /data/run0_master.h5 /data/run90_master.h5 --run_prefix strategy_pair --processing_dir /tmp/convert
+```
+
+# What the Tool Does
+
+The CLI performs these steps:
+
+1. parse the list of HDF5 master files
+2. determine an output prefix
+3. create a `cbf_files` directory under the chosen processing directory
+4. convert frames using `eiger2cbf`
+5. rename the generated CBF files into a numbered sequence
+6. write `filelist.txt`
+
+Output directory behavior:
+
+- converted files always go into `<processing_dir>/cbf_files`
+
+Manifest behavior:
+
+- `filelist.txt` contains filenames only, not absolute paths
+
+# Output Naming
+
+## Single input file
+
+If you do not provide `--run_prefix`:
+
+- QP2 derives the prefix from the file path with `_master.h5` removed
+
+Practical note:
+
+- this may produce a longer prefix than you expect, so using `--run_prefix` is often clearer
+
+## Multiple input files
+
+If you do not provide `--run_prefix`:
+
+- QP2 tries to find a common basename prefix
+- if that fails, it falls back to `cbfconvert`
+
+## Numbering behavior
+
+CBF numbering is derived from omega offsets when possible.
+
+Fallback behavior:
+
+- if the omega-based numbering cannot be used, QP2 falls back to an index-based sequence
+
+# Common Workflows
+
+## Convert one master file
+
+```bash
+qp2/bin/h5_to_cbf --h5 /data/sample_master.h5 --run_prefix sample --processing_dir /tmp/sample_convert
+```
+
+Use this when:
+
+- you want a simple one-dataset conversion with predictable names
+
+## Convert a multi-orientation pair for strategy work
+
+```bash
+qp2/bin/h5_to_cbf --h5 /data/run0_master.h5 /data/run90_master.h5 --run_prefix strategy_pair --processing_dir /tmp/strategy_convert
+```
+
+Use this when:
+
+- you want a small CBF set suitable for downstream strategy-style processing
+
+# Diagram
+
+```mermaid
+flowchart LR
+  A[master.h5 files] --> B[Read metadata and image counts]
+  B --> C[eiger2cbf]
+  C --> D[Rename to numbered .cbf files]
+  D --> E[Write cbf_files directory]
+  E --> F[Write filelist.txt]
+```
+
+# Suggested Screenshot
+
+For this CLI, a screenshot is less useful than a terminal example plus an example directory tree. If you add an image later, the best candidate is a simple output-folder view showing:
+
+- `cbf_files/`
+- numbered `.cbf` files
+- `filelist.txt`
+
+# Caveats
+
+- This tool depends on external `eiger2cbf`.
+- The CLI forces a strategy-style conversion path rather than selecting behavior from rich metadata.
+- For a single input file, the default prefix may come from the full input path minus `_master.h5`, which can be surprising.
+- `filelist.txt` contains filenames only, so downstream tools should run from or resolve against the output directory.
+
+# Related Pages
+
+- [Launcher overview](index.qmd)
+- [Strategy](strategy.qmd)
+- [Image Viewer (`iv`)](iv.qmd)

@@ -1,0 +1,235 @@
+---
+title: "Strategy"
+format:
+  html:
+    toc: true
+---
+
+# Quick Start
+
+- [Back to launcher overview](index.qmd)
+- [See screenshot and diagram ideas](screenshots.qmd#diagram-ideas)
+- Run the strategy CLI with `qp2/bin/strategy`.
+- Supply either a mapping JSON string, `--masters`, or `--frames` plus a required `--program` value.
+- Use `--program xds` or `--program mosflm`.
+- Add `--enable_single` when you want both per-dataset and combined runs.
+- Add `--parallel` when you want multiple planned scopes to run concurrently.
+
+# Overview
+
+`strategy` is a command-line launcher for strategy calculations. It is not a GUI.
+
+Launcher target:
+
+- `qp2/bin/strategy` -> `python -m qp2.pipelines.strategy.main`
+
+Use this tool when:
+
+- you want to run strategy calculations outside `iv`
+- you want a scriptable XDS or MOSFLM strategy workflow
+- you want machine-readable JSON output describing one or more strategy executions
+
+# Main Inputs
+
+The CLI accepts three main styles of dataset specification.
+
+## Mapping JSON positional argument
+
+Example form:
+
+```bash
+qp2/bin/strategy '{"/path/to/master1.h5":[1], "/path/to/master2.h5":[1,91]}' --program xds
+```
+
+Use this when:
+
+- you already have a JSON mapping from master files to frame numbers
+
+## `--masters`
+
+Example:
+
+```bash
+qp2/bin/strategy --masters /path/to/master1.h5 /path/to/master2.h5 --program mosflm
+```
+
+Use this when:
+
+- you want the default frame behavior, typically image 1 for each master file
+
+## `--frames`
+
+Example:
+
+```bash
+qp2/bin/strategy --program xds --frames /path/to/master1.h5:1,91 --frames /path/to/master2.h5:20-30
+```
+
+Use this when:
+
+- you want explicit per-master frame control
+- you need more than the default first-image behavior
+
+# Required and Common Options
+
+## `--program`
+
+Required choices:
+
+- `mosflm`
+- `xds`
+
+Important note:
+
+- the CLI only accepts these two backends even though other strategy-related logic exists elsewhere in QP2
+
+## `--workdir`
+
+Use this to control where results are written.
+
+If omitted:
+
+- QP2 derives a processing path from the first master file
+- the default directory ends in a program-specific strategy path such as `xds_strategy` or `mosflm_strategy`
+
+## `--enable_single`
+
+Use this when:
+
+- you want a plan for each dataset separately
+- and, if multiple datasets are present, an additional combined run
+
+Behavior:
+
+- per-dataset runs go into `solo/...`
+- the combined run goes into a combined work directory
+
+## `--parallel`
+
+Use this when:
+
+- you want the planned runs to execute concurrently
+
+Behavior:
+
+- QP2 uses a thread pool for the planned execution scopes
+
+# Optional Metadata
+
+Useful metadata options include:
+
+- `--username`
+- `--sampleName`
+- `--esaf_id`
+- `--pi_id`
+- `--primary_group`
+- `--molsize`
+
+Use these when:
+
+- you want strategy output and downstream records to carry richer beamline context
+- you want Matthews coefficient or related size-dependent behavior through `--molsize`
+
+# Common Workflows
+
+## One combined strategy run
+
+```bash
+qp2/bin/strategy --masters /data/run1_master.h5 /data/run2_master.h5 --program xds
+```
+
+What happens:
+
+- QP2 builds one combined plan using all supplied masters
+- results are written under the derived or supplied work directory
+- JSON output describing the execution is printed to stdout
+
+## Per-dataset plus combined strategy
+
+```bash
+qp2/bin/strategy --masters /data/run1_master.h5 /data/run2_master.h5 --program mosflm --enable_single
+```
+
+What happens:
+
+- QP2 runs one strategy per dataset in separate `solo` subdirectories
+- if more than one dataset is present, QP2 also runs one combined strategy
+
+## Parallel execution of planned scopes
+
+```bash
+qp2/bin/strategy --masters /data/run1_master.h5 /data/run2_master.h5 --program xds --enable_single --parallel
+```
+
+What happens:
+
+- the planned `solo` and combined scopes are executed concurrently
+
+# Output
+
+The tool prints JSON to stdout.
+
+High-level structure:
+
+- `executions`
+  - `scope`
+  - `program`
+  - `workdir`
+  - `mapping`
+  - `result`
+
+What to expect in the normalized result payload:
+
+- oscillation range
+- completeness
+- mosaicity
+- detector distance
+- score
+- work directory
+- solvent estimate
+- ASU estimate
+- backend-specific raw payload
+
+# Validation and Error Handling
+
+What QP2 validates:
+
+- dataset mappings are normalized to absolute paths
+- frame syntax must be valid
+- at least one mapping source must be supplied
+
+Failure behavior to expect:
+
+- invalid `--frames` syntax exits with code 2
+- missing mapping input exits with code 2
+- bad JSON or invalid path forms are normalized or rejected during coercion
+
+# Relationship to Other QP2 Tools
+
+Use `strategy` when:
+
+- you want a scriptable or automation-friendly workflow
+
+Use `iv` or `dv` when:
+
+- you want to browse and review strategy results interactively
+- you want visual result inspection instead of raw JSON output
+
+Important note:
+
+- export and result-view dialogs in the image viewer are separate from this launcher
+
+# Caveats
+
+- `strategy` is CLI only; it does not open a viewer or result dialog by itself.
+- Only `xds` and `mosflm` are valid `--program` values for this launcher.
+- If you omit `--workdir`, QP2 derives one automatically from the first dataset.
+- Multi-dataset behavior changes depending on whether `--enable_single` is set.
+- JSON output is intended for downstream tooling or manual inspection, not as a polished human-facing report.
+
+# Related Pages
+
+- [Launcher overview](index.qmd)
+- [Image Viewer (`iv`)](iv.qmd)
+- [Data Viewer (`dv`)](dv.qmd)
+- [Dose Planner](dose_planner.qmd)
