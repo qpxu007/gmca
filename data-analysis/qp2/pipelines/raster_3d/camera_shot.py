@@ -34,6 +34,7 @@ import numpy as np
 from PIL import Image
 from io import BytesIO
 from urllib.request import urlopen
+from qp2.pipelines.raster_3d.config import CAMERA_SERVER_HOST, CAMERA_SERVER_PORT
 
 
 # ------------------------------------------------------------------
@@ -226,8 +227,8 @@ def grab_image(url):
 def get_camera_urls(beamline):
     """Return (highres_url, lowres_url) for the beamline cameras."""
     # PVA-based JPEG endpoint (same as autocenter_loop.py)
-    highres = f"http://192.168.1.13:8200/jpeg?pv={beamline}V1:Pva1:Image"
-    lowres = f"http://192.168.1.13:8200/jpeg?pv={beamline}V2:Pva1:Image"
+    highres = f"http://{CAMERA_SERVER_HOST}:{CAMERA_SERVER_PORT}/jpeg?pv={beamline}V1:Pva1:Image"
+    lowres = f"http://{CAMERA_SERVER_HOST}:{CAMERA_SERVER_PORT}/jpeg?pv={beamline}V2:Pva1:Image"
     return highres, lowres
 
 
