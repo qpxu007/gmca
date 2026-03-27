@@ -62,7 +62,7 @@ class BaseRunner:
             pipeline_params["imageSet"] = get_image_set_string(self.datasets)
 
         # Get default from central config
-        redis_host = ServerConfig.get_redis_hosts().get("analysis_results", "127.0.0.1")
+        redis_host = ServerConfig.get_redis_hosts().get("analysis_results", "10.20.103.67")
 
         self.tracker = PipelineTracker(
             pipeline_name=self.pipeline_name,

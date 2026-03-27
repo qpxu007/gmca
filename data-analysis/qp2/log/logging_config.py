@@ -39,6 +39,13 @@ def setup_logging(
     """
     global _log_queue
 
+    if log_file is None:
+        try:
+            from qp2.config.servers import ServerConfig
+            log_file = ServerConfig.LOG_FILE
+        except ImportError:
+            pass
+
     # --- Standard Library logging (default) ---
     root_logger = logging.getLogger(root_name)
     root_logger.setLevel(logging.getLevelName(log_level))

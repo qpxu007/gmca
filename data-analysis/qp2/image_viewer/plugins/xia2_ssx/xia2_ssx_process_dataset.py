@@ -176,7 +176,7 @@ def main():
                 "error": str(e),
             }
             for sk in args.status_key:
-                redis_conn.set(sk, json.dumps(failed_status))
+                redis_conn.set(sk, json.dumps(failed_status), ex=7 * 24 * 3600)
         sys.exit(1)
 
 

@@ -59,7 +59,12 @@ class VolumeManager(QObject):
             )
             return
         
-        self.scan_mode = mw.settings_manager.get("scan_mode", "row_wise")
+        self.scan_mode = mw.settings_manager.get("scan_mode", "auto")
+        if self.scan_mode == "auto":
+            all_datasets = self.xy_datasets + self.xz_datasets
+            self.scan_mode = self._resolve_auto_scan_mode(
+                run_xy_prefix, all_datasets
+            )
 
         # --- START: MODIFIED SHIFT LOGIC ---
         n_frames_xy = self.xy_datasets[0].total_frames
@@ -121,6 +126,26 @@ class VolumeManager(QObject):
             lambda msg: mw.ui_manager.show_status_message(msg, 0)
         )
         mw.threadpool.start(worker)
+
+    def _resolve_auto_scan_mode(self, run_prefix: str, datasets) -> str:
+        """Resolve scan mode from analysis Redis or filename pattern."""
+        from qp2.pipelines.raster_3d.scan_mode import resolve_auto_scan_mode
+
+        mw = self.main_window
+        master_files = [d.master_file_path for d in datasets] if datasets else []
+        group_name = ""
+        if master_files:
+            try:
+                from qp2.xio.user_group_manager import get_esaf_from_data_path
+                info = get_esaf_from_data_path(master_files[0])
+                group_name = info.get("group_name") or info.get("primary_group", "")
+            except Exception:
+                pass
+        return resolve_auto_scan_mode(
+            run_prefix, master_files,
+            analysis_conn=mw.redis_output_server,
+            group_name=group_name,
+        )
 
     @pyqtSlot(dict)
     def _on_data_fetched(self, result: dict):
@@ -397,7 +422,14 @@ class VolumeManager(QObject):
             return
 
         mw = self.main_window
-        self.scan_mode = mw.settings_manager.get("scan_mode", "row_wise")
+        self.scan_mode = mw.settings_manager.get("scan_mode", "auto")
+        if self.scan_mode == "auto":
+            all_datasets = self.xy_datasets + self.xz_datasets
+            self.scan_mode = self._resolve_auto_scan_mode(
+                self.xy_datasets[0].master_file_path.rsplit("_R", 1)[0].rsplit("/", 1)[-1]
+                if self.xy_datasets else "",
+                all_datasets,
+            )
 
         # --- Apply same skip-dialog logic on refresh ---
         n_frames_xy = self.xy_datasets[0].total_frames

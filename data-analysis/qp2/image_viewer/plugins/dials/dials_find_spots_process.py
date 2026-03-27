@@ -154,6 +154,7 @@ def main():
                     pipe.hset(
                         redis_key, result_dict["img_num"], json.dumps(result_dict)
                     )
+                pipe.expire(redis_key, 24 * 3600)
                 pipe.execute()
             logger.info(
                 f"Successfully saved results for {len(results_by_frame)} frames to Redis."

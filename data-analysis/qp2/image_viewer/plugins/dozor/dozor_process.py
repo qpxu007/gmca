@@ -7,6 +7,16 @@ import subprocess
 import sys
 import tempfile
 
+# Bootstrap project root so this script works when launched standalone (e.g. via Slurm)
+# This file lives at qp2/image_viewer/plugins/dozor/dozor_process.py — 4 levels up
+_project_root = os.path.dirname(
+    os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    )
+)
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+
 import redis
 from qp2.config.programs import ProgramConfig
 

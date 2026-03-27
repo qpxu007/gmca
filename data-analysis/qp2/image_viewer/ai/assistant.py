@@ -75,6 +75,7 @@ class RedisChatHistory:
         try:
             if status == "join":
                 client.sadd(self.presence_key, user)
+                client.expire(self.presence_key, 24 * 3600)
             elif status == "leave":
                 client.srem(self.presence_key, user)
         except Exception as e:
@@ -111,6 +112,7 @@ class RedisChatHistory:
             client.rpush(self.key, json.dumps(msg_data))
             # Keep only last 100 messages
             client.ltrim(self.key, -100, -1)
+            client.expire(self.key, 7 * 24 * 3600)
             # Publish to channel
             client.publish(self.channel_key, json.dumps(msg_data))
         except Exception as e:

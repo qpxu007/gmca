@@ -145,7 +145,7 @@ def main():
                 "timestamp": time.time(),
                 "error": str(e),
             }
-            redis_conn.set(args.status_key, json.dumps(failed_status))
+            redis_conn.set(args.status_key, json.dumps(failed_status), ex=24 * 3600)
         sys.exit(1)
 
 

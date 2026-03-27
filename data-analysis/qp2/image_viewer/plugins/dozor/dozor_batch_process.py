@@ -91,6 +91,7 @@ def main():
     try:
         running_status = {"status": "RUNNING", "timestamp": time.time()}
         redis_conn.hset(args.status_key, args.job_name, json.dumps(running_status))
+        redis_conn.expire(args.status_key, 24 * 3600)  # match results TTL
     except redis.RedisError as e:
         logger.warning(f"Could not update job status to RUNNING: {e}")
 
@@ -162,6 +163,7 @@ def main():
             final_status = {"status": "COMPLETED", "timestamp": time.time()}
 
         redis_conn.hset(args.status_key, args.job_name, json.dumps(final_status))
+        redis_conn.expire(args.status_key, 24 * 3600)  # match results TTL
         logger.info(
             f"Dozor batch processing finished. Final status: {final_status['status']}"
         )

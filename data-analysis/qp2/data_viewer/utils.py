@@ -23,20 +23,31 @@ def get_rpc_url():
     return ServerConfig.get_pbs_rpc_url()
 
 
-def send_strategy_to_redis(beamline, options):
+def send_strategy_to_redis(beamline, options, redis_manager=None):
     """
-    Connects to Redis and sends the strategy options.
-    NOTE: You may need to configure the host, port, and password for your Redis instance.
+    Sends strategy options to the bluice Redis server.
+
+    Parameters
+    ----------
+    beamline : str
+        Beamline identifier (e.g. "23i").
+    options : dict
+        Strategy options to publish (must include ``'id'`` key).
+    redis_manager : RedisManager, optional
+        If provided, reuses its bluice connection.  Otherwise creates
+        a temporary RedisManager instance.
     """
     try:
-        with RedisManager().get_bluice_connection() as r:
-            # Example of sending data: using a specific key for the beamline
-            # This part needs to be adapted to your actual Redis schema/logic
-            redis_key = f"strategy_export:{beamline}:{options['id']}"
-            r.hset(redis_key, mapping=options)
-            r.expire(redis_key, 7 * 24 * 3600)  # 1-week expiration
-            logger.info(f"Sent to Redis on key {redis_key}: {options}")
-            return True
+        rm = redis_manager or RedisManager()
+        conn = rm.get_bluice_connection()
+        if conn is None:
+            logger.error("No bluice Redis connection available.")
+            return False
+        redis_key = f"strategy_export:{beamline}:{options['id']}"
+        conn.hset(redis_key, mapping=options)
+        conn.expire(redis_key, 7 * 24 * 3600)  # 1-week expiration
+        logger.info(f"Sent to Redis on key {redis_key}: {options}")
+        return True
     except Exception as e:
         logger.error(f"ERROR: Could not send data to Redis. {e}")
         return False

@@ -1,0 +1,22 @@
+#!/bin/bash
+# Standalone search tool for GM/CA beamline toolbar.
+# Auto-detects beamline from hostname; accepts optional arguments.
+# Usage: gmca_search [staff|users] [caqtdm|medm]
+
+HOST=${HOSTNAME%%.*}
+case "$HOST" in
+   bl1* | keithley1* | mar1* )              BL=23i ;;
+   bl2* | keithley2* | mar2* | directnet* ) BL=23o ;;
+   bl3* | keithley3* | mar3* )              BL=23b ;;
+   * )                                      BL=23d ;;
+esac
+
+# Auto-detect staff/users from group membership
+CTRL=users
+if id -nG "$USER" 2>/dev/null | grep -qw staffGroup; then
+   CTRL=staff
+fi
+
+SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+
+exec wish "${SCRIPT_DIR}/tools/gmca_search.tcl" $BL $CTRL "$@" &

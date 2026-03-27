@@ -57,6 +57,7 @@ import scheduler # Import the module
 import dataset_routes as datasets # Import dataset routes
 import processing_routes as processing # Import processing routes
 import h5_routes # Import h5grove wrapper
+import chat_routes # Import chat routes
 
 # Configure h5grove to allow absolute paths
 os.environ["H5GROVE_BASE_DIR"] = "/"
@@ -118,6 +119,9 @@ print(f"Processing router included. Prefix: {processing.router.prefix}", file=sy
 
 print("Including h5grove router...", file=sys.stderr)
 app.include_router(h5_routes.router)
+
+print("Including chat router...", file=sys.stderr)
+app.include_router(chat_routes.router)
 
 # Allow CORS for local development (React frontend)
 app.add_middleware(

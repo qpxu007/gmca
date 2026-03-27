@@ -192,7 +192,7 @@ class BasePipeline(ABC):
         }
 
         # Get default from central config
-        redis_host = ServerConfig.get_redis_hosts().get("analysis_results", "127.0.0.1")
+        redis_host = ServerConfig.get_redis_hosts().get("analysis_results", "10.20.103.67")
         redis_config = {"host": redis_host, "db": 0}
 
         return PipelineTracker(

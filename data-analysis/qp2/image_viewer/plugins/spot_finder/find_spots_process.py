@@ -133,6 +133,7 @@ def main():
                 redis_conn.hset(
                     args.status_key, status_field, json.dumps(running_status)
                 )
+                redis_conn.expire(args.status_key, 24 * 3600)
             except redis.RedisError as e:
                 logger.error(
                     f"Could not connect to Redis: {e}. Results will not be saved."
@@ -252,6 +253,7 @@ def main():
 
         completed_status = {"status": "COMPLETED", "timestamp": time()}
         redis_conn.hset(args.status_key, status_field, json.dumps(completed_status))
+        redis_conn.expire(args.status_key, 24 * 3600)
         logger.info(
             f"Job completed successfully for frames {args.start_frame}-{args.end_frame}."
         )
@@ -263,6 +265,7 @@ def main():
         if redis_conn:
             failed_status = {"status": "FAILED", "timestamp": time(), "error": str(e)}
             redis_conn.hset(args.status_key, status_field, json.dumps(failed_status))
+            redis_conn.expire(args.status_key, 24 * 3600)
         sys.exit(1)  # Exit with a non-zero code to indicate failure
 
 

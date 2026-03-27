@@ -1,10 +1,16 @@
 # redis_manager.py
 
-import json
+import os
 import socket
+try:
+    import orjson as json
+except ImportError:
+    import json
 import subprocess
 import threading
 import time
+import functools
+import concurrent.futures
 from pathlib import Path
 from typing import Optional, Tuple, Dict, Any, List
 from urllib.parse import urlparse
@@ -28,25 +34,31 @@ class RedisConfig:
     DEFAULT_REDIS_PORT = 6379
 
 
+@functools.lru_cache(maxsize=16)
 def get_redis_server(beamline=None, location="redis"):
     """get redis configuration from mysql DB"""
-    if beamline in ("23i", "23b"):
-        sql_server = ServerConfig.MYSQL_HOST_BL1
+    if beamline == "23i":
+        sql_server = "bl1upper"
     elif beamline == "23o":
-        sql_server = ServerConfig.MYSQL_HOST_BL2
+        sql_server = "bl2upper"
+    elif beamline == "23b":
+        sql_server = "bl3upper"
     else:
-        sql_server = ServerConfig.MYSQL_HOST_BL1
+        if not socket.gethostname().startswith("bl"):
+            raise Exception("Unknown hostname " + socket.gethostname())
+
+        sql_server = "bl{}upper".format(socket.gethostname()[2])
 
     sql_response = subprocess.check_output(
         [
             "mysql",
             "-u",
-            ServerConfig.MYSQL_USER,
+            "dhs",
             "-h",
             sql_server,
             "-e",
             f'select location from Locations where name="{location}"',
-            ServerConfig.MYSQL_DB_BLC,
+            "blc2004",
         ]
     )
     out = sql_response.decode("utf-8").split("\n")[1].split(":")
@@ -102,7 +114,7 @@ class RedisConnection:
         if time.time() - self.last_failure_time < self.retry_cooldown:
             return False
 
-        if self.conn and self.ping():
+        if self.conn:
             return True
 
         hostname, port = self._parse_host_string(self.host)
@@ -208,6 +220,9 @@ class RedisAnalysisConnection(QtCore.QObject):
         if not self.connection_pool:
             self.connection_error.emit("No analysis Redis hosts are configured at all.")
 
+        self._last_conn_status_time = 0.0
+        self._conn_status_interval = 10.0  # seconds between verbose connection logs
+
     def get_analysis_connection(self) -> Optional[Redis]:
         """
         Tries to get a connection from the pool, starting with the primary.
@@ -220,31 +235,34 @@ class RedisAnalysisConnection(QtCore.QObject):
             )
             return None
 
+        now = time.time()
+        verbose = (now - self._last_conn_status_time) > self._conn_status_interval
+
         # Iterate through the connection objects in order (primary, then fallback)
         for redis_conn_obj in self.connection_pool:
-            self.status_update.emit(
-                f"Attempting to connect to {redis_conn_obj.description}..."
-            )
+            if verbose:
+                self.status_update.emit(
+                    f"Attempting to connect to {redis_conn_obj.description}..."
+                )
 
             # The get_connection() method already contains the connect-and-ping logic
             connection = redis_conn_obj.get_connection()
 
             if connection:
-                # Success! We found a working connection.
                 self.status_update.emit(
                     f"Successfully connected to {redis_conn_obj.description}."
                 )
+                self._last_conn_status_time = now
                 return connection  # Return the active connection immediately
 
             else:
-                # This attempt failed, log it and the loop will try the next one.
-                # Use status_update instead of connection_error to avoid intrusive popups
-                # while we still have other servers to try.
-                self.status_update.emit(
-                    f"Connection to {redis_conn_obj.description} failed. Trying next available server."
-                )
+                if verbose:
+                    self.status_update.emit(
+                        f"Connection to {redis_conn_obj.description} failed. Trying next available server."
+                    )
 
         # If the loop completes without returning, it means all connections failed.
+        self._last_conn_status_time = now
         self.connection_error.emit("All analysis Redis servers are unavailable.")
         return None
 
@@ -315,15 +333,20 @@ class RedisStreamManager(QtCore.QObject):
         self._last_stream_id = "$"
         self._monitor_thread = None
         self.active_runs: Dict[str, Dict[str, Any]] = {}
+        self._in_high_lag = False
+        self._last_eviction_check = 0.0
 
         self.connection_pool: List[RedisConnection] = []
         self._setup_connections()
 
         self.user_group_manager = UserGroupManager()
+        self._user_group_lock = threading.Lock()
+        self.io_executor = None
 
-        self.pending_series = (
-            {}
-        )  # Format: {stream_series_id: {metadata, retries_remaining}}
+        self.pending_series = {}
+        self.pending_series_lock = threading.Lock()
+        self.seen_series_ids = set()
+        
         self.retry_timer = QtCore.QTimer()
         self.retry_timer.timeout.connect(self._retry_pending_series)
         self.max_retries = 30
@@ -404,9 +427,17 @@ class RedisStreamManager(QtCore.QObject):
             self.status_update.emit("Monitoring is already active.")
             return
         self.status_update.emit("Starting Redis stream monitoring...")
+        
+        # Instantiate or recreate the executor. A shut down executor cannot be reused.
+        if self.io_executor is None or self.io_executor._shutdown:
+            self.io_executor = concurrent.futures.ThreadPoolExecutor(max_workers=8)
+            
         self._monitoring_active = True
         self._last_stream_id = "$"
         self.active_runs.clear()
+        self.seen_series_ids.clear()
+        with self.pending_series_lock:
+            self.pending_series.clear()
 
         self._monitor_thread = threading.Thread(
             target=self._run_monitoring_loop, daemon=True
@@ -426,6 +457,10 @@ class RedisStreamManager(QtCore.QObject):
         if self._monitor_thread and self._monitor_thread.is_alive():
             self._monitor_thread.join(timeout=1.5)
         
+        if self.io_executor is not None:
+            self.io_executor.shutdown(wait=False)
+            self.io_executor = None
+            
         for conn in self.connection_pool:
             conn.close()
             
@@ -435,6 +470,10 @@ class RedisStreamManager(QtCore.QObject):
     def get_recent_dataset_paths(self, count: int = 10) -> List[str]:
         """
         Scans recent Redis messages to find multiple unique and valid dataset paths.
+
+        Note: This method performs blocking os.path.exists() calls on potentially
+        network-mounted filesystems (e.g. BeeGFS). Must be called from a
+        background thread, not the GUI thread.
         """
         redis_conn = self.get_working_connection()
         if not redis_conn:
@@ -444,22 +483,39 @@ class RedisStreamManager(QtCore.QObject):
             return []
 
         recent_paths = []
-        seen_paths = set()
         try:
             messages = redis_conn.xrevrange(
                 RedisConfig.REDIS_STREAM_NAME, count=RedisConfig.REDIS_MESSAGE_COUNT * 6
             )
+            
+            candidates = []
+            seen_paths = set()
             for _, message_data_raw in messages:
-                if len(recent_paths) >= count:
+                if len(candidates) >= count * 2: # Get extra in case some don't exist
                     break
                 parsed = self._parse_message_basics(message_data_raw)
                 if parsed:
                     h5_master, data1_file, *rest = parsed
-                    # Check for existence and uniqueness
                     if h5_master and h5_master not in seen_paths:
-                        if Path(h5_master).exists() and Path(data1_file).exists():
-                            recent_paths.append(h5_master)
-                            seen_paths.add(h5_master)
+                        seen_paths.add(h5_master)
+                        candidates.append((h5_master, data1_file))
+                        
+            # Parallelize the existence checks to mitigate network filesystem latency
+            def check_exists(pair):
+                h5_master, data1_file = pair
+                if os.path.exists(h5_master) and os.path.exists(data1_file):
+                    return h5_master
+                return None
+                
+            # Use a locally scoped executor because this function runs on demand, 
+            # independently of the main stream monitoring lifecycle.
+            with concurrent.futures.ThreadPoolExecutor(max_workers=min(max(len(candidates), 1), 16)) as executor:
+                results = list(executor.map(check_exists, candidates))
+                
+            for res in results:
+                if res and len(recent_paths) < count:
+                    recent_paths.append(res)
+                    
             if not recent_paths:
                 self.status_update.emit(
                     "No recent, valid HDF5 master files found (xrevrange)."
@@ -470,6 +526,7 @@ class RedisStreamManager(QtCore.QObject):
         return []
 
     def get_latest_dataset_path(self) -> Optional[str]:
+        """Note: Performs blocking os.path.exists() calls. Call from a background thread."""
         redis_conn = self.get_working_connection()
         if not redis_conn:
             self.connection_error.emit(
@@ -480,20 +537,38 @@ class RedisStreamManager(QtCore.QObject):
             messages = redis_conn.xrevrange(
                 RedisConfig.REDIS_STREAM_NAME, count=RedisConfig.REDIS_MESSAGE_COUNT
             )
+            
+            candidates = []
             for _, message_data_raw in messages:
+                if len(candidates) >= 10: # Only need one, but grab a few backups
+                    break
                 parsed = self._parse_message_basics(message_data_raw)
                 if parsed:
                     h5_master, data1_file, _, _, _, _, _, _, _ = parsed
-                    # Use Path objects for checks
-                    if (
-                        h5_master
-                        and data1_file
-                        and Path(h5_master).exists()
-                        and Path(data1_file).exists()
-                    ):
-                        return h5_master
+                    if h5_master and data1_file:
+                        candidates.append((h5_master, data1_file))
+            
+            if not candidates:
+                self.status_update.emit(
+                    "No recent, valid HDF5 master file found (xrevrange)."
+                )
+                return None
+                
+            def check_exists(pair):
+                h5_master, data1_file = pair
+                if os.path.exists(h5_master) and os.path.exists(data1_file):
+                    return h5_master
+                return None
+                
+            with concurrent.futures.ThreadPoolExecutor(max_workers=min(max(len(candidates), 1), 10)) as executor:
+                results = list(executor.map(check_exists, candidates))
+                
+            for res in results:
+                if res:
+                    return res
+                    
             self.status_update.emit(
-                "No recent, valid HDF5 master file found (xrevrange)."
+                "No recent, valid HDF5 master file found (xrevrange) after existence checks."
             )
         except Exception as e:
             self.status_update.emit(f"Error querying Redis stream (xrevrange): {e}")
@@ -522,7 +597,7 @@ class RedisStreamManager(QtCore.QObject):
                 messages = redis_conn.xread(
                     {RedisConfig.REDIS_STREAM_NAME: self._last_stream_id},
                     block=1000,
-                    count=100,
+                    count=500,
                 )
 
                 if not messages:
@@ -560,59 +635,56 @@ class RedisStreamManager(QtCore.QObject):
                             img_data_json_content,
                         ) = parsed_basics
 
-                        # --- DIAGNOSTIC: Lag Calculation ---
+                        # --- DIAGNOSTIC: Lag Calculation (rate-limited) ---
                         try:
                             msg_ts = msg_json_content.get("timestamp")
                             if msg_ts:
                                 lag = now - float(msg_ts)
                                 if lag > 5.0:
-                                    logger.warning(
-                                        f"High Lag Detected! Msg {message_id} (Frame {series_frame_num}) "
-                                        f"lag is {lag:.2f}s. "
+                                    if not self._in_high_lag:
+                                        self._in_high_lag = True
+                                        logger.warning(
+                                            f"High lag detected ({lag:.1f}s at Frame {series_frame_num}). "
+                                            f"Suppressing per-frame lag warnings until caught up."
+                                        )
+                                elif self._in_high_lag:
+                                    self._in_high_lag = False
+                                    logger.info(
+                                        f"Lag recovered ({lag:.2f}s at Frame {series_frame_num})."
                                     )
                         except (ValueError, TypeError):
                             pass
 
+                        # Extract metadata once per new series; cache for reuse
+                        # by both file-stream emission and run-tracking below.
+                        cached_metadata = None
                         if (
                             stream_series_id is not None
                             and h5_master_file
                             and data1_file
-                            and self.last_stream_id_for_file_stream != stream_series_id
+                            and stream_series_id not in self.seen_series_ids
                         ):
-                            trigger_meta_for_new_file = self._extract_metadata(
+                            cached_metadata = self._extract_metadata(
                                 msg_json_content,
                                 img_data_json_content,
                                 h5_master_file,
                                 data1_file,
                             )
-                            if trigger_meta_for_new_file:
-                                # Blocking I/O is in this thread, which is OK since this is not the main/GUI thread.
-                                if self._files_accessible(h5_master_file, data1_file):
-                                    logger.info(
-                                        f"Series {stream_series_id}: files on disk immediately. "
-                                        f"Master: {h5_master_file}"
-                                    )
-                                    self._emit_signal_for_series(
-                                        h5_master_file,
-                                        trigger_meta_for_new_file,
-                                        stream_series_id,
-                                    )
-                                else:
-                                    logger.warning(
-                                        f"Series {stream_series_id}: master file NOT on disk at Redis message time. "
-                                        f"Will poll every 2s (max {self.max_retries} retries = {self.max_retries * 2}s). "
-                                        f"Master: {h5_master_file}"
-                                    )
+                            if cached_metadata:
+                                self.seen_series_ids.add(stream_series_id)
+                                self.last_stream_id_for_file_stream = stream_series_id
+                                # Delegate blocking file I/O checks to the thread pool
+                                with self.pending_series_lock:
                                     self.pending_series[stream_series_id] = {
                                         "h5_master_file": h5_master_file,
                                         "data1_file": data1_file,
-                                        "metadata": trigger_meta_for_new_file,
+                                        "metadata": cached_metadata,
                                         "retries_remaining": self.max_retries,
                                         "enqueue_time": time.time(),
                                     }
-                                    self.status_update.emit(
-                                        f"Files for series {stream_series_id} not ready — waiting for filesystem."
-                                    )
+                                # Explicitly trigger an immediate check instead of waiting for timer
+                                if self.io_executor:
+                                    self.io_executor.submit(self._check_and_emit_pending, stream_series_id)
 
                             else:
                                 self.status_update.emit(
@@ -622,12 +694,23 @@ class RedisStreamManager(QtCore.QObject):
                         if basic_run_prefix:
                             run_prefix = basic_run_prefix
 
+                            # Evict stale runs (>1 hour) periodically, not per-frame
+                            if now - self._last_eviction_check > 60:
+                                self._last_eviction_check = now
+                                stale_keys = [
+                                    k for k, v in self.active_runs.items()
+                                    if now - v.get("last_activity", now) > 3600
+                                ]
+                                for k in stale_keys:
+                                    logger.warning(f"Evicting stale run '{k}' (no activity for >1 hour).")
+                                    del self.active_runs[k]
+
                             if run_prefix not in self.active_runs:
                                 if (
                                     series_frame_num == 0
                                     and stream_series_id is not None
                                 ):
-                                    series_start_meta = self._extract_metadata(
+                                    series_start_meta = cached_metadata or self._extract_metadata(
                                         msg_json_content,
                                         img_data_json_content,
                                         h5_master_file,
@@ -655,6 +738,7 @@ class RedisStreamManager(QtCore.QObject):
                                         "run_total_frames": run_total_frames,
                                         "processed_run_frames_count": 0,
                                         "processed_frame_identifiers": set(),
+                                        "last_activity": time.time(),
                                         "series_info_list": [
                                             {
                                                 "series_prefix": series_msg_prefix,
@@ -763,19 +847,10 @@ class RedisStreamManager(QtCore.QObject):
                             if frame_key not in run_info["processed_frame_identifiers"]:
                                 run_info["processed_frame_identifiers"].add(frame_key)
                                 run_info["processed_run_frames_count"] += 1
+                                run_info["last_activity"] = now
 
                             current_acc_frames = run_info["processed_run_frames_count"]
                             total_run_frames = run_info["run_total_frames"]
-
-                            current_master_files_for_signal = [
-                                str(Path(s["frame0_metadata"]["master_file"]).resolve())
-                                for s in run_info["series_info_list"]
-                                if "master_file" in s.get("frame0_metadata", {})
-                            ]
-                            current_metadata_list_for_signal = [
-                                s["frame0_metadata"]
-                                for s in run_info["series_info_list"]
-                            ]
 
                             if total_run_frames > 0:
                                 progress_percent = (
@@ -785,9 +860,8 @@ class RedisStreamManager(QtCore.QObject):
                                 if progress_percent >= 25 and not run_info.get(
                                     "milestone_25_emitted"
                                 ):
-                                    run_info["milestone_25_emitted"] = (
-                                        True  # Emit only once
-                                    )
+                                    run_info["milestone_25_emitted"] = True
+                                    master_files, metadata_list = self._build_run_signal_data(run_info)
                                     self.status_update.emit(
                                         f"Run '{run_prefix}': 25% progress. Emitting signal."
                                     )
@@ -796,16 +870,15 @@ class RedisStreamManager(QtCore.QObject):
                                         run_prefix,
                                         current_acc_frames,
                                         total_run_frames,
-                                        current_master_files_for_signal,
-                                        current_metadata_list_for_signal,
+                                        master_files,
+                                        metadata_list,
                                     )
 
                                 if progress_percent >= 50 and not run_info.get(
                                     "milestone_50_emitted"
                                 ):
-                                    run_info["milestone_50_emitted"] = (
-                                        True  # Emit only once
-                                    )
+                                    run_info["milestone_50_emitted"] = True
+                                    master_files, metadata_list = self._build_run_signal_data(run_info)
                                     self.status_update.emit(
                                         f"Run '{run_prefix}': 50% progress. Emitting signal."
                                     )
@@ -814,11 +887,12 @@ class RedisStreamManager(QtCore.QObject):
                                         run_prefix,
                                         current_acc_frames,
                                         total_run_frames,
-                                        current_master_files_for_signal,
-                                        current_metadata_list_for_signal,
+                                        master_files,
+                                        metadata_list,
                                     )
 
                             if current_acc_frames >= total_run_frames:
+                                master_files, metadata_list = self._build_run_signal_data(run_info)
                                 self.status_update.emit(
                                     f"Run '{run_prefix}' COMPLETED. Emitting final signal."
                                 )
@@ -827,8 +901,8 @@ class RedisStreamManager(QtCore.QObject):
                                     run_prefix,
                                     current_acc_frames,
                                     total_run_frames,
-                                    current_master_files_for_signal,
-                                    current_metadata_list_for_signal,
+                                    master_files,
+                                    metadata_list,
                                 )
                                 del self.active_runs[run_prefix]
 
@@ -841,18 +915,16 @@ class RedisStreamManager(QtCore.QObject):
                 self.status_update.emit("Stream Redis connection lost, reconnecting...")
                 self._handle_connection_error(retry_count)
                 retry_count += 1
-            except Exception as e:
+            except Exception:
                 logger.exception("Unexpected error in stream monitoring loop.")
                 time.sleep(self._retry_delay)
         self.status_update.emit("Redis stream monitoring loop finished.")
 
     def _files_accessible(self, h5_path: str, data1_path: str) -> bool:
-        # Using pathlib for checks
         start_time = time.time()
-        exists = Path(h5_path).exists() and Path(data1_path).exists()
-        end_time = time.time()
-        
-        fs_lag = end_time - start_time
+        exists = os.path.exists(h5_path) and os.path.exists(data1_path)
+        fs_lag = time.time() - start_time
+
         if fs_lag > 0.1:
             logger.warning(
                 f"High File System Latency! Existence check took {fs_lag:.3f}s for:\n"
@@ -860,6 +932,19 @@ class RedisStreamManager(QtCore.QObject):
                 f"  Data1:  {data1_path}"
             )
         return exists
+
+    def _build_run_signal_data(self, run_info):
+        """Build master file paths and metadata lists for run milestone signals."""
+        master_files = [
+            str(Path(s["frame0_metadata"]["master_file"]).absolute())
+            for s in run_info["series_info_list"]
+            if "master_file" in s.get("frame0_metadata", {})
+        ]
+        metadata_list = [
+            s["frame0_metadata"]
+            for s in run_info["series_info_list"]
+        ]
+        return master_files, metadata_list
 
     def _emit_signal_for_series(self, h5_path: str, metadata: dict, stream_id: int):
         QtCore.QMetaObject.invokeMethod(
@@ -869,14 +954,15 @@ class RedisStreamManager(QtCore.QObject):
             QtCore.Q_ARG(str, h5_path),
             QtCore.Q_ARG(dict, metadata),
         )
-        self.last_stream_id_for_file_stream = stream_id
         self.status_update.emit(f"Emitted signal for new series {stream_id}")
 
     def _check_and_emit_pending(self, stream_id: int):
         """This function runs in a background thread to avoid blocking the GUI."""
-        series = self.pending_series.get(stream_id)
+        with self.pending_series_lock:
+            series = self.pending_series.pop(stream_id, None)
+            
         if not series:
-            return
+            return  # Already processed or currently being checked by another executor thread
 
         if self._files_accessible(series["h5_master_file"], series["data1_file"]):
             wait_sec = time.time() - series.get("enqueue_time", time.time())
@@ -888,10 +974,10 @@ class RedisStreamManager(QtCore.QObject):
             self.status_update.emit(
                 f"Series {stream_id}: files appeared after {wait_sec:.1f}s. Loading."
             )
+            self._enrich_metadata_with_group_info(series["metadata"])
             self._emit_signal_for_series(
                 series["h5_master_file"], series["metadata"], stream_id
             )
-            self.pending_series.pop(stream_id, None)
         else:
             series["retries_remaining"] -= 1
             if series["retries_remaining"] <= 0:
@@ -903,16 +989,20 @@ class RedisStreamManager(QtCore.QObject):
                 self.status_update.emit(msg)
                 # Escalate to connection_error to trigger a visible UI dialog
                 self.connection_error.emit(msg)
-                
-                self.pending_series.pop(stream_id, None)
+            else:
+                with self.pending_series_lock:
+                    self.pending_series[stream_id] = series
 
     def _retry_pending_series(self):
-        """Timer-based slot that dispatches non-blocking checks."""
-        for stream_id in list(self.pending_series.keys()):
-            # Dispatch the check to a new thread to keep the event loop free
-            threading.Thread(
-                target=self._check_and_emit_pending, args=(stream_id,)
-            ).start()
+        """Timer-based slot that dispatches non-blocking checks to the executor."""
+        if not self.io_executor:
+            return
+            
+        with self.pending_series_lock:
+            stream_ids = list(self.pending_series.keys())
+            
+        for stream_id in stream_ids:
+            self.io_executor.submit(self._check_and_emit_pending, stream_id)
 
     def emit_milestone_signal(self, emit_func_slot, *args):
         """Helper to emit milestone signals via the Qt event loop."""
@@ -944,9 +1034,9 @@ class RedisStreamManager(QtCore.QObject):
             if not all([series_prefix, data_dir_root, user_dir is not None]):
                 return None
 
-            data_dir = Path(data_dir_root) / user_dir
-            h5_master_path = str(data_dir / f"{series_prefix}_master.h5")
-            data_file1_path = str(data_dir / f"{series_prefix}_data_000001.h5")
+            data_dir = os.path.join(data_dir_root, user_dir)
+            h5_master_path = os.path.join(data_dir, f"{series_prefix}_master.h5")
+            data_file1_path = os.path.join(data_dir, f"{series_prefix}_data_000001.h5")
 
             return (
                 h5_master_path,
@@ -959,7 +1049,9 @@ class RedisStreamManager(QtCore.QObject):
                 message_json_content,
                 img_data,
             )
-        except (json.JSONDecodeError, KeyError, TypeError, ValueError):
+        except (KeyError, TypeError, ValueError) as e:
+            # catch general exceptions from JSON parsing errors, but don't swallow broad Exceptions
+            logger.debug(f"Error parsing message basics (likely non-Eiger message): {e}")
             return None
 
     def _extract_metadata(
@@ -999,27 +1091,6 @@ class RedisStreamManager(QtCore.QObject):
                 "username": img_data_json_content.get("username"),
             }
 
-            # adding data ownership information to metadata
-            if self.user_group_manager and metadata.get("username"):
-                try:
-                    # Get the most recent ESAF info for the user
-                    # in bluice, the user is the esaf group name
-                    group_info = self.user_group_manager.groupinfo_from_groupname(
-                        metadata["username"]
-                    )
-                    if group_info:
-                        metadata["primary_group"] = group_info.get("group_name")
-                        metadata["pi_badge"] = group_info.get("pi_badge")
-                        metadata["esaf_id"] = group_info.get("esaf_number")
-                        logger.info(
-                            f"Enriched metadata for user '{metadata['username']}' with group info: {group_info.get('group_name')}"
-                        )
-                except Exception as e:
-                    metadata["primary_group"] = metadata.get("username")
-                    logger.warning(
-                        f"Could not get group info for user '{metadata['username']}': {e}"
-                    )
-
             for key in [
                 "frame",
                 "stream_series_id",
@@ -1052,6 +1123,36 @@ class RedisStreamManager(QtCore.QObject):
         except Exception as e:
             logger.warning(f"Warning: Error during metadata extraction: {e}")
             return None
+
+    def _enrich_metadata_with_group_info(self, metadata: Dict[str, Any]) -> None:
+        """Enrich metadata with user group info from MySQL.
+
+        Thread-safe and idempotent. Intended to be called from a background
+        thread (e.g. the io_executor) so MySQL latency does not block the
+        stream-monitoring loop.
+        """
+        if not self.user_group_manager or not metadata.get("username"):
+            return
+        if metadata.get("primary_group"):
+            return  # Already enriched
+        try:
+            with self._user_group_lock:
+                group_info = self.user_group_manager.groupinfo_from_groupname(
+                    metadata["username"]
+                )
+            if group_info:
+                metadata["primary_group"] = group_info.get("group_name")
+                metadata["pi_badge"] = group_info.get("pi_badge")
+                metadata["esaf_id"] = group_info.get("esaf_number")
+                logger.info(
+                    f"Enriched metadata for user '{metadata['username']}' "
+                    f"with group info: {group_info.get('group_name')}"
+                )
+        except Exception as e:
+            metadata["primary_group"] = metadata.get("username")
+            logger.warning(
+                f"Could not get group info for user '{metadata['username']}': {e}"
+            )
 
     def _handle_connection_error(self, current_retry_count: int):
         if current_retry_count < self._max_retries:
@@ -1223,6 +1324,162 @@ class RedisManager(QtCore.QObject):
         if self.bluice_connection_manager:
             return self.bluice_connection_manager.get_bluice_connection()
         return None
+
+    # ------------------------------------------------------------------
+    # Bluice high-level API  (delegates to qp2.xio.bluice_params)
+    # ------------------------------------------------------------------
+
+    def get_raster_params(self, run_prefix: str) -> dict:
+        """Query all bluice raster parameters for a run.
+
+        Returns dict with available keys: ``cell_w_um``, ``cell_h_um``,
+        ``beam_size_x_um``, ``beam_size_y_um``, ``raster_attenuation``,
+        ``scan_mode``.
+        """
+        conn = self.get_bluice_connection()
+        if conn is None:
+            return {}
+        try:
+            from qp2.xio.bluice_params import get_all_bluice_params
+            return get_all_bluice_params(conn, run_prefix)
+        except Exception as e:
+            logger.debug(f"get_raster_params failed: {e}")
+            return {}
+
+    def get_raster_scan_mode(self, run_prefix: str) -> Optional[str]:
+        """Query bluice for raster scan mode (row_wise, column_wise, etc.)."""
+        conn = self.get_bluice_connection()
+        if conn is None:
+            return None
+        try:
+            from qp2.xio.bluice_params import get_scan_mode
+            return get_scan_mode(conn, run_prefix)
+        except Exception as e:
+            logger.debug(f"get_raster_scan_mode failed: {e}")
+            return None
+
+    def get_raster_cell_size(self, run_prefix: str):
+        """Query bluice for raster cell size → ``(w_um, h_um)`` or None."""
+        conn = self.get_bluice_connection()
+        if conn is None:
+            return None
+        try:
+            from qp2.xio.bluice_params import get_raster_cell_size
+            return get_raster_cell_size(conn, run_prefix)
+        except Exception as e:
+            logger.debug(f"get_raster_cell_size failed: {e}")
+            return None
+
+    def get_raster_grid_params(self, run_prefix: str):
+        """Query bluice for raster grid geometry (grid_ref, act_bounds, rows, cols)."""
+        conn = self.get_bluice_connection()
+        if conn is None:
+            return None
+        try:
+            from qp2.xio.bluice_params import get_raster_grid_params
+            return get_raster_grid_params(conn, run_prefix)
+        except Exception as e:
+            logger.debug(f"get_raster_grid_params failed: {e}")
+            return None
+
+    def get_beam_size(self, run_prefix: str):
+        """Query bluice for beam size → ``(x_um, y_um)`` or None."""
+        conn = self.get_bluice_connection()
+        if conn is None:
+            return None
+        try:
+            from qp2.xio.bluice_params import get_beam_size
+            return get_beam_size(conn, run_prefix)
+        except Exception as e:
+            logger.debug(f"get_beam_size failed: {e}")
+            return None
+
+    def get_attenuation(self, run_prefix: str) -> Optional[float]:
+        """Query bluice for attenuation factor, or None."""
+        conn = self.get_bluice_connection()
+        if conn is None:
+            return None
+        try:
+            from qp2.xio.bluice_params import get_attenuation
+            return get_attenuation(conn, run_prefix)
+        except Exception as e:
+            logger.debug(f"get_attenuation failed: {e}")
+            return None
+
+    # --- Beamline state ---
+
+    def get_beamline_name(self) -> Optional[str]:
+        """Read beamline name from bluice Redis."""
+        conn = self.get_bluice_connection()
+        if conn is None:
+            return None
+        try:
+            from qp2.xio.bluice_params import get_beamline_name
+            return get_beamline_name(conn)
+        except Exception as e:
+            logger.debug(f"get_beamline_name failed: {e}")
+            return None
+
+    def get_beamline_user(self) -> Optional[str]:
+        """Read current beamline user from bluice Redis."""
+        conn = self.get_bluice_connection()
+        if conn is None:
+            return None
+        try:
+            from qp2.xio.bluice_params import get_beamline_user
+            return get_beamline_user(conn)
+        except Exception as e:
+            logger.debug(f"get_beamline_user failed: {e}")
+            return None
+
+    def get_robot_mounted(self) -> Optional[str]:
+        """Read robot mounted status from bluice Redis."""
+        conn = self.get_bluice_connection()
+        if conn is None:
+            return None
+        try:
+            from qp2.xio.bluice_params import get_robot_mounted
+            return get_robot_mounted(conn)
+        except Exception as e:
+            logger.debug(f"get_robot_mounted failed: {e}")
+            return None
+
+    def get_spreadsheet_rel(self) -> Optional[str]:
+        """Read spreadsheet relative path from bluice Redis."""
+        conn = self.get_bluice_connection()
+        if conn is None:
+            return None
+        try:
+            from qp2.xio.bluice_params import get_spreadsheet_rel
+            return get_spreadsheet_rel(conn)
+        except Exception as e:
+            logger.debug(f"get_spreadsheet_rel failed: {e}")
+            return None
+
+    # --- Strategy publishing ---
+
+    def publish_strategy(self, redis_key: str, mapping: dict) -> bool:
+        """Write strategy results to a bluice strategy table hash."""
+        conn = self.get_bluice_connection()
+        if conn is None:
+            return False
+        try:
+            from qp2.xio.bluice_params import publish_strategy
+            return publish_strategy(conn, redis_key, mapping)
+        except Exception as e:
+            logger.debug(f"publish_strategy failed: {e}")
+            return False
+
+    def bump_strategy_version(self) -> None:
+        """Increment the bluice strategy version counter."""
+        conn = self.get_bluice_connection()
+        if conn is None:
+            return
+        try:
+            from qp2.xio.bluice_params import bump_strategy_version
+            bump_strategy_version(conn)
+        except Exception as e:
+            logger.debug(f"bump_strategy_version failed: {e}")
 
     @property
     def is_monitoring_active(self) -> bool:

@@ -43,7 +43,7 @@ def main():
     group_id = config.get('redis_group_id')
     if group_id and r_conn:
         try:
-            r_conn.set(f"xia2_ssx:{group_id}:finished_count", 0)
+            r_conn.set(f"xia2_ssx:{group_id}:finished_count", 0, ex=7 * 24 * 3600)
         except Exception:
             pass
 

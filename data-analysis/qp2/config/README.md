@@ -36,7 +36,7 @@ This file manages the connection details for internal services (Data Processing 
 *   **Environment Modes:** Checks `QP2_ENV` environment variable.
     *   `prod` (default): Uses standard production IPs and auto-detects beamline-specific services based on hostname.
     *   `test`: Forces all connections to `localhost` / `127.0.0.1` for safe local development.
-*   **Service URLs:** Defaults to `localhost` for all services; override via environment variables (e.g., `DATAPROC_SERVER_URL`, `QP2_PG_HOST`) for remote deployments.
+*   **Auto-Detection:** Automatically determines the correct Data Processing Server URL based on the current hostname (e.g., if running on `bl1ws1`, it knows to use the BL1 server).
 
 ## Usage Guide
 

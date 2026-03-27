@@ -22,7 +22,7 @@ class XDS:
         # self.data_process_result_id = None
         
         # --- ADD the PipelineTracker ---
-        redis_conf = {"host": "127.0.0.1", "db": 0} if use_redis else None
+        redis_conf = {"host": "10.20.103.67", "db": 0} if use_redis else None
         
         tracker_params = {
             'sampleName': self.prefix,

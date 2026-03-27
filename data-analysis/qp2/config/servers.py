@@ -41,32 +41,40 @@ class ServerConfig:
         }
     else:
         _DEFAULT_REDIS_HOSTS = {
-            "bl2": "127.0.0.1",
-            "bl1": "127.0.0.1",
-            "analysis_results": "127.0.0.1",
+            "bl2": "10.20.103.154", # bl2epu
+            "bl1": "10.20.103.85", # bl1epu
+            "analysis_results": "10.20.103.67",  # bl1ws1
             "analysis_fallback": "127.0.0.1",
             "fallback_redis": "127.0.0.1",
         }
     
+    # --- Bluice Redis (beamline control system, port 8009) ---
+    _BLUICE_REDIS_HOSTS = {
+        "23i": "127.0.0.1" if _is_test else "10.20.103.71",
+        "23o": "127.0.0.1" if _is_test else "10.20.103.138",
+        "23b": "127.0.0.1" if _is_test else "10.20.103.197",
+    }
+    _BLUICE_REDIS_PORT = 8003 if _is_test else 8009
+
     # --- Database ---
-    POSTGRES_HOST = os.environ.get("QP2_PG_HOST", "localhost")
+    POSTGRES_HOST = "localhost" if _is_test else os.environ.get("QP2_PG_HOST", "bl1ws1")
     POSTGRES_PORT = os.environ.get("QP2_PG_PORT", "5432")
-    POSTGRES_USER = os.environ.get("QP2_PG_USER", "qp2user")
+    POSTGRES_USER = os.environ.get("QP2_PG_USER", "dhs")
     POSTGRES_PASS = os.environ.get("QP2_PG_PASS", "")
     POSTGRES_DB = os.environ.get("QP2_PG_DB", "user_data")
     
     # --- MySQL ---
-    MYSQL_GMCA_ACCOUNTS = os.environ.get("MYSQL_GMCA_ACCOUNTS", "localhost")
-    MYSQL_HOST_BL1 = os.environ.get("MYSQL_HOST_BL1", "localhost")
-    MYSQL_HOST_BL2 = os.environ.get("MYSQL_HOST_BL2", "localhost")
-    MYSQL_USER = os.environ.get("MYSQL_USER", "qp2user")
+    MYSQL_GMCA_ACCOUNTS = "localhost" if _is_test else os.environ.get("MYSQL_GMCA_ACCOUNTS", "bl1upper") # gmca user accounts
+    MYSQL_HOST_BL1 = "localhost" if _is_test else os.environ.get("MYSQL_HOST_BL1", "bl1upper") # bl1 user data
+    MYSQL_HOST_BL2 = "localhost" if _is_test else os.environ.get("MYSQL_HOST_BL2", "bl2upper") # bl2 user data
+    MYSQL_USER = os.environ.get("MYSQL_USER", "dhs")
     MYSQL_PASS = os.environ.get("MYSQL_PASS", "")
     MYSQL_DB_USER_DATA = "user_data"
     MYSQL_DB_BLC = "blc2004"
     MYSQL_DB_GMCA_ACCOUNTS = "gmca_accounts"
     
-    # --- AI Server ---
-    _AI_SERVER_DEFAULT = "http://localhost:8888/v1"
+    # --- AI Server (Argo API) ---
+    AI_SERVER_URL = None if _is_test else "https://apps-dev.inside.anl.gov/argoapi/v1"
     
     # --- Web App ---
     _WEB_APP_PORT_DEFAULT = 8000
@@ -76,6 +84,9 @@ class ServerConfig:
     # --- Dose Planner ---
     _DOSE_PLANNER_PORT_DEFAULT = 5000
     DOSE_PLANNER_PORT = int(os.environ.get("DOSE_PLANNER_PORT", _DOSE_PLANNER_PORT_DEFAULT))
+
+    # --- Logging ---
+    LOG_FILE = os.environ.get("QP2_LOG_FILE", None)
 
     # --- HDF5 File Monitoring ---
     _HDF5_POLL_INTERVAL_MS_DEFAULT = 200
@@ -103,17 +114,31 @@ class ServerConfig:
     def get_dataproc_url(cls):
         """
         Returns the Data Processing Server URL.
-        Priority: DATAPROC_SERVER_URL -> DATAPROC_HOST -> localhost
+        Priority: QP2_ENV=test -> DATAPROC_SERVER_URL -> Auto-detect -> localhost
         """
-        if os.environ.get("DATAPROC_SERVER_URL"):
+        url = None
+        source = "default"
+
+        if cls.is_test_env():
+            url = f"http://localhost:{cls.DATAPROC_PORT}"
+            source = "test mode"
+        elif os.environ.get("DATAPROC_SERVER_URL"):
             url = os.environ["DATAPROC_SERVER_URL"]
             source = "DATAPROC_SERVER_URL env var"
         elif os.environ.get("DATAPROC_HOST"):
             url = f"http://{os.environ['DATAPROC_HOST']}:{cls.DATAPROC_PORT}"
             source = "DATAPROC_HOST env var"
         else:
-            url = f"http://localhost:{cls.DATAPROC_PORT}"
-            source = "default"
+            hostname = socket.gethostname()
+            if hostname.startswith("bl1"):
+                url = f"http://10.20.103.71:{cls.DATAPROC_PORT}"
+                source = "auto-detected (bl1)"
+            elif hostname.startswith("bl2"):
+                url = f"http://10.20.103.138:{cls.DATAPROC_PORT}"
+                source = "auto-detected (bl2)"
+            else:
+                url = f"http://localhost:{cls.DATAPROC_PORT}"
+                source = "fallback"
 
         logger.debug(f"DataProc URL: {url} (source: {source})")
         return url
@@ -154,6 +179,30 @@ class ServerConfig:
         return hosts
 
     @classmethod
+    def get_bluice_redis_connection(cls, beamline: str):
+        """
+        Returns a Redis connection to the Bluice Redis server for the given beamline,
+        or None if the beamline is not recognized.
+        """
+        if not beamline:
+            return None
+        bl = beamline.lower()
+        host = None
+        for key, addr in cls._BLUICE_REDIS_HOSTS.items():
+            if key in bl:
+                host = addr
+                break
+        if not host:
+            logger.debug(f"No Bluice Redis host for beamline '{beamline}'")
+            return None
+        try:
+            import redis
+            return redis.Redis(host=host, port=cls._BLUICE_REDIS_PORT, decode_responses=True)
+        except Exception as e:
+            logger.warning(f"Failed to connect to Bluice Redis at {host}:{cls._BLUICE_REDIS_PORT}: {e}")
+            return None
+
+    @classmethod
     def get_postgres_url(cls):
         """
         Returns the PostgreSQL connection string.
@@ -173,13 +222,8 @@ class ServerConfig:
 
     @classmethod
     def get_ai_server_url(cls):
-        """
-        Returns the AI Server URL.
-        """
-        url = os.environ.get("AI_SERVER_URL", cls._AI_SERVER_DEFAULT)
-        source = "AI_SERVER_URL env var" if "AI_SERVER_URL" in os.environ else "default"
-        logger.debug(f"AI Server URL: {url} (source: {source})")
-        return url
+        """Returns the AI Server URL (Argo API)."""
+        return cls.AI_SERVER_URL
 
     @classmethod
     def get_web_app_url(cls):
@@ -228,7 +272,17 @@ class ServerConfig:
             return url
 
         try:
-            sql_server = os.environ.get("MYSQL_HOST_BL1", cls.MYSQL_HOST_BL1)
+            hostname = socket.gethostname()
+            if not hostname.startswith("bl"):
+                return None
+                
+            if hostname.startswith("bl1"):
+                sql_server = cls.MYSQL_HOST_BL1
+            elif hostname.startswith("bl2"):
+                sql_server = cls.MYSQL_HOST_BL2
+            else:
+                sql_server = f"bl{hostname[2]}upper"
+                
             sql_query = 'select location from Locations where name="pbs"'
 
             import subprocess
@@ -262,7 +316,6 @@ class ServerConfig:
         cls.get_dataproc_url()
         cls.get_websocket_url()
         cls.get_redis_hosts()
-        cls.get_postgres_url()
         cls.get_ai_server_url()
         cls.get_web_app_url()
         cls.get_dose_planner_url()

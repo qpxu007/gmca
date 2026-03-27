@@ -61,8 +61,7 @@ class CodebaseRAG:
         try:
             # Pickle the entire knowledge base list
             data = pickle.dumps(self.knowledge_base)
-            # Save without expiration (persistent)
-            self.redis_client.set(key, data) 
+            self.redis_client.set(key, data)  # no TTL — recalculation is expensive
             logger.info(f"Saved RAG knowledge base to Redis: {key}")
         except Exception as e:
             logger.error(f"Error saving to Redis: {e}")

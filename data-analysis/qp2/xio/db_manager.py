@@ -119,8 +119,8 @@ class DBManager:
 
         if determined_url:
             self.db_url = determined_url
-            self._emit_status(f"DB: Using MySQL database URL for beamline {beamline}.")
-            logger.debug(f"MySQL DB URL: {self.db_url}")
+            parsed = make_url(determined_url)
+            logger.info(f"User Data DB: {parsed.drivername}://{parsed.host}/{parsed.database} (beamline: {beamline})")
         elif "default" in MYSQL_HOST_CONFIG:  # Fallback to general default if specific host not found
             self.db_url = MYSQL_HOST_CONFIG["default"]
             # Check if default is Postgres and log appropriately

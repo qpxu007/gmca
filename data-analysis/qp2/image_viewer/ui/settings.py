@@ -87,6 +87,7 @@ class SettingsDialog(SingletonDialog):
             "Define the geometry and direction of grid scans."
         )
         scan_options = {
+            "auto": "Auto Detect",
             "row_wise": "Row-wise (Left to Right)",
             "column_wise": "Column-wise (Top to Bottom)",
             "row_wise_serpentine": "Row-wise Serpentine",

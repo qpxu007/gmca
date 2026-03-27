@@ -560,6 +560,7 @@ def main():
 
             completed_status = {"status": "COMPLETED", "timestamp": time.time()}
             redis_conn.hset(args.status_key, status_field, json.dumps(completed_status))
+            redis_conn.expire(args.status_key, 24 * 3600)
             logger.info(
                 f"Updated job status to COMPLETED for frame {args.start_frame}."
             )
@@ -576,6 +577,7 @@ def main():
                 "error": str(e),
             }
             redis_conn.hset(args.status_key, status_field, json.dumps(failed_status))
+            redis_conn.expire(args.status_key, 24 * 3600)
             logger.error(f"Updated job status to FAILED for frame {args.start_frame}.")
         sys.exit(1)
     finally:

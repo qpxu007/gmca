@@ -411,7 +411,8 @@ def main():
             for key, value in result.results.items():
                 if value is not None:
                     redis_conn.hset(results_key, key, str(value))
-            
+            redis_conn.expire(results_key, 7 * 24 * 3600)
+
             # Update status to COMPLETED
             completed_status = {{"status": "COMPLETED", "timestamp": time.time()}}
             redis_conn.set(args.status_key, json.dumps(completed_status), ex=7 * 24 * 3600)

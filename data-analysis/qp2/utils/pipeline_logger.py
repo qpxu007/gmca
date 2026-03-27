@@ -127,7 +127,7 @@ class PipelineLogger:
         """Saves a dictionary of data to Redis."""
         try:
             # Use analysis_results as primary
-            redis_host = ServerConfig.get_redis_hosts().get("analysis_results", "127.0.0.1")
+            redis_host = ServerConfig.get_redis_hosts().get("analysis_results", "10.20.103.67")
             redis_conn = redis.Redis(host=redis_host, db=0, socket_timeout=2, socket_connect_timeout=2)
             redis_conn.ping()
             redis_key = f"analysis:out:data:{self.pipeline_name}:{self.sample_name}"

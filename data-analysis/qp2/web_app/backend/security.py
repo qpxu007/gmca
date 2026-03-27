@@ -1,12 +1,10 @@
-import os
 import jwt
 import datetime
 from fastapi import HTTPException, Security
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-SECRET_KEY = os.environ.get("QP2_JWT_SECRET_KEY")
-if not SECRET_KEY:
-    raise RuntimeError("QP2_JWT_SECRET_KEY environment variable must be set")
+# SECRET_KEY should be loaded from environment variables in production
+SECRET_KEY = "your-very-secure-secret-key-change-this-in-production"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
 

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "qp2"
-version = "2.0.0"
+version = "0.1.1"
 description = "Crystallographic data processing and visualization platform"
 authors = [{ name = "QP2 Team" }]
 readme = "README.md"
@@ -55,12 +55,19 @@ dependencies = [
   "PyOpenGL_accelerate",
   "PyQtWebEngine",
   "xlrd>=2.0.1",
-  "openpyxl"
+  "openpyxl",
+  "orjson",
+  "flask",
+  "hiredis"
 ]
 
 [project.optional-dependencies]
 server = [
   "mysql-connector-python>=8.0",
+]
+alcf = [
+  "globus-sdk>=3.0",
+  "globus-compute-sdk>=2.0",
 ]
 dev = [
   "pytest",
@@ -77,6 +84,7 @@ qp2-image-viewer = "qp2.image_viewer.ui.main:main"
 qp2-data-viewer = "qp2.data_viewer.main:main"
 qp2-dp-server = "qp2.data_proc.server.data_processing_server:main"
 qp2-web-server = "qp2.web.server:main"
+qp2-hkl-auto = "qp2.hkl_automation.run:main"
 
 [tool.pytest.ini_options]
 minversion = "6.0"

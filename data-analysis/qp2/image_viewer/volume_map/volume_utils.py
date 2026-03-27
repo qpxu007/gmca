@@ -213,10 +213,17 @@ def find_3d_hotspots(volume: np.ndarray, percentile_threshold: float, min_size: 
 
             peak_value = volume[abs_z, abs_y, abs_x]
 
+            # Axis-aligned extents from bounding box (in voxels)
+            # obj_slice is (z_slice, y_slice, x_slice) matching volume (z, y, x)
+            extent_x = obj_slice[2].stop - obj_slice[2].start  # rotation axis
+            extent_y = obj_slice[1].stop - obj_slice[1].start  # vertical
+            extent_z = obj_slice[0].stop - obj_slice[0].start  # beam
+
             hotspots.append({
                 "coords": (abs_x, abs_y, abs_z),
                 "value": peak_value,
                 "dimensions": tuple(dimensions),
+                "extents": (extent_x, extent_y, extent_z),
                 "orientation": orientation,
                 "voxel_count": int(voxel_count),
                 "integrated_intensity": float(integrated_intensity),

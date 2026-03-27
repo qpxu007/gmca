@@ -285,6 +285,7 @@ class PipelineTracker:
             redis_key = f"analysis:out:data:{self.pipeline_name}:{self.run_identifier}"
             new_result_json = json.dumps(redis_data, default=str)
             self.redis_conn.rpush(redis_key, new_result_json)
+            self.redis_conn.expire(redis_key, 7 * 24 * 3600)
             logger.debug(f"Pushed full results to Redis key: {redis_key}")
         except redis.exceptions.RedisError as e:
             logger.warning(f"Failed to push to Redis list. Error: {e}")

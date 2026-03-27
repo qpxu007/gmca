@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Grid, FileSpreadsheet, PlusCircle, LogOut, Calendar, Database, Activity } from 'lucide-react';
+import { Grid, FileSpreadsheet, PlusCircle, LogOut, Calendar, Database, Activity, MessageCircle } from 'lucide-react';
 import './Dashboard.css'; // We will create this
 
 const Dashboard = () => {
@@ -35,6 +35,13 @@ const Dashboard = () => {
             description: 'Monitor data processing pipelines.',
             icon: <Activity size={48} color="#e67e22" />,
             route: '/processing'
+        },
+        {
+            id: 'chat',
+            name: 'AI Chat',
+            description: 'Chat with the AI assistant and your team.',
+            icon: <MessageCircle size={48} color="#e74c3c" />,
+            route: '/chat'
         },
         // Future apps can be added here
         {

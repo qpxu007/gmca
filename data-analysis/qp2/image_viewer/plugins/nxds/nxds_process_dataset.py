@@ -97,7 +97,8 @@ def main():
 
     try:
         redis_conn.set(
-            args.status_key, json.dumps({"status": "RUNNING", "timestamp": time.time()})
+            args.status_key, json.dumps({"status": "RUNNING", "timestamp": time.time()}),
+            ex=7 * 24 * 3600,
         )
 
         # Parse xds_param into a dictionary
@@ -206,7 +207,7 @@ def main():
                 "timestamp": time.time(),
                 "error": str(e),
             }
-            redis_conn.set(args.status_key, json.dumps(failed_status))
+            redis_conn.set(args.status_key, json.dumps(failed_status), ex=7 * 24 * 3600)
         sys.exit(1)
 
 

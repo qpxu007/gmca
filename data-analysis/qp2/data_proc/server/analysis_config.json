@@ -1,13 +1,14 @@
 {
-    "enabled_pipelines": [
-        "xds",
-        "xia2",
-        "autoproc",
-        "dozor",
-        "nxds"
-    ],
-    "enable_legacy_pipelines": true,
-    "only_run_legacy_strategy": true,
+    "default_pipelines_by_mode": {
+        "STANDARD": ["xds", "xia2", "autoproc", "dozor"],
+        "VECTOR": ["xds", "xia2", "autoproc", "dozor"],
+        "SINGLE": ["xds", "xia2", "autoproc", "dozor"],
+        "SITE": ["xds", "xia2", "autoproc", "dozor"],
+        "RASTER": ["nxds", "dozor"],
+        "STRATEGY": ["xds_strategy", "mosflm_strategy", "dozor"]
+    },
+    "enable_legacy_pipelines": false,
+    "only_run_legacy_strategy": false,
     "minimum_frames_for_pipelines": 5,
     "run_for_each_series_upon_run_completion": true,
     "spotfinder": {
@@ -73,6 +74,32 @@
         "peakfinder8_auto_threshold": true,
         "peakfinder8_min_pix_count": 2,
         "peakfinder8_max_pix_count": 200
+    },
+    "alcf_processing": {
+        "enabled": false,
+        "pipelines": ["xia2_ssx"],
+        "mode": "per_dataset",
+        "nproc": 64,
+        "nodes": 1,
+        "walltime": "02:00:00",
+        "queue": "preemptable",
+        "auto_cleanup": true
+    },
+    "raster_3d": {
+        "enabled": false,
+        "analysis_source": "dozor",
+        "metric": null,
+        "shift": 0.0,
+        "max_peaks": 10,
+        "min_size": 3,
+        "percentile_threshold": 95.0,
+        "step_size_um": 10.0,
+        "tracker_ttl_seconds": 3600,
+        "wait_timeout_s": 600,
+        "retry_timeout_s": 300,
+        "poll_interval_s": 15,
+        "max_retries": 1,
+        "min_coverage_pct": 80
     },
     "dozor": {
         "batch_size": 5,

@@ -137,10 +137,14 @@ class XdsStrategy:
             pipeline_params = {}
 
         self._bluice_redis_key = pipeline_params.get("redis_key")
-        self._bluice_redis = (
-            ServerConfig.get_bluice_redis_connection(pipeline_params.get("beamline"))
-            if self._bluice_redis_key else None
-        )
+        self._redis_manager = pipeline_params.get("redis_manager")
+        if self._redis_manager and self._bluice_redis_key:
+            self._bluice_redis = self._redis_manager.get_bluice_connection()
+        else:
+            self._bluice_redis = (
+                ServerConfig.get_bluice_redis_connection(pipeline_params.get("beamline"))
+                if self._bluice_redis_key else None
+            )
 
         # Derive sample name from master file stem if not provided
         sample_name = (
@@ -159,7 +163,7 @@ class XdsStrategy:
         pipeline_params.setdefault("datasets", json.dumps(list(self.map.keys())))
 
         # Get Redis host from central config
-        redis_host = ServerConfig.get_redis_hosts().get("analysis_results", "127.0.0.1")
+        redis_host = ServerConfig.get_redis_hosts().get("analysis_results", "10.20.103.67")
 
         self.tracker = PipelineTracker(
             pipeline_name="xds_strategy",

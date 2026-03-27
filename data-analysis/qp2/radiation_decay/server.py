@@ -17,6 +17,7 @@ from qp2.radiation_decay.calculations import (
     _calculate_rotisserie_factor,
     _setup_raddose3d_input,
 )
+from qp2.radiation_decay.data_source import FluxManager
 from qp2.radiation_decay.raddose3d import run_raddose3d
 
 # --- Global Configuration and State ---
@@ -293,10 +294,10 @@ def handle_dose_calculation(user_input: DoseCalculationInput):
             crystal_lx_um=params["crystal_dims"][0],
             crystal_ly_um=params["crystal_dims"][1],
             crystal_lz_um=params["crystal_dims"][2],
-            beam_size_y_um=params["beam_size_um"][0],
-            beam_size_z_um=params["beam_size_um"][1],
+            beam_size_x_um=params["beam_size_um"][0],
+            beam_size_y_um=params["beam_size_um"][1],
             attenuation_factor=params["attenuation_factor"],
-            translation_z_um=params["translation_z_um"],
+            translation_x_um=params["translation_z_um"],
         )
         rotisserie_factor, _ = _calculate_rotisserie_factor(
             *params["crystal_dims"], *params["beam_size_um"], params["translation_z_um"]
@@ -369,18 +370,23 @@ def find_recommendations(search_input: RecommendationInput):
     logger.info("Received recommendation search request")
     try:
         # MODIFICATION: Pass the new list-based parameter to the calculation function
+        # Create a constant FluxManager from the single flux value.
+        # This returns the same flux for all energies in the search space.
+        from collections import OrderedDict
+        flux_manager = FluxManager(OrderedDict({12.0: search_input.flux}))
+
         recommendations = find_experimental_recommendations(
             crystal_dims=search_input.crystal_dims,
             dose_limit_mgy=search_input.dose_limit_mgy,
-            flux=search_input.flux,
+            flux_manager=flux_manager,
             desired_n_images_to_search=search_input.desired_n_images_to_search,
             beam_sizes_to_search=search_input.beam_sizes_to_search,
             wavelengths_to_search=search_input.wavelengths_to_search,
             attenuations_to_search=search_input.attenuations_to_search,
             translations_to_search=search_input.translations_to_search,
             exposure_times_to_search=search_input.exposure_times_to_search,
-            max_recommendations=search_input.max_recommendations,
         )
+        recommendations = recommendations[:search_input.max_recommendations]
         logger.info(f"Returning {len(recommendations)} recommendations")
         return recommendations
     except Exception as e:

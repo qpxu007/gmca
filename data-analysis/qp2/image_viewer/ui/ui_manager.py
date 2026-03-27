@@ -9,6 +9,7 @@ import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtGui, QtWidgets
 
 from qp2.image_viewer.config import (
+    DOCS_URL,
     IMAGE_COLORMAP,
     SETTINGS_ORGANIZATION,
     SETTINGS_APPLICATION,
@@ -181,6 +182,9 @@ class UIManager:
         mw.about_action = QtGui.QAction("&About...", mw)
         mw.about_action.setStatusTip("Show application information")
 
+        mw.open_docs_action = QtGui.QAction("&Documentation...", mw)
+        mw.open_docs_action.setStatusTip("Open QP2 documentation in browser")
+
         # --- Create and Connect Measure Distance Action ---
         # This would typically be part of UIManager.setup_actions() or UIManager.setup_menus()
         mw.measure_distance_action = QtWidgets.QAction(
@@ -306,6 +310,7 @@ class UIManager:
         help_menu = menu_bar.addMenu("&Help")
         help_menu.addAction(mw.toggle_ai_action)
         help_menu.addSeparator()
+        help_menu.addAction(mw.open_docs_action)
         help_menu.addAction(mw.about_action)
 
         # --- Main Layout ---
@@ -674,6 +679,9 @@ class UIManager:
         )
 
         # Help Action
+        mw.open_docs_action.triggered.connect(
+            lambda: QtGui.QDesktopServices.openUrl(QtCore.QUrl(DOCS_URL))
+        )
         mw.about_action.triggered.connect(mw._show_about_dialog)
 
         # Dataset History Tree

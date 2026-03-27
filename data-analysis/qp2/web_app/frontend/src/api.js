@@ -1,7 +1,7 @@
 
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'; // Adjust if hosted elsewhere
+export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'; // Adjust if hosted elsewhere
 
 // Create axios instance with interceptor
 const axiosInstance = axios.create({
@@ -211,5 +211,26 @@ export const api = {
       responseType: 'blob',
     });
     return response;
+  },
+
+  // Chat
+  chatHistory: async () => {
+    const response = await axiosInstance.get(`/chat/history`);
+    return response.data;
+  },
+
+  chatSend: async (content) => {
+    const response = await axiosInstance.post(`/chat/send`, { content });
+    return response.data;
+  },
+
+  chatAskAI: async (content) => {
+    const response = await axiosInstance.post(`/chat/ask_ai`, { content });
+    return response.data;
+  },
+
+  chatUsers: async () => {
+    const response = await axiosInstance.get(`/chat/users`);
+    return response.data;
   }
 };

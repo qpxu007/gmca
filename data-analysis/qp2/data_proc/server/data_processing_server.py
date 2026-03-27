@@ -9,6 +9,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Any
+import json
 
 from pyqtgraph.Qt import QtCore
 
@@ -30,7 +31,6 @@ from qp2.data_proc.server.xls_reader import xlsReader
 from qp2.xio.db_manager import DBManager
 import os
 
-from qp2.config.redis_keys import BluiceRedisKeys
 
 logger = get_logger(__name__)
 
@@ -393,15 +393,11 @@ class ProcessingServer(QtCore.QObject):
         bluice_srv = None
         try:
             bluice_srv = self.redis_manager.get_bluice_connection()
-            if not opt.get("robot_mounted") and bluice_srv:
-                opt["robot_mounted"] = bluice_srv.hget(
-                    *BluiceRedisKeys.KEY_ROBOT_MOUNTED.split("$")
-                )
+            if not opt.get("robot_mounted"):
+                opt["robot_mounted"] = self.redis_manager.get_robot_mounted()
 
             beamline_name = (
-                bluice_srv.hget(*BluiceRedisKeys.KEY_BEAMLINE_NAME.split("$"))
-                if bluice_srv
-                else ""
+                self.redis_manager.get_beamline_name() or ""
             ) or opt.get("beamline_config_name", "")
             bl = (
                 "23i"
@@ -410,14 +406,10 @@ class ProcessingServer(QtCore.QObject):
             )
 
             username = opt.get("username") or (
-                bluice_srv.hget(*BluiceRedisKeys.KEY_USER.split("$"))
-                if bluice_srv
-                else "unknown_user"
+                self.redis_manager.get_beamline_user() or "unknown_user"
             )
             spreadsheet_rel = opt.get("spreadsheet_input_rel") or (
-                bluice_srv.hget(*BluiceRedisKeys.KEY_SPREADSHEET_INPUT_REL.split("$"))
-                if bluice_srv
-                else None
+                self.redis_manager.get_spreadsheet_rel()
             )
 
             spreadsheet_path = (
@@ -468,6 +460,7 @@ class ProcessingServer(QtCore.QObject):
                     "prefix": series_prefix,
                     "run_prefix_from_meta": run_prefix,
                     "redis_key": f"bluice:strategy:table#{data_rel_dir}:{sample_id}",
+                    "redis_manager": self.redis_manager,
                     "beamline": bl,
                     "username": username,
                     "groupname": groupname,
@@ -476,6 +469,37 @@ class ProcessingServer(QtCore.QObject):
                     "esaf_id": esaf_id,
                 }
             )
+
+            # Save collection parameters from bluice Redis to analysis Redis.
+            # This captures raster scan mode, cell size, beam size, and
+            # attenuation at collection time so downstream tools (image
+            # viewer) can read them without bluice access.
+            if run_prefix and groupname:
+                try:
+                    from qp2.config.redis_keys import AnalysisRedisKeys
+
+                    collection_params = self.redis_manager.get_raster_params(
+                        run_prefix
+                    )
+                    opt["_bluice_collection_params"] = collection_params
+                    if collection_params:
+                        analysis_srv = self.redis_manager.get_analysis_connection()
+                        if analysis_srv:
+                            params_key = AnalysisRedisKeys.collection_params_key(
+                                groupname, run_prefix
+                            )
+                            analysis_srv.hset(params_key, mapping={
+                                k: str(v) for k, v in collection_params.items()
+                            })
+                            analysis_srv.expire(params_key, 30 * 24 * 3600)  # 30 days
+                            logger.info(
+                                f"Saved collection params to {params_key}: "
+                                f"{collection_params}"
+                            )
+                except Exception as e:
+                    logger.debug(
+                        f"Could not save collection params: {e}"
+                    )
 
             try:
                 spreadsheet_path = opt.get("spreadsheet")
@@ -525,6 +549,89 @@ class ProcessingServer(QtCore.QObject):
                 logger.warning(f"Permission denied reading spreadsheet: {e}. Continuing without spreadsheet data.")
             except Exception as e:
                 logger.error(f"Error reading spreadsheet: {e}. Continuing without spreadsheet data.", exc_info=True)
+
+            try:
+                # Apply user overrides from Image Viewer settings (group-scoped)
+                analysis_srv = self.redis_manager.get_analysis_connection()
+                if analysis_srv:
+                    from qp2.config.redis_keys import AnalysisRedisKeys
+
+                    # 1. Processing Common Parameters Overrides (Space Group, Res Cutoff, etc)
+                    #    Try group-scoped key first, fall back to global key
+                    key = AnalysisRedisKeys.scoped_processing_overrides(groupname)
+                    overrides = analysis_srv.hgetall(key)
+                    if not overrides:
+                        key = AnalysisRedisKeys.KEY_PROCESSING_OVERRIDES
+                        overrides = analysis_srv.hgetall(key)
+                    if overrides:
+                        logger.info(f"Applying user processing overrides from Redis key '{key}': {overrides}")
+                        if overrides.get("space_group"):
+                            opt["space_group"] = overrides.get("space_group")
+                        if overrides.get("unit_cell"):
+                            opt["unit_cell"] = overrides.get("unit_cell")
+                        if overrides.get("model_pdb"):
+                            opt["model_pdb"] = overrides.get("model_pdb")
+                        if overrides.get("res_cutoff_low"):
+                            opt["processing_common_res_cutoff_low"] = float(overrides.get("res_cutoff_low"))
+                        if overrides.get("res_cutoff_high"):
+                            opt["processing_common_res_cutoff_high"] = float(overrides.get("res_cutoff_high"))
+                        if overrides.get("native") is not None:
+                            opt["native"] = overrides.get("native").lower() == "true"
+                        if overrides.get("proc_dir_root"):
+                            opt["proc_root_dir"] = overrides.get("proc_dir_root")
+                            logger.info(f"User override: proc_root_dir = {opt['proc_root_dir']}")
+
+                    # 2. Pipeline Enable/Disable Overrides by Collection Mode
+                    #    Try group-scoped key first, fall back to global key
+                    collect_mode = opt.get("collect_mode", "STANDARD").upper()
+
+                    key_by_mode = AnalysisRedisKeys.scoped_pipelines_by_mode(groupname)
+                    user_mappings_str = analysis_srv.get(key_by_mode)
+                    if not user_mappings_str:
+                        key_by_mode = AnalysisRedisKeys.KEY_PROCESSING_OVERRIDES_BY_MODE
+                        user_mappings_str = analysis_srv.get(key_by_mode)
+                    
+                    pipelines_mapping = {}
+                    if user_mappings_str:
+                         try:
+                             pipelines_mapping = json.loads(user_mappings_str)
+                             logger.debug("Loaded pipeline mappings from Redis")
+                         except Exception as e:
+                             logger.warning(f"Failed to parse user pipeline overrides from Redis: {e}")
+                    
+                    if not pipelines_mapping:
+                         # Fall back to server config JSON
+                         from qp2.data_proc.server.analysis_manager import AnalysisManager
+                         # Note: using a hack to get the config, but we can load it here safely or AnalysisManager will read it
+                         config_path = Path(__file__).parent / "analysis_config.json"
+                         try:
+                             with open(config_path, "r") as f:
+                                 config_data = json.load(f)
+                                 pipelines_mapping = config_data.get("default_pipelines_by_mode", {})
+                             logger.debug(f"Loaded default pipeline mappings from config for mode {collect_mode}")
+                         except Exception as e:
+                             logger.warning(f"Failed to load analysis_config defaults: {e}")
+                             # absolute fallback
+                             pipelines_mapping = {
+                                  "STANDARD": ["xds", "xia2", "autoproc", "dozor"],
+                                  "VECTOR": ["xds", "xia2", "autoproc", "dozor"],
+                                  "SINGLE": ["xds", "xia2", "autoproc", "dozor"],
+                                  "SITE": ["xds", "xia2", "autoproc", "dozor"],
+                                  "RASTER": ["nxds", "dozor"],
+                                  "STRATEGY": ["xds_strategy", "mosflm_strategy", "dozor"]
+                             }
+                    
+                    # Resolve active pipelines for current mode
+                    active_pipelines_for_mode = pipelines_mapping.get(collect_mode, [])
+                    logger.info(f"Pipelines enabled for mode {collect_mode}: {active_pipelines_for_mode}")
+                    
+                    # Inject enable flags into opt for AnalysisManager to consume
+                    all_known_pipelines = ["xds", "nxds", "xia2", "autoproc", "xia2_ssx", "crystfel", "xds_strategy", "mosflm_strategy", "dozor"]
+                    for pipe in all_known_pipelines:
+                         opt[f"enable_{pipe}"] = (pipe in active_pipelines_for_mode)
+                         
+            except Exception as e:
+                logger.error(f"Error fetching user processing overrides: {e}", exc_info=True)
 
             return opt
         finally:

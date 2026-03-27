@@ -51,7 +51,9 @@ class HeatmapManager(QObject):
             )
             return
 
-        self.scan_mode = self.main_window.settings_manager.get("scan_mode", "row_wise")
+        self.scan_mode = self.main_window.settings_manager.get("scan_mode", "auto")
+        if self.scan_mode == "auto":
+            self.scan_mode = self._resolve_auto_scan_mode(run_prefix, run_datasets)
 
         default_metric = active_plugin.config.get("default_y_axis")
         self.active_dialog = HeatmapDialog(
@@ -243,7 +245,10 @@ class HeatmapManager(QObject):
         # --- ADD THIS LINE ---
         QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
 
-        self.scan_mode = self.main_window.settings_manager.get("scan_mode", "row_wise")
+        self.scan_mode = self.main_window.settings_manager.get("scan_mode", "auto")
+        if self.scan_mode == "auto":
+            run_datasets = mw.dataset_manager.get_datasets_for_run(run_prefix)
+            self.scan_mode = self._resolve_auto_scan_mode(run_prefix, run_datasets)
 
         # --- START MODIFICATION ---
         # This re-uses the exact same worker logic as the initial launch
@@ -268,3 +273,23 @@ class HeatmapManager(QObject):
         worker.signals.finished.connect(self._on_data_fetched)
         worker.signals.error.connect(self._on_fetch_error)
         mw.threadpool.start(worker)
+
+    def _resolve_auto_scan_mode(self, run_prefix: str, datasets) -> str:
+        """Resolve scan mode from analysis Redis or filename pattern."""
+        from qp2.pipelines.raster_3d.scan_mode import resolve_auto_scan_mode
+
+        mw = self.main_window
+        master_files = [d.master_file_path for d in datasets] if datasets else []
+        group_name = ""
+        if master_files:
+            try:
+                from qp2.xio.user_group_manager import get_esaf_from_data_path
+                info = get_esaf_from_data_path(master_files[0])
+                group_name = info.get("group_name") or info.get("primary_group", "")
+            except Exception:
+                pass
+        return resolve_auto_scan_mode(
+            run_prefix, master_files,
+            analysis_conn=mw.redis_output_server,
+            group_name=group_name,
+        )

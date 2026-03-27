@@ -94,9 +94,10 @@ class DatasetContextMenuManager:
         self._add_group_rerun_actions(serial_menu, selection_info)
         
         serial_menu.addSeparator()
-        self._add_nxds_analysis_actions(serial_menu, selection_info)
-        self._add_crystfel_analysis_actions(serial_menu, selection_info)
-        self._add_dials_analysis_actions(serial_menu, selection_info)
+        plugin_readiness = self._batch_check_plugin_readiness(list(selection_info["dataset_paths"]))
+        self._add_nxds_analysis_actions(serial_menu, selection_info, plugin_readiness)
+        self._add_crystfel_analysis_actions(serial_menu, selection_info, plugin_readiness)
+        self._add_dials_analysis_actions(serial_menu, selection_info, plugin_readiness)
         self._add_combination_actions(serial_menu, selection_info)
 
         menu.addSeparator()
@@ -1126,7 +1127,7 @@ class DatasetContextMenuManager:
                 )
             )
 
-    def _add_nxds_analysis_actions(self, menu: QMenu, info: dict):
+    def _add_nxds_analysis_actions(self, menu: QMenu, info: dict, plugin_readiness: dict):
         nxds_menu = menu.addMenu("nXDS Analysis")
         selected_paths = list(info["dataset_paths"])
 
@@ -1134,10 +1135,8 @@ class DatasetContextMenuManager:
             nxds_menu.setEnabled(False)
             return
 
-        # Find which of the selected datasets are actually ready for analysis
-        ready_paths = [
-            p for p in selected_paths if self._is_path_ready_for_plugin(p, "nxds")
-        ]
+        # Use pre-computed batch results instead of per-path Redis calls
+        ready_paths = plugin_readiness.get("nxds", [])
         num_ready = len(ready_paths)
 
         cluster_action = nxds_menu.addAction("Cluster Unit Cells...")
@@ -1164,46 +1163,32 @@ class DatasetContextMenuManager:
             orientation_action.setToolTip("Only available for nXDS results.")
             merge_action.setToolTip("Only available for nXDS results.")
 
-    def _add_dials_analysis_actions(self, menu: QMenu, info: dict):
+    def _add_dials_analysis_actions(self, menu: QMenu, info: dict, plugin_readiness: dict):
         dials_menu = menu.addMenu("DIALS Analysis")
         selected_paths = list(info["dataset_paths"])
-        is_dials_available = (
-            any(self._is_path_ready_for_plugin(p, "dials:ssx") for p in selected_paths)
-            if selected_paths
-            else False
-        )
+        # Use pre-computed batch result instead of per-path Redis calls
+        is_dials_available = plugin_readiness.get("dials:ssx", False) if selected_paths else False
         dials_menu.setEnabled(is_dials_available)
 
         placeholder = dials_menu.addAction("Clustering (Coming Soon)...")
         placeholder.setEnabled(False)
 
-    def _add_crystfel_analysis_actions(self, menu: QMenu, info: dict):
+    def _add_crystfel_analysis_actions(self, menu: QMenu, info: dict, plugin_readiness: dict):
         crystfel_menu = menu.addMenu("CrystFEL Analysis")
         merge_action = crystfel_menu.addAction("Merge Reflections...")
 
         selected_paths = list(info["dataset_paths"])
-        # Determine if any selected path corresponds to a CrystFEL run
-        is_crystfel_available = (
-            any(
-                self._is_path_ready_for_plugin(p, "crystfel")
-                for p in selected_paths
-            )
-            if selected_paths
-            else True
-        )
+        # Use pre-computed batch result instead of per-path Redis calls
+        is_crystfel_available = plugin_readiness.get("crystfel", False) if selected_paths else True
 
         crystfel_menu.setEnabled(is_crystfel_available)
 
         if is_crystfel_available:
-            dm = self.main_window.dataset_manager
-            # If nothing was selected, info['dataset_paths'] contains all paths
-            readers_to_merge = [
-                dm.get_reader(p) for p in selected_paths if dm.get_reader(p)
-            ]
+            # Defer reader loading to click time — avoids HDF5 I/O during menu construction.
+            # _launch_crystfel_merge already handles get_reader + launch_merging_tool.
+            paths_for_merge = list(selected_paths)
             merge_action.triggered.connect(
-                lambda: self.main_window.merging_manager.launch_merging_tool(
-                    readers_to_merge
-                )
+                lambda: self._launch_crystfel_merge(paths_for_merge)
             )
         else:
             merge_action.setToolTip("Only available for CrystFEL results.")
@@ -1313,6 +1298,108 @@ class DatasetContextMenuManager:
         # Launch the existing Merging Strategy Manager
         # This manager handles stream gathering (via StreamManager) and tool execution (partialator/process_hkl)
         self.main_window.merging_manager.launch_merging_tool(readers)
+
+    def _batch_check_plugin_readiness(self, paths: list) -> dict:
+        """Batch-check plugin readiness for all paths using Redis pipelines.
+
+        Uses 1-3 pipeline roundtrips instead of O(N) individual calls.
+
+        Returns:
+            {"nxds": [list of ready paths], "dials:ssx": bool, "crystfel": bool}
+        """
+        result = {"nxds": [], "dials:ssx": False, "crystfel": False}
+
+        redis_conn = self.main_window.redis_output_server
+        if not redis_conn or not paths:
+            return result
+
+        try:
+            plugins = ["nxds", "dials:ssx", "crystfel"]
+
+            # Build all (plugin, path, redis_key) combos
+            combos = []
+            for plugin in plugins:
+                for path in paths:
+                    combos.append((plugin, path, f"analysis:out:{plugin}:{path}"))
+
+            # Phase 1: Pipeline HEXISTS(key, "results_json") for all combos
+            pipe = redis_conn.pipeline(transaction=False)
+            for _plugin, _path, key in combos:
+                pipe.hexists(key, "results_json")
+            phase1_results = pipe.execute()
+
+            resolved = {}  # (plugin, path) -> bool
+            unresolved = []
+
+            for i, (plugin, path, key) in enumerate(combos):
+                if phase1_results[i]:
+                    resolved[(plugin, path)] = True
+                else:
+                    unresolved.append((plugin, path, key))
+
+            # Phase 2: Pipeline EXISTS(key) [+ EXISTS(key:segments) for crystfel]
+            if unresolved:
+                pipe = redis_conn.pipeline(transaction=False)
+                for plugin, _path, key in unresolved:
+                    pipe.exists(key)
+                    if plugin == "crystfel":
+                        pipe.exists(f"{key}:segments")
+                phase2_results = pipe.execute()
+
+                still_unresolved = []
+                idx = 0
+                for i, (plugin, path, key) in enumerate(unresolved):
+                    exists_val = phase2_results[idx]
+                    idx += 1
+
+                    if plugin == "crystfel":
+                        segments_exists = phase2_results[idx]
+                        idx += 1
+                        if exists_val:
+                            resolved[(plugin, path)] = bool(segments_exists)
+                        else:
+                            still_unresolved.append((plugin, path, key))
+                    else:
+                        if exists_val:
+                            resolved[(plugin, path)] = True
+                        else:
+                            still_unresolved.append((plugin, path, key))
+
+                unresolved = still_unresolved
+
+            # Phase 3: Pipeline GET(key:status) for remaining unresolved
+            if unresolved:
+                pipe = redis_conn.pipeline(transaction=False)
+                for _plugin, _path, key in unresolved:
+                    pipe.get(f"{key}:status")
+                phase3_results = pipe.execute()
+
+                for i, (plugin, path, _key) in enumerate(unresolved):
+                    status_raw = phase3_results[i]
+                    if status_raw:
+                        try:
+                            status_data = json.loads(status_raw)
+                            if status_data.get("status") == "COMPLETED" or "results_json" in status_data:
+                                resolved[(plugin, path)] = True
+                                continue
+                        except (json.JSONDecodeError, TypeError, AttributeError):
+                            pass
+                    resolved[(plugin, path)] = False
+
+            # Build result from resolved map
+            for path in paths:
+                if resolved.get(("nxds", path), False):
+                    result["nxds"].append(path)
+                if not result["dials:ssx"] and resolved.get(("dials:ssx", path), False):
+                    result["dials:ssx"] = True
+                if not result["crystfel"] and resolved.get(("crystfel", path), False):
+                    result["crystfel"] = True
+
+        except Exception as e:
+            logger.warning(f"Batch plugin readiness check failed: {e}")
+            # Return safe defaults - menu still appears with analysis actions disabled
+
+        return result
 
     def _is_path_ready_for_plugin(self, path: str, plugin_key_part: str) -> bool:
         """Checks if a single dataset path has results for a given plugin."""

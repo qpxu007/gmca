@@ -135,7 +135,8 @@ def main():
 
     # Update status to RUNNING
     redis_conn.set(
-        status_key, json.dumps({"status": "RUNNING", "timestamp": time.time()})
+        status_key, json.dumps({"status": "RUNNING", "timestamp": time.time()}),
+        ex=7 * 24 * 3600,
     )
 
     try:
@@ -369,6 +370,7 @@ def main():
         redis_conn.set(
             status_key,
             json.dumps({"status": "FAILED", "timestamp": time.time(), "error": str(e)}),
+            ex=7 * 24 * 3600,
         )
         sys.exit(1)
 

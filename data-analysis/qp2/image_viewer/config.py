@@ -52,7 +52,7 @@ DEFAULT_SETTINGS = {
     "playback_interval_ms": 50,
     "image_filter_type": "Poisson Threshold",  # Default filter
     "se_size": 5,  # Default filter kernel size
-    "scan_mode": "row_wise",
+    "scan_mode": "auto",
     # --- Common Processing Parameters ---
     "processing_common_mode": "manual",
     "processing_common_space_group": "",
@@ -63,6 +63,14 @@ DEFAULT_SETTINGS = {
     "processing_common_res_cutoff_low": None,
     "processing_common_res_cutoff_high": None,
     "processing_common_native": True,
+    "pipelines_by_mode": {
+        "STANDARD": ["xds", "xia2", "autoproc", "dozor"],
+        "VECTOR": ["xds", "xia2", "autoproc", "dozor"],
+        "SINGLE": ["xds", "xia2", "autoproc", "dozor"],
+        "SITE": ["xds", "xia2", "autoproc", "dozor"],
+        "RASTER": ["nxds", "dozor"],
+        "STRATEGY": ["xds_strategy", "mosflm_strategy", "dozor"]
+    },
     # XDS Plugin Settings
     "xds_space_group": "",
     "xds_unit_cell": "",
@@ -145,6 +153,7 @@ DEFAULT_SETTINGS = {
     "nxds_nproc": 16,
     "nxds_njobs": 8,
     "nxds_auto_merge": False,
+    "nxds_extra_params": "MAXIMUM_ERROR_OF_SPOT_POSITION=10",
     # xia2
     "xia2_pipeline": "xia2_dials",
     "xia2_pipeline_choice": "dials",
@@ -165,6 +174,10 @@ DEFAULT_SETTINGS = {
     "xia2_ssx_njobs": 1,
     "xia2_ssx_max_lattices": 3,
     "xia2_ssx_min_spots": 10,
+    "xia2_ssx_override_geometry": False,
+    "xia2_ssx_beam_x": 0.0,
+    "xia2_ssx_beam_y": 0.0,
+    "xia2_ssx_distance": 0.0,
     # autoproc
     "autoproc_nproc": 8,
     "autoproc_njobs": 2,
@@ -192,6 +205,9 @@ MASKED_CIRCLES = [
 MASKED_RECTANGLES = [
     (0, "beam_y-100", "beam_x", "beam_y+100"),
 ]
+
+# --- Documentation ---
+DOCS_URL = "https://qpxu007.github.io/gmca"
 
 # --- AI Assistant ---
 COMMON_RAG_CODEBASES = [

@@ -107,6 +107,7 @@ class DozorBatchWorker(QRunnable):
         try:
             initial_status = {"status": "SUBMITTED", "timestamp": time.time()}
             self.redis_conn.hset(status_key, job_name, json.dumps(initial_status))
+            self.redis_conn.expire(status_key, 24 * 3600)  # match results TTL
 
             # Determine working directory
             if self.kwargs.get("proc_dir"):
@@ -143,3 +144,4 @@ class DozorBatchWorker(QRunnable):
                 "error": str(e),
             }
             self.redis_conn.hset(status_key, job_name, json.dumps(failed_status))
+            self.redis_conn.expire(status_key, 24 * 3600)

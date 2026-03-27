@@ -196,8 +196,10 @@ class AnalysisDispatcher(QRunnable):
 
             worker = None
             if "dozor" in self.pipeline.lower():
-                # For Dozor, we use a batching mechanism.
-                self.manager.add_to_dozor_batch(file_info, proc_dir)
+                opt = self.manager.server.get_opt([metadata])
+                if opt.get("enable_dozor", True):
+                    # For Dozor, we use a batching mechanism.
+                    self.manager.add_to_dozor_batch(file_info, proc_dir)
                 continue
             elif "spotfinder" in self.pipeline.lower():
                 worker = self.manager._create_spotfinder_worker(file_info)
@@ -247,6 +249,20 @@ class AnalysisManager(QObject):
         self.dozor_queues: Dict[str, List[tuple]] = {}
         self.dozor_lock = threading.Lock()
 
+        # 3D Raster pair tracker
+        from qp2.pipelines.raster_3d.tracker import RasterRunTracker
+        r3d_cfg = self.config.get("raster_3d", {})
+        self.raster_tracker = RasterRunTracker(
+            ttl_seconds=int(r3d_cfg.get("tracker_ttl_seconds", 3600))
+        )
+
+        # ALCF remote processing (off by default)
+        self._alcf_manager = None
+        self._alcf_poller = None
+        alcf_cfg = self.config.get("alcf_processing", {})
+        if alcf_cfg.get("enabled", False):
+            self._init_alcf_manager(alcf_cfg)
+
     def _load_analysis_config(self) -> dict:
         """Loads analysis parameters from a JSON config file."""
         # The config file should be located relative to this script.
@@ -270,6 +286,106 @@ class AnalysisManager(QObject):
                 exc_info=True,
             )
             return {}
+
+    # -- ALCF remote processing --
+
+    def _init_alcf_manager(self, alcf_cfg: dict):
+        """Initialize ALCF job manager and start polling thread."""
+        try:
+            from qp2.alcf.alcf_job_manager import ALCFJobManager
+            self._alcf_manager = ALCFJobManager()
+            self._alcf_poller = threading.Thread(
+                target=self._alcf_poll_loop, daemon=True,
+            )
+            self._alcf_poller.start()
+            logger.info("ALCF remote processing enabled")
+        except ImportError as e:
+            logger.warning(f"ALCF processing disabled: {e}")
+            self._alcf_manager = None
+        except Exception as e:
+            logger.error(f"Failed to initialize ALCF manager: {e}", exc_info=True)
+            self._alcf_manager = None
+
+    def _alcf_poll_loop(self):
+        """Background thread that polls ALCF job statuses."""
+        from qp2.alcf.config import POLL_INTERVAL
+        while True:
+            try:
+                if self._alcf_manager:
+                    changed = self._alcf_manager.poll()
+                    for job in changed:
+                        self._alcf_update_redis_status(job)
+            except Exception as e:
+                logger.error(f"ALCF poll error: {e}", exc_info=True)
+            time.sleep(POLL_INTERVAL)
+
+    def _alcf_update_redis_status(self, job):
+        """Update Redis status key for an ALCF job."""
+        try:
+            from qp2.alcf.alcf_job_manager import JobState
+            state_map = {
+                JobState.TRANSFER_OUT: "ALCF_TRANSFER_OUT",
+                JobState.COMPUTING: "ALCF_RUNNING",
+                JobState.TRANSFER_IN: "ALCF_TRANSFER_IN",
+                JobState.DONE: "COMPLETED",
+                JobState.FAILED: "FAILED",
+            }
+            redis_status = state_map.get(job.state, str(job.state.value))
+            status_data = {
+                "status": redis_status,
+                "timestamp": time.time(),
+                "location": "alcf",
+                "job_id": job.job_id,
+            }
+            if job.error:
+                status_data["error"] = job.error
+            if job.state == JobState.DONE:
+                status_data["proc_dir"] = job.beegfs_proc_dir
+
+            redis_conn = self.server.redis_manager.get_analysis_connection()
+            if redis_conn:
+                for ds in job.datasets:
+                    key = f"{REDIS_KEYS.get(job.pipeline, 'analysis:out:alcf')}:{ds}:status"
+                    redis_conn.set(key, json.dumps(status_data), ex=7 * 24 * 3600)
+        except Exception as e:
+            logger.error(f"ALCF Redis status update failed: {e}")
+
+    def _submit_alcf_job(self, master_files: list, meta: dict, opt: dict):
+        """Submit dataset(s) to ALCF for remote processing."""
+        if not self._alcf_manager:
+            return
+
+        alcf_cfg = self.config.get("alcf_processing", {})
+
+        # Build params from processing settings
+        params = {}
+        for key in ("space_group", "unit_cell", "d_min", "d_max",
+                     "max_lattices", "min_spots", "model", "reference_hkl"):
+            val = opt.get(key) or opt.get(f"processing_common_{key}")
+            if val:
+                params[key] = val
+
+        # Job resource params from config
+        for key in ("nproc", "nodes", "walltime"):
+            if key in alcf_cfg:
+                params[key] = alcf_cfg[key]
+
+        mode = alcf_cfg.get("mode", "per_dataset")
+
+        try:
+            job_ids = self._alcf_manager.submit(
+                dataset_paths=master_files,
+                params=params,
+                mode=mode,
+                pipeline=alcf_cfg.get("pipelines", ["xia2_ssx"])[0],
+            )
+            run_prefix = meta.get("run_prefix", "unknown")
+            logger.info(
+                f"AnalysisManager: Submitted {len(job_ids)} ALCF job(s) "
+                f"for run '{run_prefix}': {job_ids}"
+            )
+        except Exception as e:
+            logger.error(f"ALCF job submission failed: {e}", exc_info=True)
 
     @pyqtSlot(list, str)
     def handle_data_files_ready(self, files_batch: list, pipeline: str):
@@ -560,6 +676,17 @@ class AnalysisManager(QObject):
 
         mounted_val = opt.get("robot_mounted")
         meta_user_val = opt.get("meta_user")
+
+        # Merge bluice collection params (scan mode, cell size, beam size,
+        # attenuation) into metadata so they're persisted in the DB headers
+        # JSON.  Only adds keys — never overwrites existing HDF5 metadata.
+        # Reuses cached result from _build_options() to avoid duplicate
+        # bluice Redis calls.
+        bluice = opt.get("_bluice_collection_params")
+        if bluice and metadata_list:
+            for k, v in bluice.items():
+                if k not in metadata_list[0]:
+                    metadata_list[0][k] = v
 
         try:
             new_run = create_dataset_run(
@@ -853,34 +980,37 @@ class AnalysisManager(QObject):
             f"AnalysisManager: Series complete {Path(master_file).name}. Mode: {collect_mode} (num_series: {num_series})"
         )
 
-        if collect_mode.upper() in ["SINGLE", "STANDARD", "VECTOR", "SITE"]:
-            opt = self.server.get_opt([metadata])
+        opt = self.server.get_opt([metadata])
 
+        if collect_mode.upper() in ["SINGLE", "STANDARD", "VECTOR", "SITE"]:
             # Run XDS on the series
-            xds_defaults = {"xds_nproc": 32, "xds_njobs": 4, "xds_native": True, "series_subdir": series_subdir}
-            self.submit_plugin_job(
-                XDSProcessDatasetWorker,
-                master_file,
-                metadata,
-                REDIS_KEYS["xds"],
-                opt=opt,
-                **xds_defaults,
-            )
+            if opt.get("enable_xds", False):
+                xds_defaults = {"xds_nproc": 32, "xds_njobs": 4, "xds_native": True, "series_subdir": series_subdir}
+                self.submit_plugin_job(
+                    XDSProcessDatasetWorker,
+                    master_file,
+                    metadata,
+                    REDIS_KEYS["xds"],
+                    opt=opt,
+                    **xds_defaults,
+                )
         elif collect_mode.upper() == "RASTER":
             # Run nXDS on the series
-            nxds_defaults = {
-                "nxds_nproc": 16,
-                "nxds_njobs": 4,
-                "nxds_auto_merge": False,
-                "series_subdir": series_subdir
-            }
-            self.submit_plugin_job(
-                NXDSProcessDatasetWorker,
-                master_file,
-                metadata,
-                REDIS_KEYS["nxds"],
-                **nxds_defaults,
-            )
+            if opt.get("enable_nxds", False):
+                nxds_defaults = {
+                    "nxds_nproc": 16,
+                    "nxds_njobs": 4,
+                    "nxds_auto_merge": False,
+                    "series_subdir": series_subdir
+                }
+                self.submit_plugin_job(
+                    NXDSProcessDatasetWorker,
+                    master_file,
+                    metadata,
+                    REDIS_KEYS["nxds"],
+                    opt=opt,
+                    **nxds_defaults,
+                )
 
     def handle_milestone_logic(
         self, run_prefix: str, milestone: str, master_files: List[str], metadata: dict
@@ -911,23 +1041,26 @@ class AnalysisManager(QObject):
                 percent_val = int(milestone.replace("%", ""))
                 end_frame = max(1, int(total_frames * (percent_val / 100.0)))  # At least frame 1
 
-                xds_defaults = {
-                    "xds_nproc": 32,
-                    "xds_njobs": 4,
-                    "xds_end": end_frame,
-                    "job_tag": f"{milestone.replace('%','pct')}",
-                    "series_subdir": series_subdir
-                }
-                logger.info(
-                    f"AnalysisManager: Triggering Milestone XDS ({milestone}, end frame: {end_frame}) for {run_prefix}"
-                )
-                self.submit_plugin_job(
-                    XDSProcessDatasetWorker,
-                    master_file,
-                    metadata,
-                    REDIS_KEYS["xds"],
-                    **xds_defaults,
-                )
+                opt = self.server.get_opt([metadata])
+                if opt.get("enable_xds", False):
+                    xds_defaults = {
+                        "xds_nproc": 32,
+                        "xds_njobs": 4,
+                        "xds_end": end_frame,
+                        "job_tag": f"{milestone.replace('%','pct')}",
+                        "series_subdir": series_subdir
+                    }
+                    logger.info(
+                        f"AnalysisManager: Triggering Milestone XDS ({milestone}, end frame: {end_frame}) for {run_prefix}"
+                    )
+                    self.submit_plugin_job(
+                        XDSProcessDatasetWorker,
+                        master_file,
+                        metadata,
+                        REDIS_KEYS["xds"],
+                        opt=opt,
+                        **xds_defaults,
+                    )
 
     def handle_run_completion_logic(
         self, run_prefix: str, master_files: List[str], metadata_list: List[dict]
@@ -957,51 +1090,57 @@ class AnalysisManager(QObject):
         opt = self.server.get_opt(metadata_list)
 
         if collect_mode in ["SINGLE", "STANDARD", "HELICAL", "SITE", "VECTOR"]:
+            num_series = len(master_files)
+            njobs = min(num_series, 4)
+
             # Option A: Run merged job if multiple files exist
-            if len(master_files) > 1:
+            if num_series > 1:
                 logger.info(
-                    f"Submitting MERGED autoPROC and xia2 jobs for {len(master_files)} files."
+                    f"Submitting MERGED autoPROC and xia2 jobs for {num_series} files (njobs={njobs})."
                 )
                 primary_file = master_files[0]
                 extra_files = master_files[1:]
 
                 # AutoPROC Merged
-                self.submit_plugin_job(
-                    AutoPROCProcessDatasetWorker,
-                    primary_file,
-                    meta,
-                    REDIS_KEYS["autoproc"],
-                    autoproc_nproc=24,
-                    autoproc_njobs=4,
-                    autoproc_fast=True,
-                    extra_data_files=extra_files,  # Worker must support this kwarg
-                    opt=opt,
-                )
+                if opt.get("enable_autoproc", False):
+                    self.submit_plugin_job(
+                        AutoPROCProcessDatasetWorker,
+                        primary_file,
+                        meta,
+                        REDIS_KEYS["autoproc"],
+                        autoproc_nproc=24,
+                        autoproc_njobs=njobs,
+                        autoproc_fast=True,
+                        extra_data_files=extra_files,  # Worker must support this kwarg
+                        opt=opt,
+                    )
 
                 # Xia2 Merged
-                self.submit_plugin_job(
-                    Xia2ProcessDatasetWorker,
-                    primary_file,
-                    meta,
-                    REDIS_KEYS["xia2"],
-                    xia2_pipeline="xia2_dials",
-                    xia2_nproc=24,
-                    xia2_njobs=4,
-                    extra_data_files=extra_files,  # Worker must support this kwarg
-                    opt=opt,
-                )
+                if opt.get("enable_xia2", False):
+                    self.submit_plugin_job(
+                        Xia2ProcessDatasetWorker,
+                        primary_file,
+                        meta,
+                        REDIS_KEYS["xia2"],
+                        xia2_pipeline="xia2_dials",
+                        xia2_nproc=24,
+                        xia2_njobs=njobs,
+                        extra_data_files=extra_files,  # Worker must support this kwarg
+                        opt=opt,
+                    )
 
                 # XDS Merged
-                xds_defaults = {"xds_nproc": 32, "xds_njobs": 4, "xds_native": True}
-                self.submit_plugin_job(
-                    XDSProcessDatasetWorker,
-                    primary_file,
-                    meta,
-                    REDIS_KEYS["xds"],
-                    extra_data_files=extra_files,
-                    opt=opt,
-                    **xds_defaults,
-                )
+                if opt.get("enable_xds", False):
+                    xds_defaults = {"xds_nproc": 32, "xds_njobs": 4, "xds_native": True}
+                    self.submit_plugin_job(
+                        XDSProcessDatasetWorker,
+                        primary_file,
+                        meta,
+                        REDIS_KEYS["xds"],
+                        extra_data_files=extra_files,
+                        opt=opt,
+                        **xds_defaults,
+                    )
 
             # Option B: Run per-series jobs (Original logic - implied if list length is 1, or if we iterate)
             else:
@@ -1018,29 +1157,122 @@ class AnalysisManager(QObject):
                         if run_prefix and series_prefix and run_prefix != series_prefix:
                             series_subdir = series_prefix
 
-                        self.submit_plugin_job(
-                            AutoPROCProcessDatasetWorker,
-                            master_file,
-                            series_meta,
-                            REDIS_KEYS["autoproc"],
-                            autoproc_nproc=16,
-                            autoproc_njobs=2,
-                            autoproc_fast=True,
-                            series_subdir=series_subdir,
-                            opt=opt
-                        )
-                        self.submit_plugin_job(
-                            Xia2ProcessDatasetWorker,
-                            master_file,
-                            series_meta,
-                            REDIS_KEYS["xia2"],
-                            xia2_pipeline="xia2_dials",
-                            xia2_nproc=16,
-                            xia2_njobs=2,
-                            series_subdir=series_subdir,
-                            opt=opt
-                        )
+                        if opt.get("enable_autoproc", False):
+                            self.submit_plugin_job(
+                                AutoPROCProcessDatasetWorker,
+                                master_file,
+                                series_meta,
+                                REDIS_KEYS["autoproc"],
+                                autoproc_nproc=16,
+                                autoproc_njobs=njobs,
+                                autoproc_fast=True,
+                                series_subdir=series_subdir,
+                                opt=opt
+                            )
+                        if opt.get("enable_xia2", False):
+                            self.submit_plugin_job(
+                                Xia2ProcessDatasetWorker,
+                                master_file,
+                                series_meta,
+                                REDIS_KEYS["xia2"],
+                                xia2_pipeline="xia2_dials",
+                                xia2_nproc=16,
+                                xia2_njobs=njobs,
+                                series_subdir=series_subdir,
+                                opt=opt
+                            )
 
+        elif collect_mode == "RASTER":
+            if opt.get("enable_xia2_ssx", False):
+                extra_files = master_files[1:] if len(master_files) > 1 else []
+                self.submit_plugin_job(
+                    Xia2SSXProcessDatasetWorker,
+                    master_files[0],
+                    meta,
+                    REDIS_KEYS["xia2_ssx"],
+                    extra_data_files=extra_files,
+                    opt=opt,
+                )
+            if opt.get("enable_crystfel", False):
+                for master_file in master_files:
+                    self.submit_plugin_job(
+                        CrystfelProcessDatasetWorker,
+                        master_file,
+                        meta,
+                        REDIS_KEYS["crystfel"],
+                        opt=opt,
+                    )
+
+            # ALCF remote processing (disabled by default)
+            if self._alcf_manager:
+                alcf_cfg = self.config.get("alcf_processing", {})
+                alcf_pipelines = alcf_cfg.get("pipelines", [])
+                if "xia2_ssx" in alcf_pipelines:
+                    self._submit_alcf_job(master_files, meta, opt)
+
+            # 3D Raster pair detection and pipeline launch
+            r3d_cfg = self.config.get("raster_3d", {})
+            if r3d_cfg.get("enabled", False):
+                try:
+                    from qp2.pipelines.raster_3d.scan_mode import detect_raster_scan_mode
+                    from qp2.pipelines.raster_3d.pipeline_worker import Raster3DPipelineWorker
+                    from qp2.pipelines.raster_3d.paths import get_raster_3d_proc_dir
+
+                    data_dir = self.server._get_data_dir_from_metadata(meta)
+                    data_dir_str = str(data_dir) if data_dir else ""
+                    scan_mode = detect_raster_scan_mode(
+                        meta, master_files, self.server.redis_manager,
+                        run_prefix=run_prefix,
+                    )
+                    pair = self.raster_tracker.register_completed_raster(
+                        run_prefix, master_files, metadata_list, data_dir_str, scan_mode
+                    )
+                    if pair:
+                        run1_info, run2_info = pair
+                        pipeline_params = {
+                            "username": opt.get("username"),
+                            "beamline": opt.get("beamline"),
+                            "primary_group": opt.get("groupname") or opt.get("username"),
+                            "run_prefix": run1_info["run_prefix"],
+                            "sampleName": opt.get("sample_id") or run1_info["run_prefix"],
+                            "processing_common_proc_dir_root": opt.get("proc_root_dir"),
+                        }
+                        proc_dir = str(
+                            get_raster_3d_proc_dir(
+                                opt.get("proc_root_dir", "/tmp"),
+                                run1_info["run_prefix"],
+                                run2_info["run_prefix"],
+                            )
+                        )
+                        Path(proc_dir).mkdir(parents=True, exist_ok=True)
+                        pipeline_params = {k: v for k, v in pipeline_params.items() if v is not None}
+
+                        worker = Raster3DPipelineWorker(
+                            run1_prefix=run1_info["run_prefix"],
+                            run2_prefix=run2_info["run_prefix"],
+                            run1_master_files=run1_info["master_files"],
+                            run2_master_files=run2_info["master_files"],
+                            run1_scan_mode=run1_info["scan_mode"],
+                            run2_scan_mode=run2_info["scan_mode"],
+                            data_dir=run1_info["data_dir"],
+                            metadata=meta,
+                            redis_conn=self.server.redis_manager.get_analysis_connection(),
+                            proc_dir=proc_dir,
+                            config=r3d_cfg,
+                            pipeline_params=pipeline_params,
+                            redis_manager=self.server.redis_manager,
+                        )
+                        worker.signals.pipeline_completed.connect(
+                            lambda d, r1=run1_info["run_prefix"], r2=run2_info["run_prefix"]:
+                                logger.info(f"3D raster pipeline completed for {r1}+{r2}")
+                        )
+                        worker.signals.error.connect(
+                            lambda s, e, r1=run1_info["run_prefix"], r2=run2_info["run_prefix"]:
+                                logger.error(f"3D raster pipeline failed for {r1}+{r2}: {e}")
+                        )
+                        self.server.worker_pool.start(worker)
+                except Exception as e:
+                    logger.error(f"3D raster pair detection/launch failed: {e}", exc_info=True)
 
         elif collect_mode == "STRATEGY":
             logger.info(
@@ -1071,11 +1303,19 @@ class AnalysisManager(QObject):
             }
 
             # 3. Create and Start Strategy Worker
-            # This runs both XDS and MOSFLM strategies in parallel (via the list ["xds", "mosflm"])
+            # This runs selected strategies in parallel
             # It handles HDF5 files directly, so no CBF conversion is needed.
             try:
+                programs = []
+                if opt.get("enable_xds_strategy", True): programs.append("xds")
+                if opt.get("enable_mosflm_strategy", True): programs.append("mosflm")
+                
+                if not programs:
+                    logger.info("Strategy mode triggered, but no strategy pipelines are enabled.")
+                    return
+                
                 worker = StrategyWorker(
-                    programs=["xds", "mosflm"],
+                    programs=programs,
                     mapping=mapping,
                     pipeline_params=pipeline_params,
                     redis_conn=self.server.redis_manager.get_analysis_connection(),

@@ -6,6 +6,7 @@ import SpreadsheetApp from './SpreadsheetApp';
 import SchedulerApp from './SchedulerApp';
 import DatasetApp from './DatasetApp';
 import ProcessingApp from './ProcessingApp';
+import ChatApp from './ChatApp';
 
 const ProtectedRoute = ({ children }) => {
     const token = localStorage.getItem('token');
@@ -50,7 +51,13 @@ function App() {
                         <ProcessingApp />
                     </ProtectedRoute>
                 } />
-                
+
+                <Route path="/chat" element={
+                    <ProtectedRoute>
+                        <ChatApp />
+                    </ProtectedRoute>
+                } />
+
                 {/* Default redirect */}
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
             </Routes>
