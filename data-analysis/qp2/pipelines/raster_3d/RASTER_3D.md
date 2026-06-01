@@ -359,13 +359,14 @@ redis-cli HGET analysis:collection_params:esaf12345:Q3_ras_run6 cell_w_um
 
 ## Configuration
 
-All parameters are in `analysis_config.json` under the `raster_3d` key:
+Runtime parameters are in `analysis_config.json` under the `raster_3d` key.
+Enable/disable is controlled via the Settings UI (pipelines_by_mode), same as
+other pipelines — there is no separate `enabled` flag in the config file.
 
 ### Core Settings
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `enabled` | `false` | Enable/disable the pipeline |
 | `analysis_source` | `"dozor"` | Analysis program: `"dozor"` or `"nxds"` |
 | `metric` | `null` | Override metric field (null = use source default) |
 | `step_size_um` | `10.0` | Raster step size in microns (fallback; prefers bluice Redis `cell_w_um/cell_h_um`) |
@@ -404,6 +405,13 @@ Optional — omit the `quality_gate` section to skip all checks.
     "min_peak_intensity": 1.0
 }
 ```
+
+#### Per-crystal override from spreadsheet
+
+If the screening spreadsheet contains a `DesiredResolution` column, its value
+overrides `min_resolution_A` on a per-crystal basis. The full spreadsheet row
+is forwarded to the pipeline via `meta_user` in `pipeline_params`. When the
+column is absent, the static config value is used as before.
 
 ### Dose Recommendation Search Space
 

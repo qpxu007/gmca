@@ -1,0 +1,52 @@
+[Unit]
+Description=QP2 Web Backend (FastAPI/Uvicorn)
+Requires=mnt-beegfs.mount
+After=network.target mnt-beegfs.mount
+
+[Service]
+Type=simple
+User=dmadmin
+Group=dmadmin
+
+# Canonical hostname (alias of bl2ws8.gmca.aps.anl.gov)
+Environment="QP2_CORS_ORIGINS=https://bl2ws8-gmca.aps.anl.gov"
+Environment="QP2_SLURM_WEB_QOS=web"
+Environment="QP2_DATA_DIR=/mnt/beegfs/DATA"
+Environment="PYTHONPATH=/mnt/software/data-analysis:/mnt/software/data-analysis/qp2/web_app/backend"
+
+# JWT secret — generated once, then loaded as an env var
+EnvironmentFile=-/mnt/beegfs/dmadmin/qp2/.env
+ExecStartPre=/bin/bash -c 'mkdir -p /mnt/beegfs/dmadmin/qp2 && if [ ! -f /mnt/beegfs/dmadmin/qp2/.jwt_secret ]; then python3 -c "import secrets; print(secrets.token_urlsafe(32))" > /mnt/beegfs/dmadmin/qp2/.jwt_secret; chmod 600 /mnt/beegfs/dmadmin/qp2/.jwt_secret; fi'
+ExecStartPre=/bin/bash -c 'echo "QP2_JWT_SECRET=$(cat /mnt/beegfs/dmadmin/qp2/.jwt_secret)" > /mnt/beegfs/dmadmin/qp2/.env && chmod 600 /mnt/beegfs/dmadmin/qp2/.env'
+
+WorkingDirectory=/mnt/software/data-analysis/qp2/web_app/backend
+
+# Plain HTTP — Apache handles TLS on :443
+ExecStart=/mnt/software/data-analysis/qp2_env/bin/python -m uvicorn main:app \
+    --host 127.0.0.1 \
+    --port 8000 \
+    --workers 2
+
+Restart=on-failure
+RestartSec=5
+
+# --- Sandboxing (systemd) ---
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+UMask=0077
+
+StandardOutput=append:/var/log/qp2-web-backend.log
+StandardError=inherit
+
+[Install]
+WantedBy=multi-user.target

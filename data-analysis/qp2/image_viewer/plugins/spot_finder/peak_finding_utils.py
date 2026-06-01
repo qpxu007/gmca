@@ -553,7 +553,7 @@ def find_peaks(
 
     try:
         # The core call to the algorithm
-        peaks = find_peaks_in_annulus(image=image_data, mask=detector_mask, **params)
+        peaks = find_peaks_in_annulus(image=image_data, detector_mask=detector_mask, **params)
         return peaks, None
     except Exception as e:
         error_msg = f"Peak finding algorithm failed: {e}"

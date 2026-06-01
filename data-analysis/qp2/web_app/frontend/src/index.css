@@ -17,36 +17,40 @@ body {
 
 #root {
   width: 100%;
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
 
-/* Toolbar */
+/* Toolbar — shared dark theme */
 .toolbar {
-  padding: 10px;
-  background-color: #f8f9fa;
-  border-bottom: 1px solid #dee2e6;
+  padding: 12px 20px;
+  background: linear-gradient(90deg, #1B262C 0%, #0F4C75 100%);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   align-items: center;
+  color: #e0e0e0;
 }
 
 .toolbar button {
   padding: 8px 16px;
-  border: 1px solid #ced4da;
-  background-color: #fff;
+  border: 1px solid rgba(255,255,255,0.15);
+  background-color: rgba(255,255,255,0.06);
   border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
+  color: #e0e0e0;
+  transition: all 0.15s;
 }
 
 .toolbar button:hover {
-  background-color: #e9ecef;
+  background-color: rgba(255,255,255,0.12);
 }
 
 .toolbar button:disabled {
-  opacity: 0.6;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
@@ -182,6 +186,12 @@ body {
   height: 250px !important;
 }
 
+.puck-assign-modal {
+  width: 500px !important;
+  height: auto !important;
+  max-height: 80vh;
+}
+
 .modal-header {
   font-size: 20px;
   font-weight: bold;
@@ -205,6 +215,30 @@ body {
   background-color: #f8f9fa;
   position: sticky;
   top: 0;
+  vertical-align: top;
+}
+
+.column-actions {
+  display: flex;
+  gap: 3px;
+  margin-top: 3px;
+}
+
+.col-action-btn {
+  font-size: 10px;
+  padding: 1px 4px;
+  border: 1px solid #bbb;
+  border-radius: 3px;
+  background: #e9ecef;
+  color: #333;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.col-action-btn:hover {
+  background: #3498db;
+  color: white;
+  border-color: #3498db;
 }
 
 .data-table input {
@@ -228,4 +262,51 @@ body {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+
+@media (max-width: 600px) {
+  .main-content {
+    padding: 10px;
+  }
+}
+
+/* Mobile Toolbar Fix — explicit list; add new toolbars here intentionally */
+@media (max-width: 768px) {
+  .toolbar,
+  .archive-toolbar,
+  .chat-toolbar,
+  .dataset-toolbar,
+  .distribution-toolbar,
+  .experiment-toolbar,
+  .processing-toolbar,
+  .rcsb-toolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 10px !important;
+  }
+
+  .toolbar > *,
+  .archive-toolbar > *,
+  .chat-toolbar > *,
+  .dataset-toolbar > *,
+  .distribution-toolbar > *,
+  .experiment-toolbar > *,
+  .processing-toolbar > *,
+  .rcsb-toolbar > * {
+    width: 100% !important;
+    margin-right: 0 !important;
+    margin-bottom: 8px !important;
+    box-sizing: border-box !important;
+  }
+
+  .toolbar > *:last-child,
+  .archive-toolbar > *:last-child,
+  .chat-toolbar > *:last-child,
+  .dataset-toolbar > *:last-child,
+  .distribution-toolbar > *:last-child,
+  .experiment-toolbar > *:last-child,
+  .processing-toolbar > *:last-child,
+  .rcsb-toolbar > *:last-child {
+    margin-bottom: 0 !important;
+  }
 }

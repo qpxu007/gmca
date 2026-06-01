@@ -4,7 +4,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from qp2.utils.auxillary import sanitize_space_group, sanitize_unit_cell
+from qp2.utils.auxiliary import sanitize_space_group, sanitize_unit_cell
 
 logger = logging.getLogger(__name__)
 

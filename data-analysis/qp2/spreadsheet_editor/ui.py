@@ -5,10 +5,10 @@ import requests
 import tempfile
 import grp
 from PyQt5.QtWidgets import (
-    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, 
+    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
     QPushButton, QLabel, QFileDialog, QMessageBox, QFrame, QApplication,
-    QScrollArea, QInputDialog, QTableWidget, QTableWidgetItem, QDialog, 
-    QDialogButtonBox, QHeaderView
+    QScrollArea, QInputDialog, QTableWidget, QTableWidgetItem, QDialog,
+    QDialogButtonBox, QHeaderView, QLineEdit, QMenu, QSizePolicy
 )
 from PyQt5.QtCore import Qt, QMimeData, QSize
 from PyQt5.QtGui import QDrag, QPixmap, QPainter, QColor, QFont
@@ -25,84 +25,259 @@ except ImportError:
         return ServerConfig.get_pbs_rpc_url()
 
 class PuckEditorDialog(QDialog):
+    _MODEL_COL = REQUIRED_HEADERS.index("ModelPath")
+    _SEQ_COL   = REQUIRED_HEADERS.index("SequencePath")
+    _PUCK_COL  = REQUIRED_HEADERS.index("Puck")
+    _NO_ACTIONS = {"Port", "Puck"}
+
     def __init__(self, puck: Puck, slot_name=None, parent=None):
         super().__init__(parent)
         self.puck = puck
+        self.slot_name = slot_name
+        self._updating = False
+
         title = f"Edit Puck {puck.original_label}"
         if slot_name:
             title += f" (in Slot {slot_name})"
         self.setWindowTitle(title)
-        self.resize(1000, 600)
-        
+        self.resize(1100, 600)
+
         layout = QVBoxLayout(self)
-        
-        # Table
+
+        # Hint label
+        hint = QLabel("Right-click a column header for Fill Rest / Fill All helpers.")
+        hint.setStyleSheet("color: gray; font-size: 10px;")
+        layout.addWidget(hint)
+
         self.table = QTableWidget()
         self.table.setRowCount(len(puck.rows))
         self.table.setColumnCount(len(REQUIRED_HEADERS))
         self.table.setHorizontalHeaderLabels(REQUIRED_HEADERS)
-        
-        # Populate
+
+        hdr = self.table.horizontalHeader()
+        hdr.setContextMenuPolicy(Qt.CustomContextMenu)
+        hdr.customContextMenuRequested.connect(self._on_header_context_menu)
+
         for r, row_data in enumerate(puck.rows):
             old_port = row_data.get("Port", "").strip()
-            
-            # Determine values to display
-            # If slot_name is provided, we simulate the transforms that happen on save
-            new_port = None
-            if slot_name:
-                new_port = f"{slot_name}{r+1}"
-            
+            new_port = f"{slot_name}{r+1}" if slot_name else None
+
             for c, header in enumerate(REQUIRED_HEADERS):
                 value = row_data.get(header, "")
-                
                 if slot_name and new_port:
                     if header == "Port":
                         value = new_port
-                    elif header == "CrystalID":
-                        if value == old_port:
-                            value = new_port
-                    elif header == "Directory":
-                        if value and old_port:
-                             # Same regex as logic.py for consistency
-                             pattern = re.compile(rf"(?<![A-Za-z0-9]){re.escape(old_port)}(?![A-Za-z0-9])")
-                             value = pattern.sub(new_port, value)
-                
-                item = QTableWidgetItem(value)
-                
-                # Make Port read-only
-                if header == "Port":
-                    item.setFlags(item.flags() ^ Qt.ItemIsEditable)
-                    item.setBackground(QColor("#f0f0f0"))
-                
-                self.table.setItem(r, c, item)
-        
+                    elif header == "CrystalID" and value == old_port:
+                        value = new_port
+                    elif header == "Directory" and value and old_port:
+                        pattern = re.compile(rf"(?<![A-Za-z0-9]){re.escape(old_port)}(?![A-Za-z0-9])")
+                        value = pattern.sub(new_port, value)
+
+                if c in (self._MODEL_COL, self._SEQ_COL):
+                    self._set_browse_cell(r, c, value)
+                else:
+                    item = QTableWidgetItem(value)
+                    if header == "Port":
+                        item.setFlags(item.flags() ^ Qt.ItemIsEditable)
+                        item.setBackground(QColor("#f0f0f0"))
+                    self.table.setItem(r, c, item)
+
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.table.cellChanged.connect(self._on_cell_changed)
         layout.addWidget(self.table)
-        
-        # Buttons
+
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
 
+    # --- Browse cell helpers ---
+
+    def _set_browse_cell(self, row, col, value):
+        widget = QWidget()
+        h = QHBoxLayout(widget)
+        h.setContentsMargins(0, 0, 0, 0)
+        h.setSpacing(1)
+        edit = QLineEdit(value)
+        btn = QPushButton("…")
+        btn.setFixedWidth(26)
+        h.addWidget(edit)
+        h.addWidget(btn)
+        is_model = (col == self._MODEL_COL)
+        btn.clicked.connect(lambda _, e=edit, im=is_model: self._browse_file(e, im))
+        self.table.setCellWidget(row, col, widget)
+
+    def _browse_file(self, edit_widget, is_model):
+        if is_model:
+            title, filt = "Select Model File", "Structure files (*.pdb *.cif *.ent);;All files (*)"
+        else:
+            title, filt = "Select Sequence File", "Sequence files (*.fasta *.fa *.seq *.txt);;All files (*)"
+        path, _ = QFileDialog.getOpenFileName(self, title, os.path.expanduser("~"), filt)
+        if path:
+            edit_widget.setText(path)
+
+    # --- Generic cell value get/set (handles both widget cells and item cells) ---
+
+    def _get_cell_value(self, row, col):
+        widget = self.table.cellWidget(row, col)
+        if widget:
+            edit = widget.findChild(QLineEdit)
+            return edit.text() if edit else ""
+        item = self.table.item(row, col)
+        return item.text() if item else ""
+
+    def _set_cell_value(self, row, col, value):
+        widget = self.table.cellWidget(row, col)
+        if widget:
+            edit = widget.findChild(QLineEdit)
+            if edit:
+                edit.setText(value)
+            return
+        item = self.table.item(row, col)
+        if item:
+            item.setText(value)
+        else:
+            self.table.setItem(row, col, QTableWidgetItem(value))
+
+    # --- Puck column: bulk update all rows ---
+
+    def _on_cell_changed(self, row, col):
+        if self._updating or col != self._PUCK_COL:
+            return
+        item = self.table.item(row, col)
+        if not item:
+            return
+        value = item.text()
+        self._updating = True
+        for r in range(self.table.rowCount()):
+            if r != row:
+                self._set_cell_value(r, self._PUCK_COL, value)
+        self._updating = False
+
+    # --- Column header context menu: Fill Rest / Fill All ---
+
+    def _on_header_context_menu(self, pos):
+        col = self.table.horizontalHeader().logicalIndexAt(pos)
+        if col < 0 or REQUIRED_HEADERS[col] in self._NO_ACTIONS:
+            return
+        menu = QMenu(self)
+        fill_rest = menu.addAction("Fill Rest — auto-number from last filled row")
+        fill_all  = menu.addAction("Fill All — copy first value to every row")
+        action = menu.exec_(self.table.horizontalHeader().mapToGlobal(pos))
+        if action == fill_rest:
+            self._fill_rest(col)
+        elif action == fill_all:
+            self._fill_all(col)
+
+    def _fill_rest(self, col):
+        n = self.table.rowCount()
+        seed_index = -1
+        for i in range(n - 1, -1, -1):
+            val = self._get_cell_value(i, col).strip()
+            # Skip rows that still hold the auto-generated default port value
+            default_val = f"{self.slot_name}{i + 1}" if self.slot_name else ""
+            if val and val != default_val:
+                seed_index = i
+                break
+        if seed_index == -1:
+            return
+
+        seed_value = self._get_cell_value(seed_index, col).strip()
+        match = re.match(r'^(.*?)(\d+)$', seed_value)
+        if match:
+            prefix, next_num = match.group(1), int(match.group(2)) + 1
+        else:
+            prefix, next_num = seed_value + "_", 1
+
+        existing = set()
+        for i in range(seed_index + 1):
+            v = self._get_cell_value(i, col).strip()
+            if v:
+                existing.add(v)
+
+        for i in range(seed_index + 1, n):
+            candidate = f"{prefix}{next_num}"
+            while candidate in existing:
+                next_num += 1
+                candidate = f"{prefix}{next_num}"
+            self._set_cell_value(i, col, candidate)
+            existing.add(candidate)
+            next_num += 1
+
+    def _fill_all(self, col):
+        first_value = None
+        for i in range(self.table.rowCount()):
+            v = self._get_cell_value(i, col).strip()
+            if v:
+                first_value = v
+                break
+        if not first_value:
+            return
+        for i in range(self.table.rowCount()):
+            self._set_cell_value(i, col, first_value)
+
+    # --- Save ---
+
     def accept(self):
-        # Save data back to puck
         new_rows = []
         for r in range(self.table.rowCount()):
-            row_dict = {}
-            for c in range(self.table.columnCount()):
-                header = REQUIRED_HEADERS[c]
-                item = self.table.item(r, c)
-                row_dict[header] = item.text().strip() if item else ""
-            
-            # Logic: If Directory is empty, default to CrystalID
+            row_dict = {h: self._get_cell_value(r, c) for c, h in enumerate(REQUIRED_HEADERS)}
             if not row_dict.get("Directory") and row_dict.get("CrystalID"):
                 row_dict["Directory"] = row_dict["CrystalID"]
-            
             new_rows.append(row_dict)
-        
         self.puck.rows = new_rows
         super().accept()
+
+class PuckAssignmentDialog(QDialog):
+    """Bulk-assign physical puck names (the Puck column) to all rows in each slot."""
+
+    def __init__(self, puck_names, slots, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Puck Assignment")
+        self.resize(320, 500)
+        self.inputs = {}
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(QLabel("Assign a physical puck name to each slot:"))
+
+        table = QTableWidget(len(puck_names), 2)
+        table.setHorizontalHeaderLabels(["Slot", "Puck Name"])
+        table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
+        table.verticalHeader().setVisible(False)
+
+        for i, name in enumerate(puck_names):
+            slot = slots.get(name)
+            has_puck = slot is not None and slot.puck_data is not None
+
+            slot_item = QTableWidgetItem(name)
+            slot_item.setFlags(Qt.ItemIsEnabled)
+            table.setItem(i, 0, slot_item)
+
+            existing = ""
+            if has_puck:
+                for row in slot.puck_data.rows:
+                    v = row.get("Puck", "").strip()
+                    if v:
+                        existing = v
+                        break
+
+            edit = QLineEdit(existing)
+            edit.setPlaceholderText("Empty slot" if not has_puck else "e.g. CU 1234")
+            edit.setEnabled(has_puck)
+            self.inputs[name] = edit
+            table.setCellWidget(i, 1, edit)
+
+        layout.addWidget(table)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+
+    def get_assignments(self):
+        return {name: edit.text().strip() for name, edit in self.inputs.items()}
+
 
 class PuckWidget(QFrame):
     """
@@ -139,8 +314,14 @@ class PuckWidget(QFrame):
         self.setAutoFillBackground(True)
 
     def refresh_ui(self):
-        self.lbl_name.setText(f"Puck {self.puck.original_label}")
-        self.lbl_info.setText(self.puck.get_summary())
+        puck_name = next(
+            (r.get("Puck", "").strip() for r in self.puck.rows if r.get("Puck", "").strip()),
+            ""
+        )
+        label = f"Puck {puck_name}" if puck_name else f"Puck {self.puck.original_label}"
+        self.lbl_name.setText(label)
+        slot_name = self.parent().letter if hasattr(self.parent(), 'letter') else None
+        self.lbl_info.setText(self.puck.get_summary(slot_name=slot_name))
 
     def sizeHint(self):
         return QSize(100, 80)
@@ -259,6 +440,7 @@ class MainWindow(QMainWindow):
         self.manager = SpreadsheetManager()
         self.slots = {} # Map 'A' -> SlotWidget
         self.user_group_manager = UserGroupManager()
+        self.current_filepath = None  # Path of the last loaded/saved spreadsheet
         
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -282,6 +464,10 @@ class MainWindow(QMainWindow):
         self.btn_config = QPushButton("Configure Pucks")
         self.btn_config.clicked.connect(self.configure_pucks)
 
+        self.btn_puck_assign = QPushButton("Puck Assignment")
+        self.btn_puck_assign.clicked.connect(self.open_puck_assignment)
+        self.btn_puck_assign.setEnabled(False)
+
         self.lbl_filename = QLabel("No file loaded.")
         font = self.lbl_filename.font()
         font.setItalic(True)
@@ -291,6 +477,7 @@ class MainWindow(QMainWindow):
         top_layout.addWidget(self.btn_load)
         top_layout.addWidget(self.btn_save)
         top_layout.addWidget(self.btn_http)
+        top_layout.addWidget(self.btn_puck_assign)
         top_layout.addWidget(self.btn_config)
         top_layout.addStretch()
         top_layout.addWidget(self.lbl_filename)
@@ -393,6 +580,7 @@ class MainWindow(QMainWindow):
         
         self.btn_save.setEnabled(True)
         self.btn_http.setEnabled(self.check_user_permission())
+        self.btn_puck_assign.setEnabled(True)
         self.lbl_filename.setText("New Spreadsheet")
         self.status_bar.showMessage(f"Created new empty spreadsheet with {len(pucks_map)} pucks.")
 
@@ -410,8 +598,34 @@ class MainWindow(QMainWindow):
         pucks_map = self.manager.load_file(filepath)
         
         if self.manager.errors:
-            QMessageBox.critical(self, "Error Loading File", "\n".join(self.manager.errors))
-            return
+            # Check whether every error is a duplicate-CrystalID error so we
+            # can offer to auto-fix rather than just rejecting the file.
+            dup_prefix = "Duplicate CrystalID"
+            all_dup_errors = all(dup_prefix in e for e in self.manager.errors)
+
+            if all_dup_errors:
+                dup_lines = "\n".join(self.manager.errors)
+                answer = QMessageBox.question(
+                    self,
+                    "Duplicate CrystalIDs Detected",
+                    f"The following duplicate CrystalIDs were found:\n\n{dup_lines}\n\n"
+                    "Would you like to fix them automatically by appending a numbered "
+                    "suffix (e.g. mycrystal_1, mycrystal_2)?",
+                    QMessageBox.Yes | QMessageBox.No,
+                    QMessageBox.Yes,
+                )
+                if answer == QMessageBox.Yes:
+                    pucks_map = self.manager.load_file(filepath, auto_fix_duplicates=True)
+                    if self.manager.errors:
+                        QMessageBox.critical(
+                            self, "Error Loading File", "\n".join(self.manager.errors)
+                        )
+                        return
+                else:
+                    return
+            else:
+                QMessageBox.critical(self, "Error Loading File", "\n".join(self.manager.errors))
+                return
         
         # Clear existing content from slots
         for slot in self.slots.values():
@@ -427,6 +641,8 @@ class MainWindow(QMainWindow):
 
         self.btn_save.setEnabled(True)
         self.btn_http.setEnabled(self.check_user_permission())
+        self.btn_puck_assign.setEnabled(True)
+        self.current_filepath = filepath
         self.lbl_filename.setText(os.path.basename(filepath)) # Display filename persistently
         self.status_bar.showMessage(f"Loaded {len(pucks_map)} pucks from {os.path.basename(filepath)}")
 
@@ -440,52 +656,79 @@ class MainWindow(QMainWindow):
             else:
                 return
 
-        # Create a temp file
-        # We default to .xlsx for structured data, or .csv if pandas missing (handled by logic but filename matters)
-        # Assuming pandas is present as per recent updates
+        # The PyBluice server reads the file by its absolute path on the shared filesystem
+        # (/mnt/beegfs).  Writing to /tmp fails because the server runs on a different host
+        # that does not share the client's /tmp.  Write the temp file next to the source
+        # spreadsheet so it lands on the shared NFS mount.  When no source file is known
+        # (new spreadsheet workflow), fall back to /mnt/beegfs/tmp.
+        if self.current_filepath and os.path.isdir(os.path.dirname(self.current_filepath)):
+            temp_dir = os.path.dirname(self.current_filepath)
+        else:
+            # The temp file must live on the shared filesystem so the
+            # PyBluice server on another host can read it.  Home dirs
+            # are on beegfs and always writable by the user.
+            temp_dir = os.path.join(os.path.expanduser("~"), ".qp2", "tmp")
+            os.makedirs(temp_dir, exist_ok=True)
+
+        temp_path = None
         try:
-            with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as tmp:
-                temp_path = tmp.name
-            
-            # Save current state to temp file
-            ordered_pucks = []
-            for name in self.manager.puck_names:
-                slot = self.slots[name]
-                ordered_pucks.append(slot.puck_data) # Can be None
-            
-            self.manager.save_file(temp_path, ordered_pucks)
-            
-            # Send Request
+            ordered_pucks = [self.slots[name].puck_data for name in self.manager.puck_names]
             puck_map = "".join(self.manager.puck_names)
-            payload = {
-                "module": "spreadsheet_import",
-                "path": temp_path,
-                "map": puck_map
-            }
-            
-            self.status_bar.showMessage(f"Uploading to {url}...")
-            resp = requests.post(url, data=payload, timeout=10)
-            
-            if resp.status_code == 200:
-                QMessageBox.information(self, "Success", "Spreadsheet uploaded successfully.")
-                self.status_bar.showMessage("Upload complete.")
-            else:
+
+            # Prefer .xlsx (openpyxl); fall back to .xls (xlrd/xlwt) if the server
+            # reports a missing-openpyxl error, so the code stays forward-compatible
+            # when openpyxl is eventually added to the PyBluice venv.
+            for suffix in (".xlsx", ".xls"):
+                if temp_path and os.path.exists(temp_path):
+                    os.unlink(temp_path)
+                with tempfile.NamedTemporaryFile(
+                    suffix=suffix, dir=temp_dir, delete=False
+                ) as tmp:
+                    temp_path = tmp.name
+
+                self.manager.save_file(temp_path, ordered_pucks)
+
+                payload = {
+                    "module": "spreadsheet_import",
+                    "path": temp_path,
+                    "map": puck_map,
+                }
+
+                self.status_bar.showMessage(f"Uploading to {url} ({suffix})...")
+                resp = requests.post(url, data=payload, timeout=10)
+
+                if resp.status_code == 200:
+                    QMessageBox.information(self, "Success", "Spreadsheet uploaded successfully.")
+                    self.status_bar.showMessage("Upload complete.")
+                    return
+
+                # Retry with .xls only if the failure is an openpyxl import error
+                if "openpyxl" in resp.text and suffix == ".xlsx":
+                    continue
+
                 QMessageBox.critical(self, "Error", f"Upload failed: {resp.status_code}\n{resp.text}")
-                
+                return
+
         except Exception as e:
             QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
         finally:
-            # We assume the server reads the file immediately or we leave it?
-            # If server is remote (not sharing filesystem), "path" param won't work.
-            # But the user specifically asked for "spreadsheet_import(path=...)" style.
-            # This implies shared filesystem.
-            # We should probably NOT delete it immediately if the server is async, 
-            # but usually RPC calls are fast or we can't manage lifecycle.
-            # Let's leave it or delete?
-            # If we delete, server might fail if it reads later.
-            # But tempfile usually deletes on close if delete=True. We set delete=False.
-            # Let's leave it for now, typically /tmp is cleaned up.
+            # Leave the file on disk; the PyBluice RPC call is synchronous but the server
+            # may read it fractionally after the HTTP response returns.  The shared NFS
+            # directory is not /tmp so it will not be auto-purged unexpectedly.
             pass
+
+    def open_puck_assignment(self):
+        dialog = PuckAssignmentDialog(self.manager.puck_names, self.slots, self)
+        if dialog.exec_() == QDialog.Accepted:
+            assignments = dialog.get_assignments()
+            for slot_name, puck_name in assignments.items():
+                slot = self.slots.get(slot_name)
+                if slot and slot.puck_data:
+                    for row in slot.puck_data.rows:
+                        row["Puck"] = puck_name
+                    if slot.puck_widget:
+                        slot.puck_widget.refresh_ui()
+            self.status_bar.showMessage("Puck names assigned.")
 
     def move_puck(self, source_letter, target_letter):
         # Swap logic

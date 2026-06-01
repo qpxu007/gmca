@@ -1,4 +1,5 @@
 import os
+import re
 import shutil
 import stat
 import subprocess
@@ -26,6 +27,7 @@ def run_command(
         walltime: str = "10:00:00", # Changed default from 12:00:00 to 10:00:00 (600 mins)
         background: bool = False,
         gpu: bool = False,
+        qos: Optional[str] = None,
         pre_command: Optional[str] = None,
         dry_run: bool = False,
         quiet: bool = False,
@@ -58,6 +60,9 @@ def run_command(
         PermissionError: CWD not writable
         RuntimeError: Execution fails
     """
+    # Sanitize job_name to prevent path traversal and command injection
+    job_name = re.sub(r'[^\w\-]', '_', job_name)
+    
     method = method.lower()
     if method not in ["shell", "slurm"]:
         raise ValueError("Method must be 'shell' or 'slurm'")
@@ -100,19 +105,25 @@ def run_command(
 
     # --- SCRIPT GENERATION LOGIC ---
     script_content = ""
+    env_cleanup = "\n".join([
+        "# --- Environment Cleanup ---",
+        "unset LD_PRELOAD",
+        "unset VGL_DISPLAY",
+        "unset VGL_CLIENT",
+        "",
+    ])
     if method == "shell":
         # Create a simple shell script
         script_content = f"#!/bin/bash\n"
         script_content += f"# Job '{job_name}' submitted for local shell execution\n\n"
 
-
-
         # Construct the block to execute
         cmd_block = f"echo \"--- Job started on $(hostname) at $(date) ---\"\n"
+        cmd_block += env_cleanup
         if pre_command:
             cmd_block += f"# --- Pre-command Environment Setup ---\n"
             cmd_block += f"{pre_command}\n\n"
-        
+
         shell_cmd_str = f"sudo -u {run_as_user} {cmd_str}" if run_as_user else cmd_str
         cmd_block += f"# --- Wrapped Command ---\n"
         cmd_block += f"{shell_cmd_str}\n"
@@ -129,29 +140,30 @@ def run_command(
         script_content = f"#!/bin/bash\n"
         script_content += f"#SBATCH --job-name={job_name}\n"
         script_content += f"#SBATCH --output={output_file}\n"
-        
+
         if nodes:
             script_content += f"#SBATCH --nodes={nodes}\n"
         if processors:
             script_content += f"#SBATCH --cpus-per-task={processors}\n"
         if memory:
             script_content += f"##SBATCH --mem={memory}\n"
-            
+
         script_content += f"##SBATCH --time={walltime}\n"
         script_content += f"#SBATCH --hint=nomultithread\n"
-        
+
         if run_as_user:
             script_content += f"#SBATCH --uid={run_as_user}\n"
-            
+
         if gpu:
             script_content += f"#SBATCH --partition=gpu\n"
+        if qos:
+            script_content += f"#SBATCH --qos={qos}\n"
 
         script_content += f"\necho \"--- Job started on $(hostname) at $(date) ---\"\n"
-
-
+        script_content += f"{env_cleanup}"
 
         if pre_command:
-            script_content += "\n# --- Pre-command Environment Setup ---\n"
+            script_content += "# --- Pre-command Environment Setup ---\n"
             script_content += f"{pre_command}\n"
 
         script_content += "\n# --- Wrapped Command ---\n"

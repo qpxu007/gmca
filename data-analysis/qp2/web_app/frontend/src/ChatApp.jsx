@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { Archive, Bot, Home, MessageCircle, Mic, MicOff, Send } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, MessageCircle, Send, Mic, MicOff, Bot } from 'lucide-react';
 import { api, API_URL } from './api';
 import './ChatApp.css';
 
@@ -10,6 +10,12 @@ const ChatApp = () => {
     const [sending, setSending] = useState(false);
     const [listening, setListening] = useState(false);
     const [aiLoading, setAiLoading] = useState(false);
+    const [activeUsers, setActiveUsers] = useState([]);
+    const [llmModel, setLlmModel] = useState('Loading...');
+    const [availableRooms, setAvailableRooms] = useState(['23i', '23o']);
+    const beamline = localStorage.getItem('beamline') || '';
+    const [room, setRoom] = useState(beamline);
+    const isAdmin = localStorage.getItem('is_admin') === 'true';
     const messagesEndRef = useRef(null);
     const seenIds = useRef(new Set());
     const eventSourceRef = useRef(null);
@@ -21,32 +27,65 @@ const ChatApp = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    // Load history + connect SSE
+    // Load history + connect SSE + poll presence + load info
     useEffect(() => {
+        seenIds.current.clear();
+        setMessages([]);
         loadHistory();
         connectSSE();
+        loadUsers();
+        loadInfo();
+        const presenceInterval = setInterval(loadUsers, 30000);
         return () => {
             if (eventSourceRef.current) {
                 eventSourceRef.current.close();
             }
+            clearInterval(presenceInterval);
         };
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [room]);
 
     const loadHistory = async () => {
         try {
-            const data = await api.chatHistory();
+            const data = await api.chatHistory(room);
             const msgs = data.messages || [];
             msgs.forEach(m => seenIds.current.add(m.msg_id));
             setMessages(msgs);
+            if (data.room && data.room !== room) {
+                setRoom(data.room);
+            }
         } catch (e) {
             console.error('Failed to load chat history', e);
         }
     };
 
+    const loadUsers = async () => {
+        try {
+            const data = await api.chatUsers(room);
+            setActiveUsers(data.users || []);
+        } catch { /* ignore */ }
+    };
+
+    const loadInfo = async () => {
+        try {
+            const data = await api.chatInfo();
+            setLlmModel(data.model || 'Unknown');
+        } catch { /* ignore */ }
+
+        try {
+            const rData = await api.chatRooms();
+            if (rData.rooms) setAvailableRooms(rData.rooms);
+        } catch { /* ignore */ }
+    };
+
     const connectSSE = () => {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-        const es = new EventSource(`${API_URL}/chat/stream?token=${token}`);
+        const currentUser = localStorage.getItem('user');
+        if (!currentUser) return;
+        const roomParam = room ? `?room=${room}` : '';
+        // Cookie is sent automatically — no token query param needed
+        const es = new EventSource(`${API_URL}/chat/stream${roomParam}`, {
+            withCredentials: true,
+        });
         es.onmessage = (event) => {
             try {
                 const msg = JSON.parse(event.data);
@@ -69,7 +108,7 @@ const ChatApp = () => {
         setInput('');
         setSending(true);
         try {
-            const res = await api.chatSend(text);
+            const res = await api.chatSend(text, room);
             // Message will arrive via SSE; add optimistically with returned msg_id
             seenIds.current.add(res.msg_id);
             setMessages(prev => [...prev, {
@@ -88,12 +127,25 @@ const ChatApp = () => {
         setInput('');
         setAiLoading(true);
         try {
-            await api.chatAskAI(text);
+            await api.chatAskAI(text, room);
             // Both user msg and AI response arrive via SSE
         } catch (e) {
             console.error('AI request failed', e);
         } finally {
             setAiLoading(false);
+        }
+    };
+
+    const handleManualArchive = async () => {
+        if (!window.confirm(`Are you sure you want to manually archive and clear the active chat room '${room}'?`)) return;
+        try {
+            await api.chatArchive(room);
+            alert("Archive completed successfully.");
+            setMessages([]);
+            seenIds.current.clear();
+            loadHistory();
+        } catch (e) {
+            alert("Archive failed: " + (e.response?.data?.detail || e.message));
         }
     };
 
@@ -155,15 +207,74 @@ const ChatApp = () => {
     return (
         <div className="chat-container">
             <div className="chat-toolbar">
-                <Link to="/dashboard" className="back-link">
-                    <ArrowLeft size={20} />
-                    Dashboard
+                <Link to="/dashboard" style={{ display: 'flex', alignItems: 'center', color: '#BBE1FA', textDecoration: 'none', marginRight: '10px' }}>
+                    <Home size={20} />
                 </Link>
                 <div className="chat-toolbar-title">
                     <MessageCircle size={20} />
-                    AI Chat
+                    Chat
+                    {isAdmin ? (
+                        <div style={{ marginLeft: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <select
+                                value={room}
+                                onChange={(e) => setRoom(e.target.value)}
+                                style={{ height: '28px', padding: '0 10px', boxSizing: 'border-box', fontSize: '0.85rem', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.1)', color: '#BBE1FA', width: '90px', outline: 'none', cursor: 'pointer' }}
+                                title="Switch Room"
+                            >
+                                {availableRooms.map(r => (
+                                    <option key={r} value={r} style={{ background: '#1B262C', color: '#fff' }}>{r}</option>
+                                ))}
+                            </select>
+                            <button
+                                onClick={handleManualArchive}
+                                style={{ height: '28px', padding: '0 10px', boxSizing: 'border-box', background: 'rgba(255, 0, 0, 0.15)', border: '1px solid rgba(255,0,0,0.3)', color: '#ffcdd2', cursor: 'pointer', fontSize: '0.85rem', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                title={`Manually Archive ${room} Chat`}
+                            >
+                                <Archive size={14} /> Archive
+                            </button>
+                        </div>
+                    ) : (
+                        room && <span style={{ fontSize: '0.8rem', color: '#888', marginLeft: '8px' }}>({room})</span>
+                    )}
                 </div>
                 <div style={{ flex: 1 }} />
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontSize: '0.85rem',
+                    color: '#BBE1FA',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    height: '28px',
+                    padding: '0 10px',
+                    boxSizing: 'border-box',
+                    borderRadius: '14px'
+                }}>
+                    <Bot size={14} />
+                    {llmModel}
+                </div>
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '0.85rem',
+                    color: '#BBE1FA',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    height: '28px',
+                    padding: '0 10px',
+                    boxSizing: 'border-box',
+                    borderRadius: '14px'
+                }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 'bold' }}>
+                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#4caf50', boxShadow: '0 0 6px #4caf50' }} />
+                        {activeUsers.length} Online
+                    </span>
+                    {activeUsers.length > 0 && (
+                        <span style={{ opacity: 0.8, marginLeft: '4px' }}>
+                            ({activeUsers.join(', ')})
+                        </span>
+                    )}
+                </div>
             </div>
 
             <div className="chat-messages">

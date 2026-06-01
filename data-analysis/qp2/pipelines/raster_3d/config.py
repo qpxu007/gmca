@@ -2,10 +2,8 @@
 
 """Analysis source definitions and default configuration for 3D raster pipeline."""
 
-import os
-
-CAMERA_SERVER_HOST = os.environ.get("QP2_CAMERA_HOST", "127.0.0.1")
-CAMERA_SERVER_PORT = int(os.environ.get("QP2_CAMERA_PORT", "8200"))
+CAMERA_SERVER_HOST = "192.168.1.13"
+CAMERA_SERVER_PORT = 8200
 
 ANALYSIS_SOURCES = {
     "dozor": {

@@ -89,7 +89,7 @@ class ImageFilterWorker(QRunnable):
                 )
                 return
             height, width = self.image_data.shape
-            beam_center = (height // 2, width // 2)
+            beam_center = (width // 2, height // 2)
 
         from cv2 import blur, GaussianBlur
         try:

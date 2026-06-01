@@ -8,7 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.inspection import inspect as sa_inspect
 from sqlalchemy import desc
 
-from qp2.data_viewer.models import PipelineStatus, DataProcessResults, DatasetRun
+from qp2.db import PipelineStatus, DataProcessResults, DatasetRun
 from qp2.xio.db_manager import DBManager
 
 logger = logging.getLogger(__name__)

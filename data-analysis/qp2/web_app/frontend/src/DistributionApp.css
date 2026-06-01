@@ -1,0 +1,31 @@
+.distribution-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    box-sizing: border-box;
+    background-color: #f0f2f5;
+}
+
+.distribution-toolbar {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    gap: 15px;
+    background: linear-gradient(90deg, #1B262C 0%, #0F4C75 100%);
+    color: #e0e0e0;
+}
+
+.distribution-toolbar a {
+    color: #a0b4cc;
+    text-decoration: none;
+}
+
+.distribution-toolbar a:hover {
+    color: #fff;
+}
+
+.distribution-toolbar h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #fff;
+}

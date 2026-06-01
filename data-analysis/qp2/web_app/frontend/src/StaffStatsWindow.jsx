@@ -18,13 +18,16 @@ const StaffStatsWindow = ({ schedule, allStaff, quotas, allBeamlines = [], allDa
                 name: staff.full_name,
                 quotaDays: quota.max_days,
                 quotaWeekends: quota.max_weekends,
-                assignedDays: 0,
-                assignedWeekends: 0
+                hostDays: 0,
+                hostWeekends: 0,
+                compDays: 0,
+                is_computing: staff.is_computing
             };
         });
 
         // Calculate usage from schedule
-        const staffWorkDays = {}; // staffId -> Set(dateStr)
+        const staffHostDays = {}; // staffId -> Set(dateStr)
+        const staffCompDays = {}; // staffId -> Set(dateStr)
         const openSlotsByBeamline = {}; // beamlineId -> count
         allBeamlines.forEach(b => openSlotsByBeamline[b.id] = 0);
 
@@ -38,10 +41,16 @@ const StaffStatsWindow = ({ schedule, allStaff, quotas, allBeamlines = [], allDa
             // Count Staff Usage
             if (day.assigned_staff_id) {
                 const sid = day.assigned_staff_id;
-                if (!staffWorkDays[sid]) staffWorkDays[sid] = new Set();
+                if (!staffHostDays[sid]) staffHostDays[sid] = new Set();
                 
-                staffWorkDays[sid].add(day.date);
+                staffHostDays[sid].add(day.date);
             } 
+            if (day.assigned_computing_staff_id) {
+                const sid = day.assigned_computing_staff_id;
+                if (!staffCompDays[sid]) staffCompDays[sid] = new Set();
+                
+                staffCompDays[sid].add(day.date);
+            }
             // Count Open Slots
             else {
                 const dt = dayTypeMap[day.day_type_id];
@@ -54,16 +63,24 @@ const StaffStatsWindow = ({ schedule, allStaff, quotas, allBeamlines = [], allDa
         });
 
         // Aggregate Staff Stats
-        Object.keys(staffWorkDays).forEach(sid => {
-            const days = Array.from(staffWorkDays[sid]);
+        Object.keys(staffHostDays).forEach(sid => {
+            const days = Array.from(staffHostDays[sid]);
             if (data[sid]) {
-                data[sid].assignedDays = days.length;
-                data[sid].assignedWeekends = days.filter(d => {
+                data[sid].hostDays = days.length;
+                data[sid].hostWeekends = days.filter(d => {
                     const [y, m, dayNum] = d.split('-').map(Number);
                     const localDate = new Date(y, m - 1, dayNum);
                     const w = localDate.getDay();
                     return w === 0 || w === 6;
                 }).length;
+            }
+        });
+
+        // Aggregate Computing Stats
+        Object.keys(staffCompDays).forEach(sid => {
+            const days = Array.from(staffCompDays[sid]);
+            if (data[sid]) {
+                data[sid].compDays = days.length;
             }
         });
 
@@ -150,13 +167,21 @@ const StaffStatsWindow = ({ schedule, allStaff, quotas, allBeamlines = [], allDa
                             <div key={i} className="stats-row">
                                 <div className="stats-name">{s.name}</div>
                                 <div className="stats-metrics">
-                                    <span title="Total Days">
-                                        {s.assignedDays} / {s.quotaDays} D
+                                    <span title="Host Days">
+                                        {s.hostDays} / {s.quotaDays} D
                                     </span>
                                     <span className="separator">|</span>
-                                    <span title="Weekends">
-                                        {s.assignedWeekends} / {s.quotaWeekends} W
+                                    <span title="Host Weekends">
+                                        {s.hostWeekends} / {s.quotaWeekends} W
                                     </span>
+                                    {s.is_computing && (
+                                        <>
+                                            <span className="separator">|</span>
+                                            <span title="Computing Days">
+                                                {s.compDays} C
+                                            </span>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         ))}

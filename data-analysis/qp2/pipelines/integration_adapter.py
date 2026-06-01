@@ -116,7 +116,7 @@ class PluginCompatibilityAdapter:
             
             # Build configuration from kwargs
             config = self._build_config_from_kwargs(
-                work_dir, pipeline_type, metadata, **kwargs
+                work_dir, pipeline_type, master_file, metadata, **kwargs
             )
             
             # Set Redis tracking in config
@@ -180,7 +180,8 @@ class PluginCompatibilityAdapter:
             # Execute in background
             executor = ThreadPoolExecutor(max_workers=1)
             executor.submit(execute_pipeline)
-            
+            executor.shutdown(wait=False)
+
             return results_key
             
         except Exception as e:
@@ -211,7 +212,7 @@ class PluginCompatibilityAdapter:
         return str(work_dir)
     
     def _build_config_from_kwargs(self, work_dir: str, pipeline_type: str,
-                                 metadata: Dict[str, Any], **kwargs) -> PipelineConfig:
+                                 master_file: str, metadata: Dict[str, Any], **kwargs) -> PipelineConfig:
         """Build PipelineConfig from plugin-style kwargs."""
         # Extract common parameters
         prefix = {

@@ -12,7 +12,7 @@ from qp2.image_viewer.plugins.dozor.dozor_process import (
 )
 from qp2.image_viewer.utils.run_job import run_command, is_sbatch_available
 from qp2.log.logging_config import get_logger
-from qp2.utils.auxillary import can_read_path
+from qp2.utils.auxiliary import can_read_path
 
 logger = get_logger(__name__)
 

@@ -7,18 +7,30 @@ import SchedulerApp from './SchedulerApp';
 import DatasetApp from './DatasetApp';
 import ProcessingApp from './ProcessingApp';
 import ChatApp from './ChatApp';
+import ImageViewerApp from './ImageViewerApp';
+import LiveViewerApp from './LiveViewerApp';
+import ExperimentApp from './ExperimentApp';
+import ModelViewerApp from './ModelViewerApp';
+import RCSBApp from './RCSBApp';
+import ArchiveApp from './ArchiveApp';
+import DistributionApp from './DistributionApp';
 
-const ProtectedRoute = ({ children }) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
+// UX-only gate: localStorage values are user-controlled and provide no security guarantee.
+// All real authorization is enforced server-side via JWT verification on every API request.
+const ProtectedRoute = ({ children, staffOnly = false }) => {
+    const user = localStorage.getItem('user');
+    if (!user) {
         return <Navigate to="/login" replace />;
+    }
+    if (staffOnly && localStorage.getItem('is_admin') !== 'true') {
+        return <Navigate to="/dashboard" replace />;
     }
     return children;
 };
 
 function App() {
     return (
-        <BrowserRouter>
+        <BrowserRouter basename={import.meta.env.BASE_URL}>
             <Routes>
                 <Route path="/login" element={<Login />} />
                 
@@ -35,7 +47,7 @@ function App() {
                 } />
 
                 <Route path="/scheduler" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute staffOnly>
                         <SchedulerApp />
                     </ProtectedRoute>
                 } />
@@ -55,6 +67,48 @@ function App() {
                 <Route path="/chat" element={
                     <ProtectedRoute>
                         <ChatApp />
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/viewer" element={
+                    <ProtectedRoute>
+                        <ImageViewerApp />
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/live" element={
+                    <ProtectedRoute>
+                        <LiveViewerApp />
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/experiment" element={
+                    <ProtectedRoute>
+                        <ExperimentApp />
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/models" element={
+                    <ProtectedRoute>
+                        <ModelViewerApp />
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/rcsb" element={
+                    <ProtectedRoute staffOnly>
+                        <RCSBApp />
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/archive" element={
+                    <ProtectedRoute>
+                        <ArchiveApp />
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/distribution" element={
+                    <ProtectedRoute staffOnly>
+                        <DistributionApp />
                     </ProtectedRoute>
                 } />
 

@@ -6,7 +6,7 @@ import random
 
 try:
     from qp2.xio.db_manager import DBManager
-    from qp2.data_viewer.models import DatasetRun
+    from qp2.db import DatasetRun
 except ImportError as e:
     print(f"ImportError: {e}", file=sys.stderr)
     sys.exit(1)

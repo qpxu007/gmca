@@ -523,7 +523,7 @@ class MainWindow(QMainWindow):
         super().closeEvent(event)
 
 
-if __name__ == "__main__":
+def main():
     import os
     from datetime import datetime
 
@@ -555,3 +555,7 @@ if __name__ == "__main__":
     window = MainWindow(start_tab_index=args.tab, log_file=log_file)
     window.show()
     sys.exit(app.exec_())
+
+
+if __name__ == "__main__":
+    main()

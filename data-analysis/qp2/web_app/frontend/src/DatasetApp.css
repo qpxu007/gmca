@@ -2,31 +2,68 @@
     display: flex;
     flex-direction: column;
     height: 100vh;
-    padding: 20px;
     box-sizing: border-box;
-    background-color: #f8f9fa;
+    background-color: #f0f2f5;
 }
 
 .dataset-toolbar {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    margin-bottom: 20px;
+    padding: 12px 20px;
     gap: 15px;
+    background: linear-gradient(90deg, #1B262C 0%, #0F4C75 100%);
+    color: #e0e0e0;
+}
+
+.dataset-toolbar a {
+    color: #a0b4cc;
+    text-decoration: none;
+}
+
+.dataset-toolbar a:hover {
+    color: #fff;
+}
+
+.dataset-toolbar h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #fff;
 }
 
 .dataset-toolbar input {
-    padding: 8px 12px;
-    border: 1px solid #ccc;
+    padding: 10px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
     border-radius: 4px;
-    min-width: 300px;
+    font-size: 1rem;
+}
+
+.dataset-toolbar input::placeholder {
+    color: #667;
+}
+
+.dataset-toolbar button {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #e0e0e0;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.dataset-toolbar button:hover {
+    background: rgba(255, 255, 255, 0.12);
 }
 
 .dataset-table-container {
     flex: 1;
     overflow: auto;
     background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    border-radius: 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .dataset-table {
@@ -34,35 +71,54 @@
     border-collapse: collapse;
 }
 
-.dataset-table th, .dataset-table td {
-    padding: 12px 15px;
-    text-align: left;
-    border-bottom: 1px solid #eee;
+.dataset-table th,
+.dataset-table td {
+    padding: 10px 14px;
+    text-align: center;
+    border-bottom: 1px solid #e9ecef;
+    font-size: 0.9rem;
 }
 
 .dataset-table th {
-    background-color: #f1f3f5;
+    background-color: #0F4C75;
+    color: #BBE1FA;
     position: sticky;
     top: 0;
     font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.dataset-table tr:hover {
+.dataset-table tbody tr:nth-child(even) {
     background-color: #f8f9fa;
 }
 
+.dataset-table tbody tr:hover {
+    background-color: #e2e6ea;
+}
+
 .metadata-btn {
-    background: none;
-    border: 1px solid #ccc;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
     border-radius: 4px;
     padding: 4px 8px;
     cursor: pointer;
-    font-size: 0.8rem;
-    color: #555;
+    font-size: 0.78rem;
+    color: #495057;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    text-decoration: none;
+    transition: all 0.15s;
 }
 
 .metadata-btn:hover {
-    background-color: #eee;
+    background-color: #e9ecef;
+    border-color: #adb5bd;
+    color: #212529;
 }
 
 .pagination-controls {
@@ -73,14 +129,64 @@
 }
 
 .pagination-btn {
-    padding: 6px 12px;
+    padding: 6px 14px;
     background: white;
-    border: 1px solid #ccc;
+    border: 1px solid #dee2e6;
     border-radius: 4px;
     cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.15s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background-color: #e9ecef;
 }
 
 .pagination-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+.btn-spinner {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid #adb5bd;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 768px) {
+    .dataset-toolbar {
+        padding: 10px;
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .dataset-toolbar form {
+        width: 100%;
+    }
+    .dataset-toolbar input {
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .dataset-toolbar > * {
+        margin-right: 0 !important;
+        margin-bottom: 5px;
+    }
+    .dataset-table th,
+    .dataset-table td {
+        padding: 8px 10px;
+        font-size: 0.8rem;
+        white-space: nowrap;
+    }
+    .dataset-table-container {
+        -webkit-overflow-scrolling: touch;
+    }
 }

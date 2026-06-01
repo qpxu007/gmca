@@ -5,7 +5,7 @@ from pyqtgraph.Qt import QtWidgets
 from qp2.image_viewer.ui.singleton_dialog import SingletonDialog
 from qp2.log.logging_config import get_logger
 from qp2.image_viewer.utils.model_file_handler import handle_model_file_update
-from qp2.utils.auxillary import sanitize_space_group
+from qp2.utils.auxiliary import sanitize_space_group
 
 logger = get_logger(__name__)
 
@@ -224,7 +224,7 @@ class SettingsDialog(SingletonDialog):
         
         mode_rows = [
             ("Std/Vec/Site", ["STANDARD", "VECTOR", "SINGLE", "SITE"], ["dozor", "xds", "xia2", "autoproc"]),
-            ("Raster", ["RASTER"], ["dozor", "nxds", "xia2_ssx", "crystfel"]),
+            ("Raster", ["RASTER"], ["dozor", "nxds", "xia2_ssx", "crystfel", "raster_3d"]),
             ("Strategy", ["STRATEGY"], ["dozor", "xds_strategy", "mosflm_strategy"]),
         ]
         
@@ -233,8 +233,9 @@ class SettingsDialog(SingletonDialog):
         
         info_label = QtWidgets.QLabel("<i>* Note: These settings are ONLY for the Data Processing Server.</i>")
         info_label.setStyleSheet("color: gray;")
-        pipelines_layout.addWidget(info_label, 0, 0, 1, 6)
-        
+        pipelines_layout.addWidget(info_label, 0, 0, 1, 4)
+
+        max_cols = 3  # checkboxes per row
         row_idx = 1
         for label, modes, available_pipes in mode_rows:
             pipelines_layout.addWidget(QtWidgets.QLabel(f"<b>{label}:</b>"), row_idx, 0)
@@ -246,12 +247,15 @@ class SettingsDialog(SingletonDialog):
                 cb.setChecked(is_checked)
                 cb.stateChanged.connect(self._on_param_changed)
                 pipelines_layout.addWidget(cb, row_idx, col_idx)
-                
+
                 for m in modes:
                     if m not in self.pipeline_checkboxes:
                         self.pipeline_checkboxes[m] = {}
                     self.pipeline_checkboxes[m][pipe] = cb
                 col_idx += 1
+                if col_idx > max_cols:
+                    col_idx = 1
+                    row_idx += 1
             row_idx += 1
             
         right_column.addWidget(pipelines_group)

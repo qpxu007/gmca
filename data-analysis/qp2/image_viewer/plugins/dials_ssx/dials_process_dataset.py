@@ -3,6 +3,7 @@ import argparse
 import json
 import logging
 import os
+import redis
 import shlex
 import subprocess
 import sys

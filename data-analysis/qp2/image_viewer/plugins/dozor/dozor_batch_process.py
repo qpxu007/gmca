@@ -55,6 +55,17 @@ def main():
     )
     parser.add_argument("-d", "--debug", action="store_true")
     parser.add_argument(
+        "--keep-output",
+        action="store_true",
+        help="Keep dozor working files (dozor.in, dozor.out, *.spot) in proc_dir for inspection.",
+    )
+    parser.add_argument(
+        "--proc-dir",
+        type=str,
+        default=None,
+        help="Processing directory to store dozor output files when --keep-output is set.",
+    )
+    parser.add_argument(
         "--status_key",
         type=str,
         required=True,
@@ -133,6 +144,14 @@ def main():
                 )
             # --- END: MORE ROBUST CHECK AND LOGGING ---
 
+            # Determine output directory for this task when keep_output is enabled
+            output_dir = None
+            if args.keep_output and args.proc_dir:
+                output_dir = os.path.join(
+                    args.proc_dir, f"frames_{start_frame}_{start_frame + nimages - 1}"
+                )
+                os.makedirs(output_dir, exist_ok=True)
+
             # Run the imported dozor_job function
             # Pass the original decoded connection to dozor_job
             dozor_job(
@@ -142,6 +161,7 @@ def main():
                 start=start_frame,
                 nimages=nimages,
                 debug=args.debug,
+                output_dir=output_dir,
             )
             logger.info(f"--- Task {i+1} completed successfully. ---")
 

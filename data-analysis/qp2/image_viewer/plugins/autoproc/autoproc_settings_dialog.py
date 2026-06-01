@@ -4,7 +4,7 @@ from PyQt5.QtCore import pyqtSignal
 from pyqtgraph.Qt import QtWidgets
 from qp2.image_viewer.ui.singleton_dialog import SingletonDialog
 from qp2.image_viewer.utils.model_file_handler import handle_model_file_update
-from qp2.utils.auxillary import sanitize_space_group
+from qp2.utils.auxiliary import sanitize_space_group
 
 
 class AutoPROCSettingsDialog(SingletonDialog):

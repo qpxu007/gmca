@@ -2,7 +2,8 @@ from pathlib import Path
 from pathlib import Path
 from typing import Dict, Optional, Tuple, Any
 
-from symmetry import Symmetry
+from qp2.pipelines.gmcaproc.symmetry import Symmetry
+from qp2.log.logging_config import get_logger
 
 # Configure logging
 logger = get_logger(__name__)

@@ -10,8 +10,8 @@ project_root = current_file.parent.parent.parent
 sys.path.append(str(project_root))
 
 try:
-    from xio.db_manager import DBManager
-    from data_viewer.models import Run, ScheduleDay, Beamline, DayType
+    from qp2.xio.db_manager import DBManager
+    from qp2.db import Run, ScheduleDay, Beamline, DayType
     from sqlalchemy import and_
 except ImportError as e:
     print(f"ImportError: {e}")

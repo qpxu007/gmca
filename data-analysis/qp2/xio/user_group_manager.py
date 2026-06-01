@@ -3,6 +3,7 @@ import os
 import pwd
 import re
 import subprocess
+import time
 from typing import Optional, Dict, Any
 
 import pymysql
@@ -12,6 +13,27 @@ from qp2.xio.db_manager import get_beamline_from_hostname
 from qp2.config.servers import ServerConfig
 
 logger = get_logger(__name__)
+
+# ESAF group membership changes as experiments rotate (daily-ish). TTL the
+# user-group caches so a newly added member sees access within this window
+# and a removed member loses it on the same timescale, without restarting.
+USER_GROUPS_TTL_S = 60
+
+
+def _cache_get_fresh(cache: dict, key):
+    """Return cached value if still within TTL, else None and evict."""
+    entry = cache.get(key)
+    if entry is None:
+        return None
+    value, expires_at = entry
+    if time.time() > expires_at:
+        cache.pop(key, None)
+        return None
+    return value
+
+
+def _cache_put(cache: dict, key, value, ttl_s: float = USER_GROUPS_TTL_S):
+    cache[key] = (value, time.time() + ttl_s)
 
 
 class UserGroupManager:
@@ -106,7 +128,7 @@ class UserGroupManager:
             for group in grp.getgrall():
                 if username in group.gr_mem and group.gr_name.startswith("esaf"):
                     group_names.append(group.gr_name)
-                elif group.gr_name == "staffGroup":
+                elif group.gr_name == "staffGroup" and username in group.gr_mem:
                     group_names.append("staff")
 
             # Sort numerically by the ESAF number in descending order with 'staff' first
@@ -130,12 +152,55 @@ class UserGroupManager:
             logger.error(f"An error occurred during system group lookup fallback: {e}", exc_info=True)
             return []
 
+    def get_remote_ip_patterns(self, username):
+        """Get allowed remote IP patterns for a user from all their ESAF groups."""
+        cnx, cursor = None, None
+        try:
+            cnx, cursor = self._get_connection()
+            cursor.execute("""
+                SELECT DISTINCT g.remote_ip_list
+                FROM user u
+                INNER JOIN user_group ug ON u.badge_number = ug.badge_number
+                INNER JOIN `group` g ON ug.group_name = g.group_name
+                WHERE u.username = %s AND g.remote_enable = 1
+                  AND g.remote_ip_list IS NOT NULL AND g.remote_ip_list != ''
+            """, (username,))
+            patterns = set()
+            for row in cursor.fetchall():
+                for p in row["remote_ip_list"].split(","):
+                    p = p.strip()
+                    if p:
+                        patterns.add(p)
+            return patterns
+        except Exception as e:
+            logger.warning(f"Error in get_remote_ip_patterns: {e}")
+            return set()
+        finally:
+            self._close_connection(cnx, cursor)
+
+    def get_user_info(self, username):
+        """Get user contact info (full_name, email) from the accounts database."""
+        cnx, cursor = None, None
+        try:
+            cnx, cursor = self._get_connection()
+            cursor.execute(
+                "SELECT username, full_name, email, badge_number FROM user WHERE username = %s",
+                (username,),
+            )
+            return cursor.fetchone()
+        except Exception as e:
+            logger.warning(f"Error in get_user_info: {e}")
+            return None
+        finally:
+            self._close_connection(cnx, cursor)
+
     def groupnames_from_username(self, username):
         """
         Given a login username, find the group names (esaf) that the user belongs to.
         """
-        if username in self._username_all_groups_cache:
-            return self._username_all_groups_cache[username]
+        cached = _cache_get_fresh(self._username_all_groups_cache, username)
+        if cached is not None:
+            return cached
 
         cnx, cursor = None, None
         try:
@@ -148,7 +213,7 @@ class UserGroupManager:
                     """
             cursor.execute(query, (username,))
             result = cursor.fetchall()
-            self._username_all_groups_cache[username] = result
+            _cache_put(self._username_all_groups_cache, username, result)
             return result
         except Exception as e:
             logger.warning(f"Error in groupnames_from_username: {e}")
@@ -161,8 +226,9 @@ class UserGroupManager:
         Finds all groups for a given user where the group name starts with 'esaf'.
         Tries the database first, then falls back to a local system lookup on failure.
         """
-        if username in self._username_esaf_groups_cache:
-            return self._username_esaf_groups_cache[username]
+        cached = _cache_get_fresh(self._username_esaf_groups_cache, username)
+        if cached is not None:
+            return cached
 
         result = None
         cnx, cursor = None, None
@@ -200,7 +266,7 @@ class UserGroupManager:
         
         # Cache the result (whether from DB or fallback)
         if result is not None:
-             self._username_esaf_groups_cache[username] = result
+            _cache_put(self._username_esaf_groups_cache, username, result)
         return result or []
 
     def is_staff(self, username):
@@ -279,6 +345,28 @@ class UserGroupManager:
         except Exception as e:
             logger.warning(f"Error in groupinfo_from_groupname: {e}")
             return None
+        finally:
+            self._close_connection(cnx, cursor)
+
+    def get_all_active_esafs(self, days_past=30, days_future=90):
+        """Return all active/upcoming ESAFs (collect window overlaps the range)."""
+        cnx, cursor = None, None
+        try:
+            cnx, cursor = self._get_connection()
+            query = """
+                SELECT group_name, esaf_number, beamline, pi_full_name,
+                       esaf_collect_start, esaf_collect_end, esaf_title
+                FROM `group`
+                WHERE group_enable = 1
+                  AND esaf_collect_end >= DATE_SUB(NOW(), INTERVAL %s DAY)
+                  AND esaf_collect_start <= DATE_ADD(NOW(), INTERVAL %s DAY)
+                ORDER BY esaf_collect_start DESC
+            """
+            cursor.execute(query, (days_past, days_future))
+            return cursor.fetchall()
+        except Exception as e:
+            logger.warning(f"Error in get_all_active_esafs: {e}")
+            return []
         finally:
             self._close_connection(cnx, cursor)
 

@@ -5,5 +5,5 @@ curl -X POST -H "Content-Type: application/json" -d '{
     "sample_id": "sample123",
     "username": "testuser",
     "groupname": "testgroup"
-    # ... any other parameters required by xprocess ...
+    # ... any other parameters required by the pipeline ...
 }' http://localhost:8080/launch_job

@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from itertools import product
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple
+from qp2.log.logging_config import get_logger
 
 # Configure logging
 logger = get_logger(__name__)

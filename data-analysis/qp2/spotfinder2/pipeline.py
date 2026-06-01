@@ -8,6 +8,7 @@ import time
 import numpy as np
 from dataclasses import dataclass, field
 from typing import Optional, Dict, Callable
+from .spot_list import SpotList
 
 from qp2.log.logging_config import get_logger
 

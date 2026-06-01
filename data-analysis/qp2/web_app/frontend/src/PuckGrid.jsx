@@ -14,9 +14,10 @@ export default function PuckGrid({ puckNames, slotsMap, onPuckDoubleClick }) {
                             // Puck ID must be unique. Use original label is risky if duplicates allowed?
                             // Logic guarantees unique original_label in load? 
                             // Let's use `puck-${puckData.original_label}`.
-                            <Puck 
-                                id={`puck-${puckData.original_label}`} 
-                                puckData={puckData} 
+                            <Puck
+                                id={`puck-${puckData.original_label}`}
+                                puckData={puckData}
+                                slotName={name}
                                 onDoubleClick={() => onPuckDoubleClick(name, puckData)}
                             />
                         )}

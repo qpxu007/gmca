@@ -14,15 +14,18 @@ from sqlalchemy.exc import IntegrityError # Import IntegrityError
 # For now, I will assume a get_db dependency can be provided or I'll use db_manager directly.
 
 try:
-    from qp2.data_viewer.models import (
+    from qp2.db import (
         Run, DayType, Staff, ScheduleDay, ShiftAllocation, Beamline, StaffQuota, StaffAvailability
     )
-    from xio.db_manager import DBManager
+    from qp2.xio.db_manager import DBManager
+    from qp2.web_app.backend.security import verify_token
+    from qp2.web_app.backend.auth import is_staff_member
 except ImportError:
     # Fallback for dev/IDE context
     pass
 
-router = APIRouter(prefix="/scheduler", tags=["scheduler"])
+# All scheduler endpoints require authentication
+router = APIRouter(prefix="/scheduler", tags=["scheduler"], dependencies=[Depends(verify_token)])
 
 # --- Pydantic Models ---
 
@@ -47,6 +50,8 @@ class StaffBase(BaseModel):
     full_name: str
     email: str
     is_active: bool = True
+    is_host: bool = True
+    is_computing: bool = False
 
 class StaffCreate(StaffBase):
     pass
@@ -100,12 +105,14 @@ class ScheduleDayResponse(BaseModel):
     run_id: int
     day_type_id: int
     assigned_staff_id: Optional[int]
+    assigned_computing_staff_id: Optional[int] = None
     
     # Enriched fields
     beamline_name: str
     day_type_name: str
     day_type_color: str
     staff_name: Optional[str]
+    computing_staff_name: Optional[str] = None
     
     shifts: List[ShiftAllocationResponse] = []
 
@@ -150,6 +157,7 @@ class ScheduleDayUpdate(BaseModel):
     day_id: int
     day_type_id: int
     assigned_staff_id: Optional[int] = None
+    assigned_computing_staff_id: Optional[int] = None
     shifts: Optional[List[ShiftAllocationUpdate]] = None
 
 # --- Dependencies ---
@@ -158,6 +166,117 @@ def get_db_session():
     # This function is a placeholder and should always be overridden by main.py
     # If this is called, it means the dependency override failed.
     raise RuntimeError("get_db_session dependency not properly overridden in main.py")
+
+_session_factory = None
+
+def set_session_factory(factory):
+    global _session_factory
+    _session_factory = factory
+
+def _job_send_staff_reminders():
+    """APScheduler job: send staff reminders 5 and 1 days in advance."""
+    if not _session_factory:
+        return
+        
+    import logging
+    from datetime import datetime, timedelta
+    from qp2.web_app.backend.email_utils import send_mail
+    
+    logger = logging.getLogger("qp2.scheduler_reminders")
+    
+    with _session_factory() as session:
+        try:
+            today = datetime.now().date()
+            target_dates = [today + timedelta(days=5), today + timedelta(days=1)]
+            
+            days_to_remind = session.query(ScheduleDay).filter(
+                ScheduleDay.date.in_(target_dates),
+                (ScheduleDay.assigned_staff_id.isnot(None)) | (ScheduleDay.assigned_computing_staff_id.isnot(None))
+            ).all()
+            
+            if not days_to_remind:
+                return
+                
+            # Pre-fetch lookup data
+            beamlines = {b.id: b for b in session.query(Beamline).all()}
+            day_types = {dt.id: dt for dt in session.query(DayType).all()}
+            staff_map = {s.id: s for s in session.query(Staff).all()}
+            
+            day_ids = [d.id for d in days_to_remind]
+            shifts = session.query(ShiftAllocation).filter(ShiftAllocation.schedule_day_id.in_(day_ids)).all()
+            shifts_by_day = {}
+            for s in shifts:
+                shifts_by_day.setdefault(s.schedule_day_id, []).append(s)
+            
+            for day in days_to_remind:
+                dt = day_types.get(day.day_type_id)
+                if not dt or not dt.requires_staff:
+                    continue
+                    
+                staff = staff_map.get(day.assigned_staff_id)
+                comp_staff = staff_map.get(day.assigned_computing_staff_id)
+                
+                bl = beamlines.get(day.beamline_id)
+                bl_name = bl.name if bl else "Unknown Beamline"
+                days_away = (day.date - today).days
+                
+                # Fetch users/shifts
+                day_shifts = shifts_by_day.get(day.id, [])
+                user_details = ""
+                if day_shifts:
+                    user_info_list = []
+                    for s in day_shifts:
+                        info = []
+                        if s.pi_name:
+                            info.append(s.pi_name)
+                        if s.esaf_id:
+                            info.append(f"ESAF: {s.esaf_id}")
+                        if info:
+                            user_info_list.append(" - " + " ".join(info))
+                    if user_info_list:
+                        user_details = "\nUsers/Projects:\n" + "\n".join(user_info_list) + "\n"
+                
+                emails_to_send = set()
+                staff_roles = {} # email -> list of roles
+                
+                if staff and staff.email:
+                    emails_to_send.add(staff.email)
+                    staff_roles[staff.email] = {"name": staff.full_name, "is_host": True, "is_comp": False}
+                    
+                if comp_staff and comp_staff.email:
+                    emails_to_send.add(comp_staff.email)
+                    if comp_staff.email in staff_roles:
+                        staff_roles[comp_staff.email]["is_comp"] = True
+                    else:
+                        staff_roles[comp_staff.email] = {"name": comp_staff.full_name, "is_host": False, "is_comp": True}
+                        
+                if not emails_to_send:
+                    continue
+                
+                for email in emails_to_send:
+                    role_info = staff_roles[email]
+                    role_str = ""
+                    if role_info["is_host"] and role_info["is_comp"]:
+                        role_str = "host AND provide computing support for"
+                    elif role_info["is_host"]:
+                        role_str = "host"
+                    else:
+                        role_str = "provide computing support for"
+
+                    subject = f"Reminder: Beamline Shift ({role_str}) in {days_away} day{'s' if days_away > 1 else ''}"
+                    body = (f"Hello {role_info['name']},\n\n"
+                            f"This is a reminder that you are scheduled to {role_str} a beamline shift:\n\n"
+                            f"Date: {day.date.strftime('%Y-%m-%d')}\n"
+                            f"Beamline: {bl_name}\n"
+                            f"Type: {dt.name}\n"
+                            f"{user_details}\n"
+                            f"Please ensure you are prepared for your shift.\n")
+                    
+                    send_mail(subject=subject, body=body, to=[email])
+                    logger.info(f"Sent {days_away}-day reminder ({role_str}) for {day.date} to {email}")
+                
+        except Exception as e:
+            logger.error(f"Error in _job_send_staff_reminders: {e}")
 
 # --- Endpoints ---
 
@@ -168,16 +287,41 @@ async def list_runs(session: Session = Depends(get_db_session)):
     return runs
 
 @router.post("/runs", response_model=RunResponse)
-async def create_run(run: RunCreate, session: Session = Depends(get_db_session)):
+async def create_run(run: RunCreate, user: str = Depends(verify_token), session: Session = Depends(get_db_session)):
+    if not is_staff_member(user):
+        raise HTTPException(status_code=403, detail="Staff only")
     db_run = Run(**run.dict())
     session.add(db_run)
     session.commit()
     session.refresh(db_run)
+
+    # Auto-generate ScheduleDay rows for each date × beamline
+    beamlines = session.query(Beamline).all()
+    default_day_type = session.query(DayType).filter_by(name="User beam time").first() or session.query(DayType).first()
+    monday_day_type = session.query(DayType).filter_by(name="APS Studies").first()
+    if beamlines and default_day_type:
+        delta = (db_run.end_date - db_run.start_date).days
+        for i in range(delta + 1):
+            day_date = db_run.start_date + timedelta(days=i)
+            # Monday = 0 in weekday()
+            day_type = monday_day_type if (monday_day_type and day_date.weekday() == 0) else default_day_type
+            for bl in beamlines:
+                session.add(ScheduleDay(
+                    date=day_date,
+                    beamline_id=bl.id,
+                    run_id=db_run.id,
+                    day_type_id=day_type.id,
+                    assigned_staff_id=None,
+                ))
+        session.commit()
+
     return db_run
 
 @router.put("/runs", response_model=RunResponse)
-async def update_run(run: RunUpdate, session: Session = Depends(get_db_session)):
-    db_run = session.query(Run).get(run.id)
+async def update_run(run: RunUpdate, user: str = Depends(verify_token), session: Session = Depends(get_db_session)):
+    if not is_staff_member(user):
+        raise HTTPException(status_code=403, detail="Staff only")
+    db_run = session.get(Run,run.id)
     if not db_run:
         raise HTTPException(status_code=404, detail="Run not found")
     
@@ -189,22 +333,26 @@ async def update_run(run: RunUpdate, session: Session = Depends(get_db_session))
     return db_run
 
 @router.delete("/runs/{run_id}")
-async def delete_run(run_id: int, session: Session = Depends(get_db_session)):
-    db_run = session.query(Run).get(run_id)
+async def delete_run(run_id: int, user: str = Depends(verify_token), session: Session = Depends(get_db_session)):
+    if not is_staff_member(user):
+        raise HTTPException(status_code=403, detail="Staff only")
+    db_run = session.get(Run,run_id)
     if not db_run:
         raise HTTPException(status_code=404, detail="Run not found")
     
-    # Check for dependencies
-    usage_count = session.query(ScheduleDay).filter(ScheduleDay.run_id == run_id).count()
-    if usage_count > 0:
-        raise HTTPException(status_code=400, detail=f"Cannot delete Run: It contains {usage_count} schedule days. Please delete the days or the schedule first.")
+    # Cascade delete schedule days, quotas, and shift allocations for this run
+    schedule_days = session.query(ScheduleDay).filter(ScheduleDay.run_id == run_id).all()
+    for sd in schedule_days:
+        session.query(ShiftAllocation).filter(ShiftAllocation.schedule_day_id == sd.id).delete()
+    session.query(ScheduleDay).filter(ScheduleDay.run_id == run_id).delete()
+    session.query(StaffQuota).filter(StaffQuota.run_id == run_id).delete()
 
     session.delete(db_run)
     try:
         session.commit()
     except IntegrityError as e:
         session.rollback()
-        raise HTTPException(status_code=400, detail=f"Database error: {e.orig.pgerror if hasattr(e.orig, 'pgerror') else e}")
+        raise HTTPException(status_code=400, detail="Database error during operation")
     return {"message": "Run deleted"}
 
 # 2. Staff
@@ -214,7 +362,9 @@ async def list_staff(session: Session = Depends(get_db_session)):
     return staff
 
 @router.post("/staff", response_model=StaffResponse)
-async def create_staff(staff: StaffCreate, session: Session = Depends(get_db_session)):
+async def create_staff(staff: StaffCreate, user: str = Depends(verify_token), session: Session = Depends(get_db_session)):
+    if not is_staff_member(user):
+        raise HTTPException(status_code=403, detail="Staff only")
     db_staff = Staff(**staff.dict())
     session.add(db_staff)
     session.commit()
@@ -222,8 +372,10 @@ async def create_staff(staff: StaffCreate, session: Session = Depends(get_db_ses
     return db_staff
 
 @router.put("/staff", response_model=StaffResponse)
-async def update_staff(staff: StaffUpdate, session: Session = Depends(get_db_session)):
-    db_staff = session.query(Staff).get(staff.id)
+async def update_staff(staff: StaffUpdate, user: str = Depends(verify_token), session: Session = Depends(get_db_session)):
+    if not is_staff_member(user):
+        raise HTTPException(status_code=403, detail="Staff only")
+    db_staff = session.get(Staff,staff.id)
     if not db_staff:
         raise HTTPException(status_code=404, detail="Staff not found")
     
@@ -235,8 +387,10 @@ async def update_staff(staff: StaffUpdate, session: Session = Depends(get_db_ses
     return db_staff
 
 @router.delete("/staff/{staff_id}")
-async def delete_staff(staff_id: int, session: Session = Depends(get_db_session)):
-    db_staff = session.query(Staff).get(staff_id)
+async def delete_staff(staff_id: int, user: str = Depends(verify_token), session: Session = Depends(get_db_session)):
+    if not is_staff_member(user):
+        raise HTTPException(status_code=403, detail="Staff only")
+    db_staff = session.get(Staff,staff_id)
     if not db_staff:
         raise HTTPException(status_code=404, detail="Staff not found")
     
@@ -260,7 +414,7 @@ async def delete_staff(staff_id: int, session: Session = Depends(get_db_session)
         session.commit()
     except IntegrityError as e:
         session.rollback()
-        raise HTTPException(status_code=400, detail=f"Database error: {e.orig.pgerror if hasattr(e.orig, 'pgerror') else e}")
+        raise HTTPException(status_code=400, detail="Database error during operation")
     return {"message": "Staff deleted"}
 
 # 3. Day Types
@@ -270,7 +424,9 @@ async def list_day_types(session: Session = Depends(get_db_session)):
     return types
 
 @router.post("/day_types", response_model=DayTypeResponse)
-async def create_day_type(dtype: DayTypeCreate, session: Session = Depends(get_db_session)):
+async def create_day_type(dtype: DayTypeCreate, user: str = Depends(verify_token), session: Session = Depends(get_db_session)):
+    if not is_staff_member(user):
+        raise HTTPException(status_code=403, detail="Staff only")
     db_type = DayType(**dtype.dict())
     session.add(db_type)
     session.commit()
@@ -281,8 +437,10 @@ async def create_day_type(dtype: DayTypeCreate, session: Session = Depends(get_d
 #     id: int
 
 @router.put("/day_types", response_model=DayTypeResponse)
-async def update_day_type(dtype: DayTypeUpdate, session: Session = Depends(get_db_session)):
-    db_type = session.query(DayType).get(dtype.id)
+async def update_day_type(dtype: DayTypeUpdate, user: str = Depends(verify_token), session: Session = Depends(get_db_session)):
+    if not is_staff_member(user):
+        raise HTTPException(status_code=403, detail="Staff only")
+    db_type = session.get(DayType,dtype.id)
     if not db_type:
         raise HTTPException(status_code=404, detail="Day Type not found")
     
@@ -294,8 +452,10 @@ async def update_day_type(dtype: DayTypeUpdate, session: Session = Depends(get_d
     return db_type
 
 @router.delete("/day_types/{type_id}")
-async def delete_day_type(type_id: int, session: Session = Depends(get_db_session)):
-    db_type = session.query(DayType).get(type_id)
+async def delete_day_type(type_id: int, user: str = Depends(verify_token), session: Session = Depends(get_db_session)):
+    if not is_staff_member(user):
+        raise HTTPException(status_code=403, detail="Staff only")
+    db_type = session.get(DayType,type_id)
     if not db_type:
         raise HTTPException(status_code=404, detail="Day Type not found")
     
@@ -309,10 +469,67 @@ async def delete_day_type(type_id: int, session: Session = Depends(get_db_sessio
         session.commit()
     except IntegrityError as e:
         session.rollback()
-        raise HTTPException(status_code=400, detail=f"Database error: {e.orig.pgerror if hasattr(e.orig, 'pgerror') else e}")
+        raise HTTPException(status_code=400, detail="Database error during operation")
     return {"message": "Day Type deleted"}
 
 # 3b. Beamlines
+@router.post("/init_defaults")
+async def init_defaults(user: str = Depends(verify_token), session: Session = Depends(get_db_session)):
+    if not is_staff_member(user):
+        raise HTTPException(status_code=403, detail="Staff only")
+    """Initialize default beamlines and day types if they don't exist."""
+    created = []
+
+    # Beamlines
+    for name, alias in [("23IDD", "bl1"), ("23IDB", "bl2")]:
+        if not session.query(Beamline).filter_by(alias=alias).first():
+            session.add(Beamline(name=name, alias=alias))
+            created.append(f"Beamline {name} ({alias})")
+
+    # Day types
+    defaults = [
+        ("User beam time", "#800080", True),
+        ("APS Studies", "#FF0000", True),
+        ("Staff research", "#008000", True),
+        ("Start-up", "#90EE90", True),
+        ("Not assigned", "#FFFFFF", False),
+        ("Weekends", "#808080", False),
+    ]
+    for name, color, requires_staff in defaults:
+        if not session.query(DayType).filter_by(name=name).first():
+            session.add(DayType(name=name, color_code=color, requires_staff=requires_staff))
+            created.append(f"DayType {name}")
+
+    if created:
+        session.commit()
+
+    # Generate schedule days for any existing runs that have none
+    beamlines = session.query(Beamline).all()
+    default_day_type = session.query(DayType).filter_by(name="User beam time").first() or session.query(DayType).first()
+    monday_day_type = session.query(DayType).filter_by(name="APS Studies").first()
+    if beamlines and default_day_type:
+        runs = session.query(Run).all()
+        for run in runs:
+            existing = session.query(ScheduleDay).filter(ScheduleDay.run_id == run.id).count()
+            if existing == 0:
+                delta = (run.end_date - run.start_date).days
+                for i in range(delta + 1):
+                    day_date = run.start_date + timedelta(days=i)
+                    day_type = monday_day_type if (monday_day_type and day_date.weekday() == 0) else default_day_type
+                    for bl in beamlines:
+                        session.add(ScheduleDay(
+                            date=day_date,
+                            beamline_id=bl.id,
+                            run_id=run.id,
+                            day_type_id=day_type.id,
+                            assigned_staff_id=None,
+                        ))
+                created.append(f"Schedule days for run {run.name}")
+        if runs:
+            session.commit()
+
+    return {"status": "ok", "created": created, "message": f"Initialized {len(created)} items" if created else "Defaults already exist"}
+
 @router.get("/beamlines", response_model=List[BeamlineResponse])
 async def list_beamlines(session: Session = Depends(get_db_session)):
     beamlines = session.query(Beamline).all()
@@ -354,6 +571,7 @@ async def get_schedule(run_id: int, session: Session = Depends(get_db_session)):
         bl = beamlines.get(d.beamline_id)
         dt = day_types.get(d.day_type_id)
         st = staff_map.get(d.assigned_staff_id)
+        comp_st = staff_map.get(d.assigned_computing_staff_id)
         
         response_list.append(ScheduleDayResponse(
             id=d.id,
@@ -362,30 +580,71 @@ async def get_schedule(run_id: int, session: Session = Depends(get_db_session)):
             run_id=d.run_id,
             day_type_id=d.day_type_id,
             assigned_staff_id=d.assigned_staff_id,
+            assigned_computing_staff_id=d.assigned_computing_staff_id,
             beamline_name=bl.name if bl else "Unknown",
             day_type_name=dt.name if dt else "Unknown",
             day_type_color=dt.color_code if dt else "#FFFFFF",
             staff_name=st.full_name if st else None,
+            computing_staff_name=comp_st.full_name if comp_st else None,
             shifts=shifts_by_day.get(d.id, [])
         ))
         
     return response_list
 @router.post("/day", response_model=ScheduleDayResponse)
-async def update_schedule_day(update: ScheduleDayUpdate, session: Session = Depends(get_db_session)):
-    day = session.query(ScheduleDay).get(update.day_id)
+async def update_schedule_day(update: ScheduleDayUpdate, user: str = Depends(verify_token), session: Session = Depends(get_db_session)):
+    if not is_staff_member(user):
+        raise HTTPException(status_code=403, detail="Staff only")
+    day = session.get(ScheduleDay,update.day_id)
     if not day:
         raise HTTPException(status_code=404, detail="Schedule day not found")
         
     day.day_type_id = update.day_type_id
     day.assigned_staff_id = update.assigned_staff_id
+    
+    # Sync computing staff across all beamlines for this date
+    session.query(ScheduleDay).filter(
+        ScheduleDay.date == day.date,
+        ScheduleDay.run_id == day.run_id
+    ).update({ScheduleDay.assigned_computing_staff_id: update.assigned_computing_staff_id})
+
+    # Process Shift Allocations
+    if update.shifts is not None:
+        for shift_data in update.shifts:
+            has_content = any([shift_data.esaf_id, shift_data.pi_name, shift_data.project_id, shift_data.description])
+            
+            existing_shift = session.query(ShiftAllocation).filter(
+                ShiftAllocation.schedule_day_id == day.id,
+                ShiftAllocation.shift_index == shift_data.shift_index
+            ).first()
+            
+            if has_content:
+                if existing_shift:
+                    existing_shift.esaf_id = shift_data.esaf_id
+                    existing_shift.pi_name = shift_data.pi_name
+                    existing_shift.project_id = shift_data.project_id
+                    existing_shift.description = shift_data.description
+                else:
+                    new_shift = ShiftAllocation(
+                        schedule_day_id=day.id,
+                        shift_index=shift_data.shift_index,
+                        esaf_id=shift_data.esaf_id,
+                        pi_name=shift_data.pi_name,
+                        project_id=shift_data.project_id,
+                        description=shift_data.description
+                    )
+                    session.add(new_shift)
+            else:
+                if existing_shift:
+                    session.delete(existing_shift)
+    
     session.commit()
     session.refresh(day)
     
     # We need to return enriched response, so fetch lookup data
-    # Ideally reuse logic from get_schedule or use a helper
-    bl = session.query(Beamline).get(day.beamline_id)
-    dt = session.query(DayType).get(day.day_type_id)
-    st = session.query(Staff).get(day.assigned_staff_id) if day.assigned_staff_id else None
+    bl = session.get(Beamline,day.beamline_id)
+    dt = session.get(DayType,day.day_type_id)
+    st = session.get(Staff,day.assigned_staff_id) if day.assigned_staff_id else None
+    comp_st = session.get(Staff,day.assigned_computing_staff_id) if day.assigned_computing_staff_id else None
     shifts = session.query(ShiftAllocation).filter(ShiftAllocation.schedule_day_id == day.id).all()
     
     return ScheduleDayResponse(
@@ -395,10 +654,12 @@ async def update_schedule_day(update: ScheduleDayUpdate, session: Session = Depe
         run_id=day.run_id,
         day_type_id=day.day_type_id,
         assigned_staff_id=day.assigned_staff_id,
+        assigned_computing_staff_id=day.assigned_computing_staff_id,
         beamline_name=bl.name if bl else "Unknown",
         day_type_name=dt.name if dt else "Unknown",
         day_type_color=dt.color_code if dt else "#FFFFFF",
         staff_name=st.full_name if st else None,
+        computing_staff_name=comp_st.full_name if comp_st else None,
         shifts=shifts
     )
 
@@ -409,7 +670,9 @@ async def list_quotas(run_id: int, session: Session = Depends(get_db_session)):
     return quotas
 
 @router.post("/quotas", response_model=StaffQuotaResponse)
-async def update_quota(quota: StaffQuotaCreate, session: Session = Depends(get_db_session)):
+async def update_quota(quota: StaffQuotaCreate, user: str = Depends(verify_token), session: Session = Depends(get_db_session)):
+    if not is_staff_member(user):
+        raise HTTPException(status_code=403, detail="Staff only")
     # Check if exists
     db_quota = session.query(StaffQuota).filter(
         and_(StaffQuota.staff_id == quota.staff_id, StaffQuota.run_id == quota.run_id)
@@ -434,7 +697,7 @@ async def list_availability(staff_id: int, session: Session = Depends(get_db_ses
     return avail
 
 @router.post("/availability", response_model=StaffAvailabilityResponse)
-async def update_availability(avail: StaffAvailabilityCreate, session: Session = Depends(get_db_session)):
+async def update_availability(avail: StaffAvailabilityCreate, user: str = Depends(verify_token), session: Session = Depends(get_db_session)):
     db_avail = session.query(StaffAvailability).filter(
         and_(StaffAvailability.staff_id == avail.staff_id, StaffAvailability.date == avail.date)
     ).first()
@@ -450,9 +713,11 @@ async def update_availability(avail: StaffAvailabilityCreate, session: Session =
     return db_avail
 
 @router.post("/auto_assign/{run_id}")
-async def auto_assign(run_id: int, overwrite: bool = False, session: Session = Depends(get_db_session)):
+async def auto_assign(run_id: int, overwrite: bool = False, user: str = Depends(verify_token), session: Session = Depends(get_db_session)):
+    if not is_staff_member(user):
+        raise HTTPException(status_code=403, detail="Staff only")
     # 1. Fetch Configuration Data
-    run = session.query(Run).get(run_id)
+    run = session.get(Run,run_id)
     if not run:
         raise HTTPException(status_code=404, detail="Run not found")
         
@@ -517,6 +782,9 @@ async def auto_assign(run_id: int, overwrite: bool = False, session: Session = D
         
         candidates = []
         for staff in all_staff:
+            if not getattr(staff, 'is_host', True):
+                continue
+                
             sid = staff.id
             
             # Constraint: Already assigned today (on another beamline)
@@ -573,13 +841,45 @@ async def auto_assign(run_id: int, overwrite: bool = False, session: Session = D
             
             assigned_count += 1
     
+    # 5. Assign Computing Staff (synchronized across beamlines for each date)
+    unique_dates = {day.date for day in schedule_days}
+    comp_staff_list = [s for s in all_staff if getattr(s, 'is_computing', False)]
+    
+    if comp_staff_list:
+        for date_key in unique_dates:
+            day_records = [d for d in schedule_days if d.date == date_key]
+            if not day_records: continue
+            
+            existing_comp = None
+            for d in day_records:
+                if getattr(d, 'assigned_computing_staff_id', None):
+                    existing_comp = d.assigned_computing_staff_id
+                    break
+            
+            if existing_comp and not overwrite:
+                continue
+                
+            hosts_today = daily_assignments.get(date_key, set())
+            comp_host_candidates = [s for s in comp_staff_list if s.id in hosts_today]
+            
+            chosen_comp_id = None
+            if comp_host_candidates:
+                chosen_comp_id = comp_host_candidates[0].id
+            else:
+                comp_staff_list.sort(key=lambda s: staff_usage[s.id]['days'])
+                chosen_comp_id = comp_staff_list[0].id
+                
+            if chosen_comp_id:
+                for d in day_records:
+                    d.assigned_computing_staff_id = chosen_comp_id
+
     session.commit()
     return {"message": f"Auto-assigned {assigned_count} slots.", "usage": staff_usage}
 
 # 8. Export
 @router.get("/export/ics/{staff_id}")
 async def export_ics(staff_id: int, session: Session = Depends(get_db_session)):
-    staff = session.query(Staff).get(staff_id)
+    staff = session.get(Staff,staff_id)
     if not staff:
         raise HTTPException(status_code=404, detail="Staff not found")
         

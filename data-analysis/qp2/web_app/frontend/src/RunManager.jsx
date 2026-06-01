@@ -30,16 +30,19 @@ const RunManager = () => {
         }
     };
 
+    const [deleting, setDeleting] = useState(null);
+
     const handleDelete = async (id) => {
-        if (window.confirm("Delete this run?")) {
-            try {
-                await api.deleteRun(id);
-                fetchRuns();
-            } catch (err) {
-                console.error("Delete failed:", err);
-                const msg = err.response?.data?.detail || err.message;
-                alert("Failed to delete run: " + msg);
-            }
+        setDeleting(id);
+        try {
+            await api.deleteRun(id);
+            fetchRuns();
+        } catch (err) {
+            console.error("Delete failed:", err);
+            const msg = err.response?.data?.detail || err.message;
+            alert("Failed to delete run: " + msg);
+        } finally {
+            setDeleting(null);
         }
     };
 
@@ -50,8 +53,13 @@ const RunManager = () => {
                 {runs.map(run => (
                     <li key={run.id} className="list-item">
                         <span>{run.name} ({run.start_date} to {run.end_date})</span>
-                        <button onClick={() => handleDelete(run.id)} className="icon-btn delete-btn">
-                            <Trash2 size={16} />
+                        <button
+                            onClick={() => handleDelete(run.id)}
+                            className="icon-btn delete-btn"
+                            disabled={deleting === run.id}
+                            title="Delete run"
+                        >
+                            {deleting === run.id ? '...' : <Trash2 size={16} />}
                         </button>
                     </li>
                 ))}

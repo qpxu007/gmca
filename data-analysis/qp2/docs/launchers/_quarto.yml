@@ -4,7 +4,7 @@ project:
 
 website:
   title: "QP2 Guide"
-  site-url: "https://qpxu007.github.io/gmca"
+  site-url: "https://qpxu007.github.io/data-analysis"
   page-navigation: true
   search: true
   reader-mode: true

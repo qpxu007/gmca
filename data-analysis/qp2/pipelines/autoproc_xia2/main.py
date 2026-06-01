@@ -32,7 +32,7 @@ if project_root and project_root not in sys.path:
 
 
 from qp2.pipelines.utils.pipeline_tracker import PipelineTracker
-from qp2.data_viewer.models import DataProcessResults
+from qp2.db import DataProcessResults
 from qp2.log.logging_config import get_logger, setup_logging
 from qp2.pipelines.autoproc_xia2.pipeline_runners import (
     AutoPROCRunner,

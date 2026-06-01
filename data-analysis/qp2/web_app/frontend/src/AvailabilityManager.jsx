@@ -8,7 +8,7 @@ const AvailabilityManager = () => {
     const [availability, setAvailability] = useState({}); // Map: "YYYY-MM-DD" -> "PREFERENCE"
     
     // Display range: Start from current month, show next 6 months
-    const [startMonth, setStartMonth] = useState(new Date());
+    const [startMonth, _setStartMonth] = useState(new Date());
 
     useEffect(() => {
         const fetchStaff = async () => {
@@ -25,22 +25,21 @@ const AvailabilityManager = () => {
 
     useEffect(() => {
         if (selectedStaffId) {
-            fetchAvailability(selectedStaffId);
+            const doFetch = async () => {
+                try {
+                    const data = await api.listAvailability(selectedStaffId);
+                    const map = {};
+                    data.forEach(item => {
+                        map[item.date] = item.preference;
+                    });
+                    setAvailability(map);
+                } catch (e) {
+                    console.error("Failed to fetch availability", e);
+                }
+            };
+            doFetch();
         }
     }, [selectedStaffId]);
-
-    const fetchAvailability = async (staffId) => {
-        try {
-            const data = await api.listAvailability(staffId);
-            const map = {};
-            data.forEach(item => {
-                map[item.date] = item.preference;
-            });
-            setAvailability(map);
-        } catch (e) {
-            console.error("Failed to fetch availability", e);
-        }
-    };
 
     const handleDayClick = async (dateStr) => {
         if (!selectedStaffId) return;

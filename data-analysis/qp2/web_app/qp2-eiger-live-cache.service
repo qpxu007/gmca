@@ -1,0 +1,29 @@
+[Unit]
+Description=Eiger Live Frame Cache (web viewer sidecar)
+Documentation=file:/mnt/software/data-analysis/qp2/web_app/EIGER_PROXY_INTEGRATION.md
+After=syslog.target
+After=network.target
+After=beegfs-client.service
+# Start after the proxy so the PUB socket is available
+After=streamproc.service
+
+[Service]
+Type=simple
+User=gmca
+Group=users
+WorkingDirectory=/mnt/software/data-analysis/qp2/web_app
+# Hostname-based beamline/redis defaults are auto-detected inside the script.
+# Add --store-raw to also cache compressed raw frames for in-memory analysis.
+ExecStart=/mnt/software/data-analysis/qp2_env/bin/python qp2_eiger_live_cache.py
+# Uncomment to enable raw frame caching:
+# ExecStart=/mnt/software/data-analysis/qp2_env/bin/python qp2_eiger_live_cache.py --store-raw
+StandardOutput=file:/var/log/qp2-eiger-live-cache.log
+StandardError=file:/var/log/qp2-eiger-live-cache.log
+TimeoutStartSec=10
+TimeoutStopSec=10
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+

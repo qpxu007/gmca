@@ -73,20 +73,32 @@ class RedisChatHistory:
         if not client:
             return
         try:
+            user_key = f"{self.presence_key}:{user}"
             if status == "join":
-                client.sadd(self.presence_key, user)
-                client.expire(self.presence_key, 24 * 3600)
+                client.setex(user_key, 120, "1")
             elif status == "leave":
-                client.srem(self.presence_key, user)
+                client.delete(user_key)
         except Exception as e:
             logger.error(f"Presence update failed: {e}")
+
+    def refresh_presence(self, user: str):
+        """Refresh presence TTL — call periodically to stay visible."""
+        client = self.get_client()
+        if not client:
+            return
+        try:
+            client.setex(f"{self.presence_key}:{user}", 120, "1")
+        except Exception:
+            pass
 
     def get_active_users(self) -> List[str]:
         client = self.get_client()
         if not client:
             return []
         try:
-            return list(client.smembers(self.presence_key))
+            prefix = f"{self.presence_key}:"
+            keys = client.keys(f"{prefix}*")
+            return [k.replace(prefix, "") for k in keys]
         except Exception:
             return []
 
@@ -565,49 +577,56 @@ class AIAssistantWidget(QtWidgets.QWidget):
         self._append_system_message(f"<span style='color:red;'>{error_msg}</span>")
         # Disable features that rely on Redis
         self.generate_btn.setEnabled(False)
+        self.human_btn.setEnabled(False)
         self.generate_btn.setText("Redis Offline")
 
     def _make_tool_button(self, icon_key, tooltip, callback):
-        """Create a QToolButton with a standard Qt icon."""
-        style = self.style()
-        icon_map = {
-            "settings":  QtWidgets.QStyle.SP_FileDialogDetailedView,
-            "rag":       QtWidgets.QStyle.SP_DirOpenIcon,
-            "attach":    QtWidgets.QStyle.SP_FileIcon,
-            "save":      QtWidgets.QStyle.SP_DialogSaveButton,
-            "clear":     QtWidgets.QStyle.SP_DialogDiscardButton,
-            "mute":      QtWidgets.QStyle.SP_MediaVolume,
-            "unmute":    QtWidgets.QStyle.SP_MediaVolumeMuted,
-            "refresh":   QtWidgets.QStyle.SP_BrowserReload,
+        """Create a QToolButton with a unicode text label (platform-independent)."""
+        text_map = {
+            "settings": "\u2699",   # ⚙
+            "rag":      "\U0001f4c1",  # 📁
+            "attach":   "\U0001f4ce",  # 📎
+            "save":     "\U0001f4be",  # 💾
+            "clear":    "\U0001f5d1",  # 🗑
+            "refresh":  "\u21bb",   # ↻
         }
         btn = QtWidgets.QToolButton()
-        btn.setIcon(style.standardIcon(icon_map[icon_key]))
+        btn.setText(text_map.get(icon_key, "?"))
         btn.setToolTip(tooltip)
-        btn.setFixedSize(28, 28)
+        btn.setFixedSize(36, 36)
+        f = btn.font()
+        f.setPointSize(16)
+        btn.setFont(f)
         btn.clicked.connect(callback)
         return btn
 
     def _setup_ui(self):
+        font = self.font()
+        font.setPointSize(12)
+        self.setFont(font)
+
         layout = QtWidgets.QVBoxLayout(self)
         layout.setContentsMargins(4, 4, 4, 4)
         layout.setSpacing(4)
 
         # --- Toolbar ---
         toolbar = QtWidgets.QToolBar()
-        toolbar.setIconSize(QtCore.QSize(18, 18))
         toolbar.setMovable(False)
-        toolbar.setStyleSheet("QToolBar { spacing: 2px; }")
+        toolbar.setStyleSheet("QToolBar { spacing: 4px; font-size: 12pt; }")
 
         # Status indicator
         self.status_label = QtWidgets.QLabel("\u25cf")  # ●
         self.status_label.setToolTip("Server Status: Unknown")
-        self.status_label.setStyleSheet("color: gray; font-size: 14px; margin: 0 4px;")
+        self.status_label.setStyleSheet("color: gray; font-size: 16pt; margin: 0 4px;")
         toolbar.addWidget(self.status_label)
 
         # Model selector
-        toolbar.addWidget(QtWidgets.QLabel(" Model: "))
+        model_label = QtWidgets.QLabel(" Model: ")
+        model_label.setFont(self.font())
+        toolbar.addWidget(model_label)
         self.model_combo = QtWidgets.QComboBox()
         self.model_combo.setMinimumWidth(120)
+        self.model_combo.setFont(self.font())
         self.model_combo.currentTextChanged.connect(self._on_model_changed)
         toolbar.addWidget(self.model_combo)
 
@@ -633,9 +652,6 @@ class AIAssistantWidget(QtWidgets.QWidget):
             "save", "Save Chat History", self._save_chat_history))
         toolbar.addWidget(self._make_tool_button(
             "clear", "Clear Chat History (for everyone)", self._clear_chat_history))
-        self.mute_ai_btn = self._make_tool_button(
-            "mute", "Toggle AI Mute (local only)", self._toggle_mute)
-        toolbar.addWidget(self.mute_ai_btn)
 
         layout.addWidget(toolbar)
 
@@ -655,15 +671,28 @@ class AIAssistantWidget(QtWidgets.QWidget):
         input_hlayout = QtWidgets.QHBoxLayout()
         self.prompt_input = QtWidgets.QTextEdit()
         self.prompt_input.setPlaceholderText("Type a message\u2026")
-        self.prompt_input.setMaximumHeight(60)
+        self.prompt_input.setMinimumHeight(60)
         input_hlayout.addWidget(self.prompt_input)
 
-        self.generate_btn = QtWidgets.QPushButton("Send")
+        btn_layout = QtWidgets.QVBoxLayout()
+        btn_layout.setSpacing(4)
+
+        self.human_btn = QtWidgets.QPushButton("\U0001f9d1 Human")
+        self.human_btn.clicked.connect(self._send_human_only)
+        self.human_btn.setFixedWidth(100)
+        self.human_btn.setSizePolicy(
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Expanding)
+        btn_layout.addWidget(self.human_btn)
+
+        self.generate_btn = QtWidgets.QPushButton("\U0001f916 Ask AI")
         self.generate_btn.clicked.connect(self._start_generation)
         self.generate_btn.setShortcut(QtGui.QKeySequence("Ctrl+Return"))
-        self.generate_btn.setFixedHeight(60)
-        self.generate_btn.setFixedWidth(60)
-        input_hlayout.addWidget(self.generate_btn)
+        self.generate_btn.setFixedWidth(100)
+        self.generate_btn.setSizePolicy(
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Expanding)
+        btn_layout.addWidget(self.generate_btn)
+
+        input_hlayout.addLayout(btn_layout)
         input_vlayout.addLayout(input_hlayout)
 
         # Progress bar (hidden by default, shown during "Thinking...")
@@ -675,8 +704,9 @@ class AIAssistantWidget(QtWidgets.QWidget):
         input_vlayout.addWidget(self.progress_bar)
 
         splitter.addWidget(input_widget)
-        splitter.setStretchFactor(0, 1)   # chat display stretches
-        splitter.setStretchFactor(1, 0)   # input stays compact
+        splitter.setStretchFactor(0, 3)   # chat display gets most space
+        splitter.setStretchFactor(1, 1)   # input can expand when dragged
+        splitter.setSizes([600, 120])
 
         layout.addWidget(splitter)
 
@@ -804,7 +834,7 @@ class AIAssistantWidget(QtWidgets.QWidget):
         # Disable the combo box and button during refresh
         self.model_combo.setEnabled(False)
         self.refresh_models_btn.setEnabled(False)
-        self.refresh_models_btn.setText("Refreshing...")
+        self.refresh_models_btn.setText("\u21bb")
 
         # Run in a separate thread to avoid freezing UI
         thread = threading.Thread(target=self._fetch_models_worker)
@@ -848,7 +878,7 @@ class AIAssistantWidget(QtWidgets.QWidget):
 
         self.model_combo.setEnabled(True)
         self.refresh_models_btn.setEnabled(True)
-        self.refresh_models_btn.setText("Refresh Models")
+        self.refresh_models_btn.setText("\u21bb")
         self._append_system_message("Model list updated.")
 
     @QtCore.pyqtSlot(str)
@@ -856,7 +886,7 @@ class AIAssistantWidget(QtWidgets.QWidget):
         self._append_system_message(f"<b>Error fetching models:</b> {error_msg}")
         self.model_combo.setEnabled(True)
         self.refresh_models_btn.setEnabled(True)
-        self.refresh_models_btn.setText("Refresh Models")
+        self.refresh_models_btn.setText("\u21bb")
 
     def _open_rag_settings_dialog(self):
         if self.rag_dialog is None:
@@ -1027,6 +1057,13 @@ class AIAssistantWidget(QtWidgets.QWidget):
     def _append_system_message(self, text):
         self.display_browser.append(f"<div style='color: {self.COLORS['system']};'><i>{text}</i></div>")
 
+    def _send_human_only(self):
+        user_prompt = self.prompt_input.toPlainText().strip()
+        if not user_prompt:
+            return
+        self._append_user_message(user_prompt)
+        self.prompt_input.clear()
+
     def _start_generation(self):
         user_prompt = self.prompt_input.toPlainText().strip()
         if not user_prompt:
@@ -1056,13 +1093,6 @@ class AIAssistantWidget(QtWidgets.QWidget):
         self._append_user_message(user_prompt)  # This now also updates self.messages
         self.prompt_input.clear()
         self.generate_btn.setEnabled(False)
-        self.generate_btn.setText("Sent")
-
-        if self.is_muted:
-            self._append_system_message("AI Assistant is muted. It will not respond to your question.")
-            self.generate_btn.setEnabled(True)
-            self.generate_btn.setText("Send")
-            return
 
         self.generate_btn.setText("Thinking...")
         self.progress_bar.show()
@@ -1196,7 +1226,7 @@ class AIAssistantWidget(QtWidgets.QWidget):
         self.messages.append({"role": "assistant", "content": text})  # Add to history
         self.chat_history.add_message("assistant", text, msg_id=msg_id)
         self.generate_btn.setEnabled(True)
-        self.generate_btn.setText("Send")
+        self.generate_btn.setText("\U0001f916 Ask AI")
         self.progress_bar.hide()
 
         html = self._render_markdown(text)
@@ -1214,7 +1244,7 @@ class AIAssistantWidget(QtWidgets.QWidget):
     @QtCore.pyqtSlot(str)
     def _handle_error(self, error_msg):
         self.generate_btn.setEnabled(True)
-        self.generate_btn.setText("Send")
+        self.generate_btn.setText("\U0001f916 Ask AI")
         self.progress_bar.hide()
         self._append_system_message(f"<b>Error:</b> {error_msg}")
 
@@ -1561,8 +1591,10 @@ if __name__ == "__main__":
             "test_var": 123,
         }
 
+    import signal
     app = QtWidgets.QApplication(sys.argv)
-    # Allow setting API key via env for testing
+    signal.signal(signal.SIGINT, signal.SIG_DFL)  # Allow Ctrl+C to kill
     window = AIAssistantWindow(mock_namespace_provider)
+    window.standalone_mode = True
     window.show()
     sys.exit(app.exec_())

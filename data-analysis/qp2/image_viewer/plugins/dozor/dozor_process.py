@@ -236,26 +236,42 @@ def dozor_job(
     nimages=1,
     tempdir_root=None,
     debug=False,
+    output_dir=None,
 ):
-    """Run a Dozor job and process outputs."""
+    """Run a Dozor job and process outputs.
 
-    chosen_tempdir_root = None
-    if tempdir_root:  # If explicitly provided
-        if os.path.isdir(tempdir_root) and os.access(tempdir_root, os.W_OK):
-            chosen_tempdir_root = tempdir_root
-        else:
-            logger.warning(
-                f"Provided tempdir_root '{tempdir_root}' not usable. Falling back."
-            )
+    Args:
+        output_dir: If provided, use this directory as the working directory and
+            keep all output files (dozor.in, dozor.out, *.spot, etc.) for inspection.
+            Overrides tempdir_root and debug settings for cleanup.
+    """
+    # If output_dir is provided, use it directly and keep the files
+    if output_dir:
+        wdir = output_dir
+        os.makedirs(wdir, exist_ok=True)
+        keep_files = True
+        logger.info(f"Using persistent output directory: {wdir}")
+    else:
+        keep_files = debug
 
-    if not chosen_tempdir_root:  # Try /dev/shm
-        if os.path.isdir("/dev/shm") and os.access("/dev/shm", os.W_OK):
-            chosen_tempdir_root = "/dev/shm"
-        else:
-            logger.warning("/dev/shm not usable. Falling back to system default temp.")
+        chosen_tempdir_root = None
+        if tempdir_root:  # If explicitly provided
+            if os.path.isdir(tempdir_root) and os.access(tempdir_root, os.W_OK):
+                chosen_tempdir_root = tempdir_root
+            else:
+                logger.warning(
+                    f"Provided tempdir_root '{tempdir_root}' not usable. Falling back."
+                )
 
-    # If chosen_tempdir_root is still None, mkdtemp will use system default (e.g., /tmp)
-    wdir = tempfile.mkdtemp(prefix="dozor_tmp_", dir=chosen_tempdir_root)
+        if not chosen_tempdir_root:  # Try /dev/shm
+            if os.path.isdir("/dev/shm") and os.access("/dev/shm", os.W_OK):
+                chosen_tempdir_root = "/dev/shm"
+            else:
+                logger.warning("/dev/shm not usable. Falling back to system default temp.")
+
+        # If chosen_tempdir_root is still None, mkdtemp will use system default (e.g., /tmp)
+        wdir = tempfile.mkdtemp(prefix="dozor_tmp_", dir=chosen_tempdir_root)
+
     logger.debug(f"Using working directory: {wdir}")
 
     try:
@@ -408,7 +424,7 @@ def dozor_job(
         logger.error(f"{e.output.decode(errors='ignore')}")
         raise
     finally:
-        if not debug:
+        if not keep_files:
             shutil.rmtree(wdir)
 
 

@@ -593,6 +593,9 @@ def parse_correct_lp(file_path):
 
         resolution_i = estimate_resolution(x_list, resolution_list, target_value)
 
+        if resolution_i is None or resolution_i < 0:
+            return None
+
         # Rounds a number up to the nearest 0.05.
         return math.ceil(resolution_i * 20) / 20
 
@@ -617,7 +620,10 @@ def parse_correct_lp(file_path):
         target_value=XdsConfig.CC_ANOM_TARGET,
     )
 
-    result_dict["resolution_highres"] = float(result_dict["table1"][-1][0])
+    if result_dict["table1"]:
+        result_dict["resolution_highres"] = float(result_dict["table1"][-1][0])
+    else:
+        result_dict["resolution_highres"] = None
 
     logger.info(
         f"resolution cutoff based on CC1/2>={XdsConfig.CC_HALF_TARGET}: {result_dict['resolution_based_on_cchalf']}"
@@ -904,7 +910,7 @@ def parse_pointless_log(file_path):
                 "SysAbsProb": parsed_data.get("SysAbsProb", 0.0),
                 "Confidence": spg_confidence,
                 "LGconfidence": lg_spg_confidence,
-                "TotalProb": parsed_data.get("SysAbsProb", 0.0),
+                "TotalProb": parsed_data.get("TotalProb", 0.0),
                 "UnitCell": " ".join(unit_cell.split()),
             }
         }

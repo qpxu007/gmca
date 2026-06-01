@@ -7,8 +7,7 @@
         "RASTER": ["nxds", "dozor"],
         "STRATEGY": ["xds_strategy", "mosflm_strategy", "dozor"]
     },
-    "enable_legacy_pipelines": false,
-    "only_run_legacy_strategy": false,
+
     "minimum_frames_for_pipelines": 5,
     "run_for_each_series_upon_run_completion": true,
     "spotfinder": {
@@ -86,7 +85,6 @@
         "auto_cleanup": true
     },
     "raster_3d": {
-        "enabled": false,
         "analysis_source": "dozor",
         "metric": null,
         "shift": 0.0,
@@ -102,7 +100,8 @@
         "min_coverage_pct": 80
     },
     "dozor": {
-        "batch_size": 5,
+        "batch_factor": 5,
+        "keep_output": false,
         "beamstop_size": 100,
         "spot_size": 3,
         "spot_level": 6,

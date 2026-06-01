@@ -24,21 +24,19 @@ const QuotaManager = () => {
 
     useEffect(() => {
         if (selectedRunId) {
-            fetchQuotas(selectedRunId);
+            const doFetch = async () => {
+                try {
+                    const data = await api.listQuotas(selectedRunId);
+                    const quotaMap = {};
+                    data.forEach(q => quotaMap[q.staff_id] = q);
+                    setQuotas(quotaMap);
+                } catch (e) {
+                    console.error("Failed to fetch quotas", e);
+                }
+            };
+            doFetch();
         }
     }, [selectedRunId]);
-
-    const fetchQuotas = async (runId) => {
-        try {
-            const data = await api.listQuotas(runId);
-            // Convert list to map for easier lookup by staff_id
-            const quotaMap = {};
-            data.forEach(q => quotaMap[q.staff_id] = q);
-            setQuotas(quotaMap);
-        } catch (e) {
-            console.error("Failed to fetch quotas", e);
-        }
-    };
 
     const updateLocalQuota = (staffId, field, value) => {
         setQuotas(prev => ({
@@ -65,7 +63,7 @@ const QuotaManager = () => {
         try {
             await api.updateQuota(payload);
             // Optional: visual feedback
-        } catch (e) {
+        } catch {
             alert("Failed to save quota");
         }
     };
@@ -86,7 +84,7 @@ const QuotaManager = () => {
 
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
-                    <tr style={{ borderBottom: '1px solid #eee', textAlign: 'left', backgroundColor: '#f9f9f9' }}>
+                    <tr style={{ borderBottom: '1px solid #eee', textAlign: 'center', backgroundColor: '#f9f9f9' }}>
                         <th style={{ padding: '10px' }}>Staff</th>
                         <th style={{ padding: '10px' }}>Max Days</th>
                         <th style={{ padding: '10px' }}>Max Weekends</th>
@@ -98,8 +96,8 @@ const QuotaManager = () => {
                         const q = quotas[s.id] || { max_days: 0, max_weekends: 0 };
                         return (
                             <tr key={s.id} style={{ borderBottom: '1px solid #f9f9f9' }}>
-                                <td style={{ padding: '10px' }}>{s.full_name}</td>
-                                <td style={{ padding: '10px' }}>
+                                <td style={{ padding: '10px', textAlign: 'center' }}>{s.full_name}</td>
+                                <td style={{ padding: '10px', textAlign: 'center' }}>
                                     <input 
                                         type="number" 
                                         value={q.max_days} 
@@ -107,7 +105,7 @@ const QuotaManager = () => {
                                         style={{ width: '80px', padding: '6px', border: '1px solid #ddd', borderRadius: '4px' }}
                                     />
                                 </td>
-                                <td style={{ padding: '10px' }}>
+                                <td style={{ padding: '10px', textAlign: 'center' }}>
                                     <input 
                                         type="number" 
                                         value={q.max_weekends} 
@@ -115,7 +113,7 @@ const QuotaManager = () => {
                                         style={{ width: '80px', padding: '6px', border: '1px solid #ddd', borderRadius: '4px' }}
                                     />
                                 </td>
-                                <td style={{ padding: '10px' }}>
+                                <td style={{ padding: '10px', textAlign: 'center' }}>
                                     <button 
                                         onClick={() => saveQuota(s.id)} 
                                         className="icon-btn" 

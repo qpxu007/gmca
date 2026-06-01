@@ -17,8 +17,7 @@ MILESTONE_FRAME_THRESHOLD = 200
 
 from qp2.xio.redis_manager import RedisManager
 from qp2.xio.hdf5_manager import HDF5Reader
-from qp2.xio.hdf5_to_cbf import convert_hdf5_to_cbf_for_strategy
-from qp2.data_proc.server import xprocess
+
 from qp2.xio.user_group_manager import UserGroupManager
 from qp2.data_proc.config import DATAPROC_SERVER_HTTP_PORT, WEBSOCKET_PORT
 from qp2.config.servers import ServerConfig
@@ -35,10 +34,6 @@ import os
 logger = get_logger(__name__)
 
 
-def submit_job(opt: Dict[str, Any]):
-    """Helper function to submit jobs via xprocess."""
-    logger.debug(f"submit_job: Submitting job with opt: {opt}")
-    xprocess.xprocess(opt, job_tag=opt.get("pipeline", "auto"))
 
 
 def derive_proc_root_dir(full_data_dir: str) -> Path:
@@ -69,7 +64,7 @@ def derive_proc_root_dir(full_data_dir: str) -> Path:
     # 2. Clean up common collection-specific subdirectories to create a clean project root
     for keyword in ["/collect/", "/raster/", "/screen/"]:
         if keyword in proc_root_dir_str:
-            proc_root_dir_str = proc_root_dir_str.replace(keyword, "")
+            proc_root_dir_str = proc_root_dir_str.replace(keyword, "", 1)
 
     # 3. Create the directory path
     proc_root_dir_path = Path(proc_root_dir_str)
@@ -180,7 +175,26 @@ class ProcessingServer(QtCore.QObject):
             logger.exception("Exception during initial Redis monitoring start.")
             if self.running:
                 self.attempt_reconnect()
+        self._start_snapshot_indexer()
         self.janitor_timer.start()
+
+    def _start_snapshot_indexer(self):
+        """Spin up the crystal-snapshot indexer if conditions allow.
+
+        Best-effort: skipped silently if no DB or no bluice Redis host.
+        The indexer itself runs benignly when pybluice has not yet been
+        patched to emit CAMERA events to ``ra.sample.events__l``.
+        """
+        if not self.db_manager:
+            return
+        try:
+            from qp2.data_proc.server.snapshot_indexer import SnapshotIndexer
+            indexer = SnapshotIndexer.from_bluice(self.db_manager)
+            if indexer is not None:
+                indexer.start()
+                self._snapshot_indexer = indexer
+        except Exception:
+            logger.exception("snapshot indexer failed to start; continuing without it")
 
     def stop(self):
         if not self.running:
@@ -201,7 +215,7 @@ class ProcessingServer(QtCore.QObject):
     def launch_job_from_external_request(self, job_data: Dict[str, Any]):
         """
         Launches a processing job based on JSON data from an external request.
-        Delegates to AnalysisManager for plugin jobs, or falls back to xprocess.
+        Delegates to AnalysisManager for plugin jobs.
         """
         thread_name = threading.current_thread().name
         logger.info(f"[{thread_name}] Received external request to launch job.")
@@ -224,42 +238,11 @@ class ProcessingServer(QtCore.QObject):
                 )
                 return
 
-            # 2. Fallback to legacy xprocess submission
-            logger.info(f"[{thread_name}] Pipeline not handled by AnalysisManager. Attempting legacy xprocess submission.")
-
-            required_keys = {
-                "proc_dir": str,
-                "data_dir": str,
-                "beamline": str,
-                "pipeline": str,
-            }
-            missing_keys = [key for key in required_keys if key not in job_data]
-            if missing_keys:
-                logger.error(
-                    f"[{thread_name}] External job data missing critical keys for legacy submission: {missing_keys}. Job submission aborted."
-                )
-                return
-
-            type_errors = []
-            for key, expected_type in required_keys.items():
-                if not isinstance(job_data.get(key), expected_type):
-                    type_errors.append(
-                        f"Key '{key}' must be a {expected_type.__name__}."
-                    )
-
-            if type_errors:
-                logger.error(
-                    f"[{thread_name}] External job data has type errors: {type_errors}. Job submission aborted."
-                )
-                return
-
-            logger.info(
-                f"[{thread_name}] Submitting job via xprocess. Pipeline: {job_data.get('pipeline', 'N/A')}"
+            # 2. Legacy fallback is disabled
+            logger.error(
+                f"[{thread_name}] Pipeline '{job_data.get('pipeline')}' not handled by AnalysisManager. Legacy fallback has been removed."
             )
-            submit_job(job_data)
-            logger.info(
-                f"[{thread_name}] Successfully submitted job from external request for pipeline: {job_data.get('pipeline', 'N/A')}"
-            )
+            return
 
         except Exception as e:
             logger.exception(
@@ -354,25 +337,24 @@ class ProcessingServer(QtCore.QObject):
         else:
             subdir_name = job_name_component
 
-        proposed_path = work_root / subdir_name
-        final_path = proposed_path
+        final_path = work_root / subdir_name
         run_number = 1
 
-        while final_path.exists():
-            final_path = work_root / f"{subdir_name}_run{run_number}"
-            run_number += 1
-            if run_number > 100:
-                raise OSError(
-                    "Exceeded 100 attempts to create a unique processing directory."
-                )
-
-        try:
-            final_path.mkdir(parents=True, exist_ok=True)
-            logger.info(f"Ensured processing directory exists: {final_path.resolve()}")
-            return final_path.resolve()
-        except Exception as e:
-            logger.exception(f"Failed to create processing directory {final_path}")
-            raise
+        while True:
+            try:
+                final_path.mkdir(parents=True, exist_ok=False)
+                logger.info(f"Ensured processing directory exists: {final_path.resolve()}")
+                return final_path.resolve()
+            except FileExistsError:
+                final_path = work_root / f"{subdir_name}_run{run_number}"
+                run_number += 1
+                if run_number > 100:
+                    raise OSError(
+                        "Exceeded 100 attempts to create a unique processing directory."
+                    )
+            except Exception as e:
+                logger.exception(f"Failed to create processing directory {final_path}")
+                raise
 
     def get_opt(self, metadata_list: List[Dict[str, Any]]) -> Dict[str, Any]:
         if not metadata_list:
@@ -626,7 +608,7 @@ class ProcessingServer(QtCore.QObject):
                     logger.info(f"Pipelines enabled for mode {collect_mode}: {active_pipelines_for_mode}")
                     
                     # Inject enable flags into opt for AnalysisManager to consume
-                    all_known_pipelines = ["xds", "nxds", "xia2", "autoproc", "xia2_ssx", "crystfel", "xds_strategy", "mosflm_strategy", "dozor"]
+                    all_known_pipelines = ["xds", "nxds", "xia2", "autoproc", "xia2_ssx", "crystfel", "xds_strategy", "mosflm_strategy", "dozor", "raster_3d"]
                     for pipe in all_known_pipelines:
                          opt[f"enable_{pipe}"] = (pipe in active_pipelines_for_mode)
                          
@@ -676,21 +658,52 @@ class ProcessingServer(QtCore.QObject):
                 # Wait for up to 120 seconds. This should be more than enough.
                 is_set = setup_event.wait(timeout=120.0)
                 if not is_set:
-                    # BUGFIX: Better error reporting on timeout
                     with self.run_readers_lock:
                         expected_readers = len(self.run_master_files.get(run_prefix, []))
                         actual_readers = len(self.run_hdf5_readers.get(run_prefix, []))
-                    
-                    error_msg = (
+
+                    logger.error(
                         f"Timed out waiting for HDF5 watcher setup for run '{run_prefix}'. "
                         f"Expected {expected_readers} readers, got {actual_readers}. "
-                        f"This usually indicates master files are missing or inaccessible."
+                        f"Proceeding with {len(master_files)} master file(s) from run-complete signal."
                     )
-                    logger.error(error_msg)
-                    raise RuntimeError(error_msg)
-                logger.info(
-                    f"Setup for '{run_prefix}' is finished. Proceeding with completion."
-                )
+                    # Skip HDF5-dependent waits — fall through to handle_run_completion_logic
+                    # using the master_files already provided by the run-complete signal.
+                else:
+                    logger.info(
+                        f"Setup for '{run_prefix}' is finished. Proceeding with completion."
+                    )
+
+                    # --- RESTORED WAIT LOGIC ---
+                    if not self.wait_for_required_files(run_prefix, total_frames):
+                        raise ValueError("Not all required data files found for completion.")
+                    # ---------------------------
+
+                    # --- ACTIVE SERIES WAIT LOGIC ---
+                    # Wait for all individual series to signal completion before proceeding.
+                    # This ensures that per-series logic (like XDS single-file processing)
+                    # has finished and emitted its signals before we clean up readers.
+                    wait_start = time.time()
+                    max_series_wait = 60.0
+                    active_count = -1
+                    while time.time() - wait_start < max_series_wait:
+                        with self.active_series_lock:
+                            active_count = len(self.active_series.get(run_prefix, []))
+
+                        if active_count == 0:
+                            logger.info(f"All series for run '{run_prefix}' have completed. Proceeding with run completion.")
+                            break
+
+                        if time.time() - wait_start > 5.0 and (time.time() - wait_start) % 5.0 < 0.2:
+                            logger.info(f"Waiting for {active_count} active series to complete for run '{run_prefix}'...")
+
+                        time.sleep(0.2)
+                    else:
+                        logger.warning(
+                            f"Timed out waiting for {active_count} series to complete for run '{run_prefix}' after {max_series_wait}s. "
+                            "Proceeding with run completion, but some per-series jobs might be skipped."
+                        )
+                    # --------------------------------
             else:
                 logger.warning(
                     f"No setup event found for run '{run_prefix}'. Proceeding without waiting."
@@ -698,45 +711,12 @@ class ProcessingServer(QtCore.QObject):
 
             if not metadata_list or total_frames <= 0:
                 raise ValueError("Invalid metadata or total_frames for completion.")
-
-            # --- RESTORED WAIT LOGIC ---
-            if not self.wait_for_required_files(run_prefix, total_frames):
-                raise ValueError("Not all required data files found for completion.")
-            # ---------------------------
-
-            # --- NEW: ACTIVE SERIES WAIT LOGIC ---
-            # Wait for all individual series to signal completion before proceeding.
-            # This ensures that per-series logic (like XDS single-file processing) 
-            # has finished and emitted its signals before we clean up readers.
-            wait_start = time.time()
-            max_series_wait = 60.0
-            active_count = -1
-            while time.time() - wait_start < max_series_wait:
-                with self.active_series_lock:
-                    active_count = len(self.active_series.get(run_prefix, []))
-                
-                if active_count == 0:
-                    logger.info(f"All series for run '{run_prefix}' have completed. Proceeding with run completion.")
-                    break
-                
-                if time.time() - wait_start > 5.0 and (time.time() - wait_start) % 5.0 < 0.2:
-                     logger.info(f"Waiting for {active_count} active series to complete for run '{run_prefix}'...")
-                     
-                time.sleep(0.2)
-            else:
-                logger.warning(
-                    f"Timed out waiting for {active_count} series to complete for run '{run_prefix}' after {max_series_wait}s. "
-                    "Proceeding with run completion, but some per-series jobs might be skipped."
-                )
             # -------------------------------------
 
             self.analysis_manager.handle_run_completion_logic(
                 run_prefix, master_files, metadata_list
             )
 
-            self.analysis_manager.handle_legacy_completion(
-                run_prefix, master_files, metadata_list
-            )
 
             with self.processed_runs_lock:
                 self.processed_runs["completed"].add(run_prefix)
@@ -882,6 +862,111 @@ class ProcessingServer(QtCore.QObject):
                                 self.run_setup_events[run_prefix].set()
                         self.pending_series_setups.pop(run_prefix, None)
 
+    def _validate_crystal_data(self, opts: dict, master_file: str) -> dict:
+        """Validate and extract crystal data from get_opt results.
+
+        Returns a dict of validated fields ready for Redis storage.
+        Invalid values are logged and dropped (set to None).
+        """
+        fname = Path(master_file).name
+        crystal_data = {}
+
+        # space_group — already sanitized by xlsReader/sanitize_space_group,
+        # but guard against empty strings slipping through
+        sg = opts.get("space_group")
+        if sg and str(sg).strip():
+            crystal_data["space_group"] = str(sg).strip()
+
+        # unit_cell — already sanitized by sanitize_unit_cell (6 floats),
+        # but double-check structure
+        uc = opts.get("unit_cell")
+        if uc and str(uc).strip():
+            parts = str(uc).replace(",", " ").split()
+            if len(parts) == 6:
+                try:
+                    [float(p) for p in parts]
+                    crystal_data["unit_cell"] = " ".join(parts)
+                except ValueError:
+                    logger.warning(f"Invalid unit_cell='{uc}' for {fname}")
+            else:
+                logger.warning(f"Invalid unit_cell='{uc}' for {fname} (expected 6 values)")
+
+        # model_pdb, reference_hkl, sequence — file paths, already checked
+        # by xlsReader._looking_for_file; store as-is if present
+        for key in ("model_pdb", "reference_hkl", "sequence"):
+            val = opts.get(key)
+            if val and str(val).strip():
+                crystal_data[key] = str(val).strip()
+
+        # heavy_atom — element symbol, should be 1-2 letters
+        ha = opts.get("heavy_atom")
+        if ha and str(ha).strip():
+            ha_str = str(ha).strip()
+            if ha_str.isalpha() and len(ha_str) <= 2:
+                crystal_data["heavy_atom"] = ha_str.capitalize()
+            else:
+                # Could be compound like "Se 2" for RADDOSE — allow alphanumeric with spaces
+                crystal_data["heavy_atom"] = ha_str
+                logger.debug(f"heavy_atom='{ha_str}' for {fname} (compound format)")
+
+        # nmol — positive integer
+        nmol = opts.get("nmol")
+        if nmol is not None and str(nmol).strip():
+            try:
+                val = int(float(nmol))
+                if val > 0:
+                    crystal_data["nmol"] = str(val)
+                else:
+                    logger.warning(f"Ignoring non-positive nmol={nmol} for {fname}")
+            except (ValueError, TypeError):
+                logger.warning(f"Ignoring non-numeric nmol='{nmol}' for {fname}")
+
+        # Per-crystal parameters from spreadsheet row (meta_user)
+        raw_meta = opts.get("meta_user")
+        if raw_meta:
+            try:
+                meta_user = json.loads(raw_meta) if isinstance(raw_meta, str) else raw_meta
+            except (json.JSONDecodeError, TypeError):
+                meta_user = {}
+
+            # DesiredResolution (Angstroms) — positive, reasonable range
+            desired_res = meta_user.get("DesiredResolution")
+            if desired_res is not None and str(desired_res).strip():
+                try:
+                    val = float(desired_res)
+                    if 0 < val <= 100:
+                        crystal_data["desired_resolution_A"] = str(val)
+                    else:
+                        logger.warning(
+                            f"Ignoring out-of-range DesiredResolution={val}A "
+                            f"for {fname} (expected 0-100)"
+                        )
+                except (ValueError, TypeError):
+                    logger.warning(
+                        f"Ignoring non-numeric DesiredResolution='{desired_res}' "
+                        f"for {fname}"
+                    )
+
+            # DesiredDosage (MGy) — positive, reasonable range
+            desired_dose = meta_user.get("DesiredDosage")
+            if desired_dose is not None and str(desired_dose).strip():
+                try:
+                    val = float(desired_dose)
+                    if 0 < val <= 1000:
+                        crystal_data["desired_dosage_mgy"] = str(val)
+                    else:
+                        logger.warning(
+                            f"Ignoring out-of-range DesiredDosage={val} MGy "
+                            f"for {fname} (expected 0-1000)"
+                        )
+                except (ValueError, TypeError):
+                    logger.warning(
+                        f"Ignoring non-numeric DesiredDosage='{desired_dose}' "
+                        f"for {fname}"
+                    )
+
+        return crystal_data
+
     def _store_crystal_data_in_redis(self, master_file: str, metadata: dict):
         """
         Fetches crystal data using get_opt and stores it in a Redis hash.
@@ -892,15 +977,7 @@ class ProcessingServer(QtCore.QObject):
         for attempt in range(max_retries):
             try:
                 opts = self.get_opt([metadata])
-                crystal_data = {
-                    "space_group": opts.get("space_group"),
-                    "unit_cell": opts.get("unit_cell"),
-                    "model_pdb": opts.get("model_pdb"),
-                    "reference_hkl": opts.get("reference_hkl"),
-                    "sequence": opts.get("sequence"),
-                    "heavy_atom": opts.get("heavy_atom"),
-                    "nmol": opts.get("nmol"),
-                }
+                crystal_data = self._validate_crystal_data(opts, master_file)
                 # Filter out None values to keep the hash clean
                 crystal_data_to_store = {k: v for k, v in crystal_data.items() if v is not None}
 
@@ -1022,7 +1099,7 @@ class ProcessingServer(QtCore.QObject):
         m_list: List[Dict[str, Any]],
     ):
         logger.info(f"25% progress for run '{run_prefix}'. ")
-        if total_frames <= MILESTONE_FRAME_THRESHOLD:
+        if total_frames < MILESTONE_FRAME_THRESHOLD:
             logger.info(
                 f"Skipping 25% milestone processing for run '{run_prefix}' "
                 f"because total frames ({total_frames}) is less than threshold ({MILESTONE_FRAME_THRESHOLD}). "
@@ -1286,9 +1363,6 @@ class ProcessingServer(QtCore.QObject):
                 run_prefix, milestone, master_files, metadata_list[0]
             )
 
-            self.analysis_manager.handle_legacy_milestone(
-                run_prefix, milestone, metadata_list
-            )
 
             normalized_percent = milestone.replace("%", "")
 

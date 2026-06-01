@@ -220,7 +220,7 @@ def _setup_raddose3d_input(base_params, dynamic_params):
     trans_per_deg = translation_x / total_rotation if total_rotation > 0 else 0
     r3d_translate_per_degree = f"{trans_per_deg} 0 0"
     wavelength = dynamic_params["wavelength_a"]
-    energy_kev = 12.398 / wavelength if wavelength > 0 else 0
+    energy_kev = 12.3984 / wavelength if wavelength > 0 else 0
     pdb_path_or_code = base_params.get("pdb_path_or_code", "").strip()
     coef_calc = base_params["coef_calc"]
     if coef_calc == "EXP" and not pdb_path_or_code:
@@ -241,7 +241,7 @@ def _setup_raddose3d_input(base_params, dynamic_params):
         crystal_size=r3d_crystal_size,
         angle_l=base_params.get("angle_l", 0.0),
         angle_p=base_params.get("angle_p", 0.0),
-        coef_calc=base_params["coef_calc"],
+        coef_calc=coef_calc,
         pdbcode=pdb_path_or_code,
         ndna=base_params["ndna"],
         nrna=base_params["nrna"],

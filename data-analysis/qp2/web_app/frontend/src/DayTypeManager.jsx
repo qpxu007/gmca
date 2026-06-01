@@ -6,10 +6,6 @@ const DayTypeManager = () => {
     const [dayTypes, setDayTypes] = useState([]);
     const [newType, setNewType] = useState({ name: '', color_code: '#000000', requires_staff: true });
 
-    useEffect(() => {
-        fetchDayTypes();
-    }, []);
-
     const fetchDayTypes = async () => {
         try {
             const data = await api.listDayTypes();
@@ -18,6 +14,18 @@ const DayTypeManager = () => {
             console.error("Failed to fetch day types", e);
         }
     };
+
+    useEffect(() => {
+        const doFetch = async () => {
+            try {
+                const data = await api.listDayTypes();
+                setDayTypes(data);
+            } catch (e) {
+                console.error("Failed to fetch day types", e);
+            }
+        };
+        doFetch();
+    }, []);
 
     const handleAdd = async (e) => {
         e.preventDefault();

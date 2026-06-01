@@ -1,0 +1,75 @@
+/* StructureViewerModal.css */
+.structure-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+}
+
+.structure-modal-content {
+    position: absolute;
+    top: 2%;
+    left: 2%;
+    right: 2%;
+    bottom: 2%;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border-radius: 4px;
+    outline: none;
+    overflow: hidden;
+}
+
+.structure-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    flex-shrink: 0;
+}
+
+.structure-modal-title-group {
+    display: flex;
+    align-items: center;
+}
+
+.structure-modal-legend {
+    margin-left: 12px;
+    font-size: 0.8rem;
+    color: #666;
+}
+
+@media (max-width: 768px) {
+    /* Fullscreen modal on mobile */
+    .structure-modal-content {
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 8px;
+        border-radius: 0;
+    }
+
+    /* Wrap the header and legend */
+    .structure-modal-header {
+        align-items: flex-start;
+    }
+
+    .structure-modal-title-group {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .structure-modal-legend {
+        margin-left: 0;
+        margin-top: 4px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        line-height: 1.3;
+    }
+}

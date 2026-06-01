@@ -1,13 +1,35 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { App, H5GroveProvider } from '@h5web/app';
+import '@h5web/app/dist/styles.css';
 import Modal from 'react-modal';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-const H5Viewer = ({ isOpen, onClose, filePath, filename }) => {
-    if (!isOpen || !filePath) return null;
+// H5GroveProvider requires an absolute URL (it uses new URL() internally).
+// When deployed behind a reverse proxy, VITE_API_URL is a relative path like
+// /data_portal/api, so we prepend the current origin.
+const H5GROVE_URL = API_URL.startsWith('http')
+    ? `${API_URL}/h5grove`
+    : `${window.location.origin}${API_URL}/h5grove`;
 
-    const token = localStorage.getItem('token');
+function createAuthFetcher() {
+    return async (url, params, opts = {}) => {
+        const { abortSignal } = opts;
+        const searchParams = new URLSearchParams(params);
+        const response = await fetch(`${url}?${searchParams.toString()}`, {
+            credentials: 'include',
+            signal: abortSignal,
+        });
+        const buffer = await response.arrayBuffer();
+        if (response.ok) return buffer;
+        throw new Error(`${response.status} ${response.statusText}`);
+    };
+}
+
+const H5Viewer = ({ isOpen, onClose, filePath, filename }) => {
+    const fetcher = useMemo(() => createAuthFetcher(), []);
+
+    if (!isOpen || !filePath) return null;
 
     return (
         <Modal
@@ -20,7 +42,7 @@ const H5Viewer = ({ isOpen, onClose, filePath, filename }) => {
                     left: '5%',
                     right: '5%',
                     bottom: '5%',
-                    padding: '0', 
+                    padding: '0',
                     overflow: 'hidden'
                 }
             }}
@@ -32,11 +54,11 @@ const H5Viewer = ({ isOpen, onClose, filePath, filename }) => {
                 </div>
                 <div style={{ flex: 1, position: 'relative' }}>
                     <H5GroveProvider
-                        url={`${API_URL}/h5grove`}
+                        url={H5GROVE_URL}
                         filepath={filePath}
-                        axiosConfig={{ headers: { Authorization: `Bearer ${token}` } }}
+                        fetcher={fetcher}
                     >
-                        <App />
+                        <App initialPath="/entry/data" />
                     </H5GroveProvider>
                 </div>
             </div>

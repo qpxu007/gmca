@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { api } from './api';
+import React, { useState } from 'react';
 import DayEditorModal from './DayEditorModal';
 import './SchedulerGrid.css';
 
-const SchedulerGrid = ({ schedule, selectedRun, allBeamlines, allDayTypes, allStaff, onUpdateDay, activePaintType }) => {
+const SchedulerGrid = ({ schedule, selectedRun, selectedMonth, allBeamlines, allDayTypes, allStaff, onUpdateDay, activePaintType }) => {
     const [editingDay, setEditingDay] = useState(null); // For Modal
     const [isModalOpen, setIsModalOpen] = useState(false);
     
@@ -22,15 +21,16 @@ const SchedulerGrid = ({ schedule, selectedRun, allBeamlines, allDayTypes, allSt
         let currentDate = new Date(selectedRun.start_date);
         const endDate = new Date(selectedRun.end_date);
         while (currentDate <= endDate) {
-            dates.push(currentDate.toISOString().split('T')[0]); // YYYY-MM-DD
+            const dateStr = currentDate.toISOString().split('T')[0]; // YYYY-MM-DD
+            if (!selectedMonth || selectedMonth === 'ALL' || dateStr.startsWith(selectedMonth)) {
+                dates.push(dateStr);
+            }
             currentDate.setDate(currentDate.getDate() + 1);
         }
     }
 
     // Helper to get lookup maps
-    const beamlineMap = allBeamlines.reduce((map, bl) => ({ ...map, [bl.id]: bl }), {});
     const dayTypeMap = allDayTypes.reduce((map, dt) => ({ ...map, [dt.id]: dt }), {});
-    const staffMap = allStaff.reduce((map, st) => ({ ...map, [st.id]: st }), {});
 
     const handleCellClick = (dayData) => {
         if (!dayData) return;
@@ -61,6 +61,20 @@ const SchedulerGrid = ({ schedule, selectedRun, allBeamlines, allDayTypes, allSt
             day_id: dayData.id,
             day_type_id: dayData.day_type_id,
             assigned_staff_id: newStaffId
+        };
+        
+        onUpdateDay(updatedData);
+    };
+
+    const handleComputingStaffChange = async (e, dayData) => {
+        const newStaffId = e.target.value ? parseInt(e.target.value) : null;
+        if (!dayData) return;
+
+        const updatedData = {
+            day_id: dayData.id,
+            day_type_id: dayData.day_type_id,
+            assigned_staff_id: dayData.assigned_staff_id,
+            assigned_computing_staff_id: newStaffId
         };
         
         onUpdateDay(updatedData);
@@ -130,19 +144,42 @@ const SchedulerGrid = ({ schedule, selectedRun, allBeamlines, allDayTypes, allSt
                                         {/* Staff/Host Cell with Stealth Select */}
                                         <div 
                                             className="schedule-cell"
-                                            style={{ backgroundColor: isWeekend ? '#e0e0e0' : '#f9f9f9', padding: '0' }}
+                                            style={{ backgroundColor: isWeekend ? '#e0e0e0' : '#f9f9f9', padding: '0', display: 'flex', flexDirection: 'column' }}
                                         >
                                             {dayData ? (
-                                                <select 
-                                                    className="stealth-select"
-                                                    value={dayData.assigned_staff_id || ""}
-                                                    onChange={(e) => handleStaffChange(e, dayData)}
-                                                >
-                                                    <option value="">-</option>
-                                                    {allStaff.map(st => (
-                                                        <option key={st.id} value={st.id}>{st.full_name}</option>
-                                                    ))}
-                                                </select>
+                                                <>
+                                                    <select 
+                                                        className="stealth-select"
+                                                        value={dayData.assigned_staff_id || ""}
+                                                        onChange={(e) => handleStaffChange(e, dayData)}
+                                                        style={{flex: 1}}
+                                                    >
+                                                        <option value="">-</option>
+                                                        {allStaff.filter(st => st.is_host !== false).map(st => (
+                                                            <option key={st.id} value={st.id}>{st.full_name}</option>
+                                                        ))}
+                                                    </select>
+                                                    <select 
+                                                        className="stealth-select"
+                                                        value={dayData.assigned_computing_staff_id || ""}
+                                                        onChange={(e) => handleComputingStaffChange(e, dayData)}
+                                                        style={{fontSize: '0.85em', color: '#0056b3', borderTop: '1px solid #ddd', backgroundColor: 'rgba(0,0,0,0.02)', padding: '2px 4px'}}
+                                                    >
+                                                        <option value="">-</option>
+                                                        {allStaff.filter(st => st.is_computing).map(st => (
+                                                            <option key={st.id} value={st.id}>[C] {st.full_name}</option>
+                                                        ))}
+                                                    </select>
+                                                    {dayData.shifts && dayData.shifts.length > 0 && (
+                                                        <div style={{fontSize: '0.75em', color: '#666', borderTop: '1px solid #ddd', padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.5)'}}>
+                                                            {dayData.shifts.map((s, idx) => (
+                                                                <div key={idx} style={{whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}} title={s.description}>
+                                                                    S{s.shift_index}: {s.esaf_id} {s.pi_name ? `- ${s.pi_name}` : ''}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </>
                                             ) : (
                                                 <div className="cell-staff placeholder">-</div>
                                             )}
@@ -156,6 +193,7 @@ const SchedulerGrid = ({ schedule, selectedRun, allBeamlines, allDayTypes, allSt
             </div>
 
             <DayEditorModal
+                key={editingDay?.id}
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 dayData={editingDay}

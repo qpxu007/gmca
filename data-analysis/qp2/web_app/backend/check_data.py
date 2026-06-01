@@ -7,15 +7,11 @@ project_root = current_file.parent.parent.parent
 sys.path.append(str(project_root))
 
 try:
-    from xio.db_manager import DBManager
-    from qp2.data_viewer.models import DatasetRun
-except ImportError:
-    try:
-        from xio.db_manager import DBManager
-        from data_viewer.models import DatasetRun
-    except ImportError as e:
-        print(f"ImportError: {e}")
-        sys.exit(1)
+    from qp2.xio.db_manager import DBManager
+    from qp2.db import DatasetRun
+except ImportError as e:
+    print(f"ImportError: {e}")
+    sys.exit(1)
 
 print("Connecting to DB...")
 try:

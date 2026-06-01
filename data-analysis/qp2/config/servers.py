@@ -57,6 +57,8 @@ class ServerConfig:
     _BLUICE_REDIS_PORT = 8003 if _is_test else 8009
 
     # --- Database ---
+    DB_ENGINE = os.environ.get("QP2_DB_ENGINE", "postgresql").lower()
+    
     POSTGRES_HOST = "localhost" if _is_test else os.environ.get("QP2_PG_HOST", "bl1ws1")
     POSTGRES_PORT = os.environ.get("QP2_PG_PORT", "5432")
     POSTGRES_USER = os.environ.get("QP2_PG_USER", "dhs")
@@ -74,7 +76,7 @@ class ServerConfig:
     MYSQL_DB_GMCA_ACCOUNTS = "gmca_accounts"
     
     # --- AI Server (Argo API) ---
-    AI_SERVER_URL = None if _is_test else "https://apps-dev.inside.anl.gov/argoapi/v1"
+    AI_SERVER_URL = None if _is_test else "https://apps.inside.anl.gov/argoapi/v1"
     
     # --- Web App ---
     _WEB_APP_PORT_DEFAULT = 8000

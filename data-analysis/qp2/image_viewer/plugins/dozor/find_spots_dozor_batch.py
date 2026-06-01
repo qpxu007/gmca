@@ -117,6 +117,9 @@ class DozorBatchWorker(QRunnable):
                 job_cwd = str(determine_proc_base_dir(user_root, master_file) / "dozor_logs")
             os.makedirs(job_cwd, exist_ok=True)
 
+            if self.kwargs.get("keep_output"):
+                command_list.extend(["--keep-output", "--proc-dir", job_cwd])
+
             job_id = run_command(
                 cmd=command_list,
                 cwd=job_cwd,

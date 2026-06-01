@@ -1,12 +1,13 @@
 import json
 import os
+import sys
 from pathlib import Path
 import shutil
 from typing import Dict, List, Tuple, Optional
 
 import numpy as np
 
-from qp2.data_viewer.models import ScreenStrategyResults
+from qp2.db import ScreenStrategyResults
 from qp2.pipelines.gmcaproc.hdf5reader import HDF5Reader  # dataset object expected by XDS
 from qp2.pipelines.utils.pipeline_tracker import PipelineTracker
 from qp2.pipelines.gmcaproc.symmetry import Symmetry

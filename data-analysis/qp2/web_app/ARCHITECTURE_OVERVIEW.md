@@ -68,3 +68,60 @@ The tie-in point is the `API_URL` in `web_app/frontend/src/api.js`. This tells t
 
 **Do they run on the same machine?**
 Physically, yes (usually). Logically, they are distinct entities that talk over a network interface.
+
+---
+
+## 3. Backend Modules
+
+The backend is organized into route modules, each registered as a FastAPI router in `main.py`:
+
+| Module | Prefix | Purpose |
+| :--- | :--- | :--- |
+| `main.py` | `/login`, `/logout`, `/api/*` | Auth, spreadsheet editor, SPA catch-all |
+| `dataset_routes.py` | `/datasets` | Dataset discovery and listing |
+| `processing_routes.py` | `/processing` | Data processing pipeline monitoring |
+| `viewer_routes.py` | `/viewer` | Diffraction image viewer |
+| `experiment_routes.py` | `/experiment` | Experiment preparation forms (ESAF-scoped) |
+| `model_routes.py` | `/models` | Structure model upload/download/view (ESAF-scoped) |
+| `prediction_routes.py` | `/predict` | Structure prediction job submission (AF3, extensible) |
+| `chat_routes.py` | `/chat` | AI chat assistant |
+| `scheduler.py` | `/scheduler` | Beamline support scheduler |
+| `h5_routes.py` | `/h5grove` | HDF5 file serving |
+| `reprocess_routes.py` | `/processing` | Dataset reprocessing |
+
+## 4. Frontend Apps
+
+Each dashboard card corresponds to a React page component:
+
+| Component | Route | Purpose |
+| :--- | :--- | :--- |
+| `SpreadsheetApp` | `/spreadsheet` | Puck spreadsheet editor with drag-and-drop |
+| `DatasetApp` | `/datasets` | Dataset viewer and search |
+| `ProcessingApp` | `/processing` | Processing pipeline monitor |
+| `ImageViewerApp` | `/viewer` | Diffraction image viewer |
+| `ExperimentApp` | `/experiment` | Experiment preparation forms |
+| `ModelViewerApp` | `/models` | Structure model management with Mol* 3D viewer |
+| `ChatApp` | `/chat` | AI chat assistant |
+| `SchedulerApp` | `/scheduler` | Staff scheduling (admin only) |
+
+## 5. Structure Model & Prediction System
+
+### Storage
+- **Uploaded models:** `/mnt/beegfs/dmadmin/models/{esaf_id}/` (PDB/CIF files)
+- **Prediction jobs:** `/mnt/beegfs/dmadmin/predictions/{esaf_id}/{job_id}/` (input JSON + output CIF)
+- All on shared BeeGFS filesystem, accessible from API server and compute nodes
+
+### 3D Viewer
+Uses [Mol*](https://molstar.org/) (vanilla JS, framework-agnostic) for viewing PDB/CIF structures. Models are fetched with session credentials and passed as raw data to Mol*'s plugin API.
+
+### Prediction Jobs (AlphaFold 3)
+- Program-agnostic design: `prediction_routes.py` dispatches to program-specific handlers
+- AF3 handler generates `fold_input.json` and submits via Slurm (`gpu` partition) using `qp2/image_viewer/utils/run_job.py`
+- Job status polled via `squeue`; completed output CIF files imported into model store
+- Extensible to Chai-1, Boltz, etc. via additional `_prepare_*_job()` handlers
+
+### Access Control
+All model and prediction endpoints are ESAF-scoped — users can only access models belonging to their ESAF groups. Staff members bypass access checks.
+
+### Spreadsheet Integration
+The puck editor's `ModelPath` column has a browse button that opens a model picker dialog, listing available models from the user's ESAF groups.

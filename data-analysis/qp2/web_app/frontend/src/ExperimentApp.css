@@ -1,0 +1,397 @@
+.experiment-container {
+    min-height: 100vh;
+    background: #1B262C;
+    color: #e0e0e0;
+    padding-bottom: 40px;
+}
+
+.experiment-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    background: linear-gradient(90deg, #1B262C 0%, #0F4C75 100%);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.experiment-toolbar .back-link {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: inherit;
+    text-decoration: none;
+}
+
+.experiment-toolbar-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.experiment-content {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* ESAF selector */
+.experiment-selector {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.experiment-selector select {
+    background: #1a3a5c;
+    color: #e0e0e0;
+    border: 1px solid #3282B8;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 0.95rem;
+    min-width: 250px;
+}
+
+.experiment-selector button {
+    background: #3282B8;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.experiment-selector button:hover {
+    background: #2a6fa0;
+}
+
+/* Section cards */
+.experiment-section {
+    background: #1a3a5c;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+
+.experiment-section h3 {
+    margin: 0 0 12px 0;
+    font-size: 0.95rem;
+    color: #82b1ff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ESAF info */
+.esaf-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 8px 16px;
+}
+
+.esaf-info-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.esaf-info-item .label {
+    font-size: 0.75rem;
+    color: #888;
+    text-transform: uppercase;
+}
+
+.esaf-info-item .value {
+    font-size: 0.95rem;
+}
+
+/* List items (files, IPs, tracking, hosts) */
+.experiment-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.experiment-list-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.experiment-list-item:hover {
+    background: rgba(255,255,255,0.03);
+}
+
+.experiment-list-item .item-icon {
+    color: #82b1ff;
+    flex-shrink: 0;
+}
+
+.experiment-list-item .item-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.experiment-list-item .item-meta {
+    font-size: 0.75rem;
+    color: #888;
+}
+
+.experiment-list-item .item-link {
+    color: #82b1ff;
+    text-decoration: none;
+    font-size: 0.8rem;
+}
+
+.experiment-list-item .item-link:hover {
+    text-decoration: underline;
+}
+
+.remove-btn {
+    background: none;
+    border: none;
+    color: #e74c3c;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    opacity: 0.6;
+}
+
+.remove-btn:hover {
+    opacity: 1;
+    background: rgba(231, 76, 60, 0.15);
+}
+
+/* Add row */
+.add-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+}
+
+.add-row input,
+.add-row select {
+    background: #1B262C;
+    color: #e0e0e0;
+    border: 1px solid #3282B8;
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 0.85rem;
+}
+
+.add-row input::placeholder {
+    color: #666;
+}
+
+.add-btn {
+    background: #3282B8;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.add-btn:hover {
+    background: #2a6fa0;
+}
+
+.add-btn:disabled {
+    background: #555;
+    cursor: not-allowed;
+}
+
+/* Instructions textarea */
+.instructions-textarea {
+    width: 100%;
+    min-height: 80px;
+    background: #1B262C;
+    color: #e0e0e0;
+    border: 1px solid #3282B8;
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    resize: vertical;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.instructions-textarea:focus {
+    border-color: #3498db;
+}
+
+/* Checkbox */
+.experiment-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.experiment-checkbox input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #3282B8;
+}
+
+/* Save button */
+.save-bar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.save-btn {
+    background: #27ae60;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 24px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.save-btn:hover {
+    background: #219a52;
+}
+
+.save-btn:disabled {
+    background: #555;
+    cursor: not-allowed;
+}
+
+/* Spreadsheet link */
+.spreadsheet-select {
+    background: #1B262C;
+    color: #e0e0e0;
+    border: 1px solid #3282B8;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    width: 100%;
+    max-width: 400px;
+}
+
+/* File upload */
+.upload-btn {
+    background: #3282B8;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 14px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.upload-btn:hover {
+    background: #2a6fa0;
+}
+
+/* Staff list view */
+.experiment-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.experiment-table th {
+    text-align: center;
+    padding: 10px 12px;
+    background: #0F4C75;
+    color: #BBE1FA;
+    font-weight: 500;
+    border-bottom: 2px solid #3282B8;
+}
+
+.experiment-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    text-align: center;
+}
+
+.experiment-table tr {
+    cursor: pointer;
+}
+
+.experiment-table tr:hover td {
+    background: rgba(50, 130, 184, 0.1);
+}
+
+.experiment-table .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.experiment-table .badge-yes {
+    background: rgba(231, 76, 60, 0.2);
+    color: #e74c3c;
+}
+
+.experiment-table .badge-tracking {
+    background: rgba(46, 204, 113, 0.2);
+    color: #2ecc71;
+}
+
+/* Empty state */
+.experiment-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: #888;
+}
+
+.experiment-empty p {
+    margin: 8px 0;
+}
+
+/* Loading */
+.experiment-loading {
+    text-align: center;
+    padding: 40px;
+    color: #888;
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+    .experiment-content {
+        padding: 12px;
+    }
+
+    .experiment-section {
+        padding: 12px;
+    }
+
+    .esaf-info-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .experiment-selector {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .experiment-selector select {
+        min-width: unset;
+    }
+}

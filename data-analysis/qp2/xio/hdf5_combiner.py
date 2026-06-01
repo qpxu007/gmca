@@ -662,18 +662,23 @@ class DatasetCombiner:
                 nimages = None
                 if "/entry/instrument/detector/detectorSpecific/nimages" in f:
                     nimages = f["/entry/instrument/detector/detectorSpecific/nimages"][()]
-                
+
                 if nimages is None:
                     return []
-                
+
+                ntrigger = 1
+                if "/entry/instrument/detector/detectorSpecific/ntrigger" in f:
+                    ntrigger = int(f["/entry/instrument/detector/detectorSpecific/ntrigger"][()])
+                total_frames = int(nimages) * ntrigger
+
                 def visitor(name, obj):
                     if isinstance(obj, h5py.Dataset):
                         # skip data/raw_data/detector data
                         if "entry/data" in name or "entry/instrument/detector/data" in name:
                             return
-                        
+
                         # Check shape
-                        if len(obj.shape) == 1 and obj.shape[0] == nimages:
+                        if len(obj.shape) == 1 and obj.shape[0] == total_frames:
                              # Exclude nimages itself from re-writing (handled separately)
                              if name.endswith("nimages"):
                                  return

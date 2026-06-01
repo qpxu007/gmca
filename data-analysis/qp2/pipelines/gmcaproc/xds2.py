@@ -278,9 +278,9 @@ class XDS:
             ),
             "NAME_TEMPLATE_OF_DATA_FRAMES": self.template,
             "DATA_RANGE": f"{self.user_start} {self.user_end}",
-            "BACKGROUND_RANGE": f"1 {min(5, self.user_end - self.user_start + 1)}",
+            "BACKGROUND_RANGE": f"{self.user_start} {self.user_start + min(5, self.user_end - self.user_start + 1) - 1}",
             "SPOT_RANGE": [
-                f"{self.user_start} {int((self.user_end - self.user_start + 1) // 2) or self.user_start}"
+                f"{self.user_start} {self.user_start + (self.user_end - self.user_start + 1) // 2 - 1}"
             ],
             "EXCLUDE_DATA_RANGE": [],
             "REFINE(IDXREF)": "POSITION BEAM ORIENTATION CELL AXIS",
@@ -1004,7 +1004,7 @@ class XDS:
                 # Remove common non-numeric chars and convert to float
                 clean_val = str(val_str).replace("%", "").replace("*", "")
                 # Divide by 100 to convert percentage to fraction
-                return str(float(clean_val) / 100.0)
+                return str(round(float(clean_val) / 100.0, 3))
             except ValueError:
                 return str(val_str)
 
@@ -1054,8 +1054,8 @@ class XDS:
             "completeness": str(total_stats.get("completeness", "")).replace("%", ""),
             "anom_completeness": str(results_dict.get("anomalous_completeness") or ""),
             "table1": results_dict.get("table1_text", ""),
-            "scale_log": self.correct_lp_file,
-            "truncate_mtz": self.processed_mtz_file,
+            "scale_log": self.correct_lp_file if os.path.exists(self.correct_lp_file) else None,
+            "truncate_mtz": self.processed_mtz_file if os.path.exists(self.processed_mtz_file) else None,
             "run_stats": json.dumps(results_dict, default=str),
             "solve": str(results_dict.get("final_pdb") or ""),
             "isa": str(results_dict.get("ISa") or ""),

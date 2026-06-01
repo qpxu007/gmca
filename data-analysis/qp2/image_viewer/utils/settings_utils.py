@@ -2,7 +2,7 @@
 
 from pathlib import Path
 from qp2.log.logging_config import get_logger
-from qp2.utils.auxillary import sanitize_space_group
+from qp2.utils.auxiliary import sanitize_space_group
 
 logger = get_logger(__name__)
 

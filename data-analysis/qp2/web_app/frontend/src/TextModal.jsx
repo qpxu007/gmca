@@ -11,15 +11,13 @@ const TextModal = ({ isOpen, onClose, title, content }) => {
             contentLabel={title}
             style={{
                 content: {
-                    top: '50%',
-                    left: '50%',
-                    right: 'auto',
-                    bottom: 'auto',
-                    marginRight: '-50%',
-                    transform: 'translate(-50%, -50%)',
-                    width: '600px',
-                    maxHeight: '80vh',
-                    overflow: 'auto'
+                    top: '5%',
+                    left: '5%',
+                    right: '5%',
+                    bottom: '5%',
+                    padding: '15px',
+                    overflow: 'auto',
+                    resize: 'both',
                 }
             }}
         >
@@ -27,15 +25,14 @@ const TextModal = ({ isOpen, onClose, title, content }) => {
                 <h3 style={{ margin: 0 }}>{title}</h3>
                 <button onClick={onClose} style={{ cursor: 'pointer', padding: '5px 10px' }}>Close</button>
             </div>
-            <pre style={{ 
-                backgroundColor: '#f4f4f4', 
-                padding: '15px', 
-                borderRadius: '4px', 
-                overflowX: 'auto', 
-                whiteSpace: 'pre-wrap', 
-                wordWrap: 'break-word',
+            <pre style={{
+                backgroundColor: '#f4f4f4',
+                padding: '15px',
+                borderRadius: '4px',
+                overflowX: 'auto',
+                whiteSpace: 'pre',
                 fontFamily: 'monospace',
-                fontSize: '0.9rem'
+                fontSize: '0.85rem'
             }}>
                 {content || 'No content available'}
             </pre>

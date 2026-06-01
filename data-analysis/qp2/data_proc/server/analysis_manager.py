@@ -18,8 +18,7 @@ from qp2.image_viewer.utils.ring_math import angstrom_to_pixels
 from qp2.image_viewer.plugins.spot_finder.find_spots_worker import (
     PeakFinderDataFileWorker,
 )
-from qp2.data_proc.server import xprocess
-from qp2.xio.hdf5_to_cbf import convert_hdf5_to_cbf_for_strategy
+
 
 from qp2.image_viewer.plugins.xds.submit_xds_job import XDSProcessDatasetWorker
 from qp2.image_viewer.plugins.nxds.submit_nxds_job import NXDSProcessDatasetWorker
@@ -248,6 +247,7 @@ class AnalysisManager(QObject):
         # Batching for Dozor
         self.dozor_queues: Dict[str, List[tuple]] = {}
         self.dozor_lock = threading.Lock()
+        self._flushed_series: set = set()  # master_files whose series has completed
 
         # 3D Raster pair tracker
         from qp2.pipelines.raster_3d.tracker import RasterRunTracker
@@ -425,19 +425,36 @@ class AnalysisManager(QObject):
         self.handle_series_completion_logic(master_file, total_frames, metadata)
 
     def add_to_dozor_batch(self, file_info: dict, proc_dir: Path):
-        """Adds a data segment to the Dozor batching queue."""
+        """Adds a data segment to the Dozor batching queue.
+
+        Segments are accumulated until ``batch_factor`` data-file segments have
+        been collected, then merged into a single dozor invocation submitted as
+        one slurm job.
+        """
         master_file = file_info["metadata"]["master_file"]
         dozor_cfg = self.config.get("dozor", {})
-        batch_size = dozor_cfg.get("batch_size", 5)
-        
+        batch_factor = dozor_cfg.get("batch_factor", 5)
+
         with self.dozor_lock:
+            # If this series has already been flushed (series_completed raced ahead of
+            # this dispatcher), submit the segment immediately instead of queuing it.
+            if master_file in self._flushed_series:
+                logger.warning(
+                    f"Dozor: late segment for already-flushed series "
+                    f"{Path(master_file).name} (frames "
+                    f"{file_info['start_frame']}-{file_info['end_frame']}). "
+                    f"Submitting immediately."
+                )
+                self._submit_dozor_batch([(file_info, proc_dir)])
+                return
+
             if master_file not in self.dozor_queues:
                 self.dozor_queues[master_file] = []
-            
+
             queue = self.dozor_queues[master_file]
             queue.append((file_info, proc_dir))
-            
-            if len(queue) >= batch_size:
+
+            if len(queue) >= batch_factor:
                 batch_to_submit = queue[:]
                 self.dozor_queues[master_file] = []
                 self._submit_dozor_batch(batch_to_submit)
@@ -445,6 +462,7 @@ class AnalysisManager(QObject):
     def flush_dozor_batches(self, master_file: str):
         """Submits any remaining segments in the Dozor queue for a series."""
         with self.dozor_lock:
+            self._flushed_series.add(master_file)
             queue = self.dozor_queues.pop(master_file, [])
             if queue:
                 logger.info(f"Flushing Dozor queue for {Path(master_file).name} with {len(queue)} segments.")
@@ -460,25 +478,35 @@ class AnalysisManager(QObject):
         
         # Prepare Dozor parameters from config
         dozor_cfg = self.config.get("dozor", {})
-        dozor_params = {f"dozor_{k}": v for k, v in dozor_cfg.items() if k != "batch_size"}
-        
-        job_batch_definitions = []
-        for file_info, _ in batch_data:
-            job_batch_definitions.append({
-                "metadata": file_info["metadata"],
-                "start_frame": file_info["start_frame"] + 1, # Dozor is 1-based
-                "nimages": file_info["end_frame"] - file_info["start_frame"] + 1,
-            })
-            
+        keep_output = dozor_cfg.get("keep_output", False)
+        dozor_params = {f"dozor_{k}": v for k, v in dozor_cfg.items() if k not in ("batch_factor", "keep_output")}
+
+        # Merge contiguous segments into a single dozor invocation.
+        # All segments share the same master file; dozor + neggia reads across
+        # data files transparently, so one call handles the full frame range.
+        sorted_batch = sorted(batch_data, key=lambda x: x[0]["start_frame"])
+        min_start = sorted_batch[0][0]["start_frame"]       # 0-based
+        max_end = sorted_batch[-1][0]["end_frame"]           # 0-based inclusive
+        total_frames = max_end - min_start + 1
+        job_batch_definitions = [{
+            "metadata": first_info["metadata"],
+            "start_frame": min_start + 1,                    # Dozor is 1-based
+            "nimages": total_frames,
+        }]
+
         worker = DozorBatchWorker(
             job_batch=job_batch_definitions,
             redis_conn=self.server.redis_manager.get_analysis_connection(),
             proc_dir=str(proc_dir.resolve()),
             redis_key_prefix=self.REDIS_DOZOR_KEY_PREFIX,
+            keep_output=keep_output,
             **dozor_params
         )
 
-        logger.debug(f"Submitting Dozor batch job for {Path(master_file).name} with {len(job_batch_definitions)} segments.")
+        logger.debug(
+            f"Submitting Dozor job for {Path(master_file).name}: "
+            f"frames {min_start + 1}-{max_end + 1} ({total_frames} frames from {len(batch_data)} segments)."
+        )
         self.server.worker_pool.start(worker)
 
     def _create_crystfel_worker(
@@ -641,6 +669,12 @@ class AnalysisManager(QObject):
         return kwargs
 
     def clear_segments_for_run(self, run_prefix: str) -> int:
+        # Also clear flushed-series markers for this run so re-runs work correctly
+        with self.dozor_lock:
+            self._flushed_series = {
+                mf for mf in self._flushed_series
+                if not (Path(mf).name.startswith(run_prefix) or f"/{run_prefix}_" in mf)
+            }
         return self.processed_segments.clear_by_predicate(
             lambda seg: isinstance(seg, tuple)
             and isinstance(seg[0], str)
@@ -1212,7 +1246,7 @@ class AnalysisManager(QObject):
 
             # 3D Raster pair detection and pipeline launch
             r3d_cfg = self.config.get("raster_3d", {})
-            if r3d_cfg.get("enabled", False):
+            if opt.get("enable_raster_3d", False):
                 try:
                     from qp2.pipelines.raster_3d.scan_mode import detect_raster_scan_mode
                     from qp2.pipelines.raster_3d.pipeline_worker import Raster3DPipelineWorker
@@ -1229,6 +1263,23 @@ class AnalysisManager(QObject):
                     )
                     if pair:
                         run1_info, run2_info = pair
+
+                        # Read pre-validated crystal data from Redis
+                        crystal_overrides = {}
+                        try:
+                            r1_master = run1_info["master_files"][0] if run1_info["master_files"] else None
+                            if r1_master:
+                                redis_conn = self.server.redis_manager.get_analysis_connection()
+                                stored = redis_conn.hgetall(f"dataset:info:{r1_master}")
+                                if stored:
+                                    decoded = {k.decode('utf-8'): v.decode('utf-8')
+                                               for k, v in stored.items()}
+                                    for key in ("desired_resolution_A", "desired_dosage_mgy"):
+                                        if key in decoded:
+                                            crystal_overrides[key] = decoded[key]
+                        except Exception as e:
+                            logger.debug(f"Could not read crystal overrides from Redis: {e}")
+
                         pipeline_params = {
                             "username": opt.get("username"),
                             "beamline": opt.get("beamline"),
@@ -1236,6 +1287,7 @@ class AnalysisManager(QObject):
                             "run_prefix": run1_info["run_prefix"],
                             "sampleName": opt.get("sample_id") or run1_info["run_prefix"],
                             "processing_common_proc_dir_root": opt.get("proc_root_dir"),
+                            **crystal_overrides,
                         }
                         proc_dir = str(
                             get_raster_3d_proc_dir(
@@ -1296,6 +1348,7 @@ class AnalysisManager(QObject):
                 "sampleName": opt.get("sample_id") or run_prefix,
                 "run_prefix": run_prefix,
                 "mounted": opt.get("robot_mounted"),
+                "processing_common_proc_dir_root": opt.get("proc_root_dir"),
             }
             # Filter out None values
             pipeline_params = {
@@ -1319,7 +1372,7 @@ class AnalysisManager(QObject):
                     mapping=mapping,
                     pipeline_params=pipeline_params,
                     redis_conn=self.server.redis_manager.get_analysis_connection(),
-                    delete_workdir=True,  # Clean up temp dirs after finish
+                    delete_workdir=False,  # Use persistent PROCESSING directory
                 )
 
                 # Connect signals for server logging
@@ -1358,7 +1411,7 @@ class AnalysisManager(QObject):
         
         target = pipeline_map.get(pipeline.lower())
         if not target:
-            logger.warning(f"Unknown pipeline '{pipeline}' requested via external API. Falling back to xprocess.")
+            logger.error(f"Unknown pipeline '{pipeline}' requested via external API. Legacy fallback has been removed.")
             return False
 
         WorkerClass, pipeline_key = target
@@ -1474,190 +1527,3 @@ class AnalysisManager(QObject):
         
         return True
 
-    # --- LEGACY HANDLERS (Uncommented and integrated) ---
-
-    def _submit_gmcaproc_job(
-        self, run_prefix, milestone, opt_base, data_dir, proc_dir_root
-    ):
-        """Helper to submit a legacy gmcaproc job."""
-        if not self.config.get("enable_legacy_pipelines", True):
-            return
-
-        try:
-            normalized_percent = milestone.replace("%", "")
-            job_name_component = "legacy/gmcaproc"
-
-            # Access internal server method to create directory
-            proc_dir = self.server._create_processing_directory(
-                Path(proc_dir_root),
-                run_prefix,
-                job_name_component,
-                normalized_percent + "pct" if milestone != "completion" else None,
-            )
-
-            opt_sub = opt_base.copy()
-            opt_sub.update(
-                {
-                    "prefix": run_prefix,
-                    "pipeline": "gmcaproc",
-                    "proc_dir": str(proc_dir.resolve()),
-                    "data_dir": str(data_dir.resolve()),
-                    "program": "process",
-                }
-            )
-
-            if milestone != "completion":
-                opt_sub["percent"] = normalized_percent
-                opt_sub["job_tag"] = f"gmcaproc_{normalized_percent}pct"
-            else:
-                opt_sub["job_tag"] = "gmcaproc_complete"
-
-            logger.info(
-                f"AnalysisManager: Submitting legacy gmcaproc job for {run_prefix} ({milestone})"
-            )
-            xprocess.xprocess(opt_sub, job_tag=opt_sub.get("job_tag"))
-
-        except Exception as e:
-            logger.error(f"Failed to submit legacy gmcaproc job: {e}", exc_info=True)
-
-    def handle_legacy_milestone(self, run_prefix, milestone, metadata_list):
-        """Handles 25%/50% milestones for gmcaproc."""
-        if not metadata_list:
-            return
-        if not self.config.get("enable_legacy_pipelines", True):
-            return
-        
-        # FIX: Respect only_run_legacy_strategy flag for milestones too
-        if self.config.get("only_run_legacy_strategy", False):
-            return
-
-        meta = metadata_list[0]
-        mode = meta.get("collect_mode", "STANDARD").lower()
-        if mode == "raster":
-            return
-
-        opt_base = self.server.get_opt(metadata_list)
-        data_dir = self.server._get_data_dir_from_metadata(meta)
-
-        if data_dir and data_dir.exists():
-            self._submit_gmcaproc_job(
-                run_prefix, milestone, opt_base, data_dir, opt_base["proc_root_dir"]
-            )
-
-    def handle_legacy_completion(self, run_prefix, master_files, metadata_list):
-        """Handles completion for gmcaproc and legacy strategy."""
-        if not metadata_list:
-            return
-        
-        # Run if legacy is enabled generally OR specifically for strategy
-        if not self.config.get("enable_legacy_pipelines", True) and not self.config.get("only_run_legacy_strategy", False):
-            return
-
-        meta = metadata_list[0]
-        mode = meta.get("collect_mode", "STANDARD").lower()
-        opt_base = self.server.get_opt(metadata_list)
-
-        # ---------------------------------------
-
-        if mode in ["standard", "single"]:
-            # If only legacy strategy is requested, skip standard legacy pipelines
-            if self.config.get("only_run_legacy_strategy", False):
-                logger.info(
-                    f"AnalysisManager: Skipping legacy standard pipelines for run '{run_prefix}' (only_run_legacy_strategy is enabled)."
-                )
-                return
-
-            # --- CHECK: Minimum Frames Threshold ---
-            total_images = meta.get("n_images")
-            if total_images is not None:
-                min_frames = self.config.get("minimum_frames_for_pipelines", 20)
-                if total_images < min_frames:
-                    logger.info(
-                        f"AnalysisManager (Legacy): Skipping gmcaproc/strategy for run '{run_prefix}'. Total frames ({total_images}) < minimum ({min_frames})."
-                    )
-                    return
-
-            data_dir = self.server._get_data_dir_from_metadata(meta)
-            if data_dir and data_dir.exists():
-                # 1. gmcaproc
-                self._submit_gmcaproc_job(
-                    run_prefix,
-                    "completion",
-                    opt_base,
-                    data_dir,
-                    opt_base["proc_root_dir"],
-                )
-
-                # 2. legacy autoproc
-                ap_dir = self.server._create_processing_directory(
-                    Path(opt_base["proc_root_dir"]), run_prefix, "legacy/autoproc", "completion"
-                )
-                self._submit_xprocess_job(opt_base, run_prefix, "autoproc", ap_dir, data_dir)
-
-                # 3. legacy xia2
-                x2_dir = self.server._create_processing_directory(
-                    Path(opt_base["proc_root_dir"]), run_prefix, "legacy/xia2", "completion"
-                )
-                self._submit_xprocess_job(opt_base, run_prefix, "xia2", x2_dir, data_dir)
-
-        elif mode == "strategy":
-
-            proc_root = Path(opt_base["proc_root_dir"])
-            cbf_dir = self.server._create_processing_directory(
-                proc_root, run_prefix, "legacy/cbf_conversion", "strategy"
-            )
-            cbf_data_dir, cbf_filelist = convert_hdf5_to_cbf_for_strategy(
-                run_prefix, master_files, metadata_list, cbf_dir
-            )
-
-            if cbf_data_dir and cbf_filelist:
-                pipelines = [
-                    "mosflm_strategy",
-                    "xds_strategy",
-                    "dials_strategy",
-                    "labelit_strategy",
-                ]
-                data_dir_for_jobs = Path(cbf_data_dir)
-
-                for p_name in pipelines:
-                    p_dir = self.server._create_processing_directory(
-                        proc_root, run_prefix, f"legacy/{p_name}", "completion"
-                    )
-                    try:
-                        self._submit_xprocess_job(
-                            opt_base,
-                            run_prefix,
-                            p_name,
-                            p_dir,
-                            data_dir_for_jobs,
-                            file_list=cbf_filelist,
-                        )
-                    except Exception as e:
-                        logger.error(f"Error submitting {p_name}: {e}", exc_info=True)
-
-    def _submit_xprocess_job(
-        self,
-        opt_base,
-        run_prefix,
-        pipeline_name,
-        proc_dir,
-        data_dir,
-        milestone_percent=None,
-        file_list=None,
-    ):
-        # Helper for the legacy strategy calls
-        opt_sub = opt_base.copy()
-        opt_sub.update(
-            {
-                "prefix": run_prefix,
-                "pipeline": pipeline_name,
-                "proc_dir": str(proc_dir),
-                "data_dir": str(data_dir),
-                "program": "strategy" if "strategy" in pipeline_name else "process",
-            }
-        )
-        if file_list:
-            opt_sub["filelist"] = file_list
-        if milestone_percent:
-            opt_sub["percent"] = milestone_percent
-        xprocess.xprocess(opt_sub, job_tag=f"{pipeline_name}")

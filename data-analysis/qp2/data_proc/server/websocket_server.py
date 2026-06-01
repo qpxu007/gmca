@@ -2,6 +2,7 @@
 import logging
 import asyncio
 import threading
+import sys
 from typing import Set
 
 import websockets

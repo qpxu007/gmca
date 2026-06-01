@@ -1,0 +1,266 @@
+{
+  "mit": {
+    "lat": 42.3582529,
+    "lng": -71.0966272,
+    "address": "Massachusetts Institute of Technology, Storrow Drive, Back Bay, Cambridge, Suffolk County, Massachusetts, 02199, United States"
+  },
+  "stanford university": {
+    "lat": 37.4313138,
+    "lng": -122.1693654,
+    "address": "Stanford University, 450, Jane Stanford Way, Rains Houses, Santa Clara County, California, 94305, United States"
+  },
+  "harvard university": {
+    "lat": 42.3657432,
+    "lng": -71.1222139,
+    "address": "Harvard University, Appleton Road, Huron Village, Cambridge, Middlesex County, Massachusetts, 02140, United States"
+  },
+  "university of oxford": {
+    "lat": 33.6505419,
+    "lng": -117.8270531,
+    "address": "Oxford, University Town Center, Irvine, Orange County, California, 92612, United States"
+  },
+  "eth zurich": {
+    "lat": 47.413218,
+    "lng": 8.5374914,
+    "address": "ETH Z\u00fcrich, 130, Binzm\u00fchlestrasse, Oerlikon, Kreis 11, Z\u00fcrich, Bezirk Z\u00fcrich, Z\u00fcrich, 8050, Schweiz/Suisse/Svizzera/Svizra"
+  },
+  "university of tokyo": {
+    "lat": 35.7117157,
+    "lng": 139.7637457,
+    "address": "\u6771\u4eac\u5927\u5b66\u672c\u90f7\u30ad\u30e3\u30f3\u30d1\u30b9, 1, \u672c\u90f7\u4e03\u4e01\u76ee, \u672c\u90f7, \u6587\u4eac\u533a, \u6771\u4eac\u90fd, 113-8654, \u65e5\u672c"
+  },
+  "yale university": {
+    "lat": 41.2571306,
+    "lng": -72.9896696,
+    "address": "Yale University, West Haven, South Central Connecticut Planning Region, Connecticut, 06516, United States"
+  },
+  "yale university, ct, usa": {
+    "lat": 41.2571306,
+    "lng": -72.9896696,
+    "address": "Yale University, West Haven, South Central Connecticut Planning Region, Connecticut, 06516, United States"
+  },
+  "emory university, ga, usa": {
+    "lat": 33.8004547,
+    "lng": -84.3172378,
+    "address": "Emory University, 201, Clifton Road Northeast, Atlanta, DeKalb County, Georgia, 30322, United States"
+  },
+  "purdue university, in, usa": {
+    "lat": 40.430028,
+    "lng": -86.9264211,
+    "address": "Purdue University, 610, West Lafayette, Tippecanoe County, Indiana, 47907, United States"
+  },
+  "harvard university, ma, usa": {
+    "lat": 42.3657432,
+    "lng": -71.1222139,
+    "address": "Harvard University, Trowbridge Terrace, Mid-Cambridge, Cambridge, Middlesex County, Massachusetts, 02318, United States"
+  },
+  "texas a&m university, tx, usa": {
+    "lat": 30.6108618,
+    "lng": -96.3520606,
+    "address": "Texas A&M University, 400, Bizzell Street, College Station, Brazos County, Texas, 77843, United States"
+  },
+  "university of toronto, canada": {
+    "lat": 43.6608141,
+    "lng": -79.3960322,
+    "address": "University of Toronto, King's College Circle, University, University\u2014Rosedale, Toronto, Golden Horseshoe, Ontario, M5S 3G4, Canada"
+  },
+  "moffitt cancer center, fl, usa": {
+    "lat": 28.0640672,
+    "lng": -82.4217261,
+    "address": "H. Lee Moffitt Cancer Center, 12902, USF Magnolia Drive, Tampa, Hillsborough County, Florida, 33612, United States"
+  },
+  "university of florida, fl, usa": {
+    "lat": 29.6411884,
+    "lng": -82.3562296,
+    "address": "University of Florida, Southwest 2nd Avenue, Gainesville, Alachua County, Florida, 32611, United States"
+  },
+  "university of michigan, mi, usa": {
+    "lat": 42.2942142,
+    "lng": -83.7100389,
+    "address": "University of Michigan, 500, South State Street, Burns Park, Ann Arbor, Washtenaw County, Michigan, 48109, United States"
+  },
+  "george mason university, va, usa": {
+    "lat": 38.8313333,
+    "lng": -77.3079884,
+    "address": "George Mason University, 4400, University Drive, George Mason, Fairfax County, Virginia, 22030, United States"
+  },
+  "university of minnesota, mn, usa": {
+    "lat": 44.9863418,
+    "lng": -93.1794451,
+    "address": "University of Minnesota, Twin Cities Campus, I 94, South Saint Anthony Park, Saint Anthony Park, Falcon Heights, Ramsey County, Minnesota, 55455, United States"
+  },
+  "east carolina university, nc, usa": {
+    "lat": 35.6328512,
+    "lng": -77.4852672,
+    "address": "East Carolina University, 1001, East 5th Street, University Park, Hartington and Williams, Greenville, Pitt County, North Carolina, 27858, United States"
+  },
+  "university of pittsburgh, pa, usa": {
+    "lat": 40.444153,
+    "lng": -79.962461,
+    "address": "University of Pittsburgh, 4200, Fifth Avenue, Chinatown, Downtown, Pittsburgh, Allegheny County, Pennsylvania, 15260, United States"
+  },
+  "university of washington, wa, usa": {
+    "lat": 47.6554303,
+    "lng": -122.3001692,
+    "address": "University of Washington, 1410, Northeast Campus Parkway, West Campus, University District, Seattle, King County, Washington, 98195, United States"
+  },
+  "michigan state university, mi, usa": {
+    "lat": 42.7023794,
+    "lng": -84.4803869,
+    "address": "Michigan State University, 426, Auditorium Road, River Trail Neighborhood, East Lansing, Ingham County, Michigan, 48824, United States"
+  },
+  "the university of chicago, il, usa": {
+    "lat": 41.7913274,
+    "lng": -87.6008421,
+    "address": "The University of Chicago, 5801, South Ellis Avenue, Woodlawn, Chicago, Hyde Park Township, Cook County, Illinois, 60637, United States"
+  },
+  "argonne national laboratory, il, usa": {
+    "lat": 41.709141,
+    "lng": -87.9786195,
+    "address": "Argonne National Laboratory, 9700, Cass Avenue, Lemont, DuPage County, Illinois, 60439, United States"
+  },
+  "thomas jefferson university, pa, usa": {
+    "lat": 39.9489114,
+    "lng": -75.1580566,
+    "address": "Thomas Jefferson University, Clover Street, Washington Square West, Center City, Philadelphia, Philadelphia County, Pennsylvania, 19107, United States"
+  },
+  "university of nebraska-lincoln, ne, usa": {
+    "lat": 40.8305567,
+    "lng": -96.6697373,
+    "address": "University of Nebraska - Lincoln (East Campus), North 35th Street, Lincoln, Lancaster County, Nebraska, 68583, United States"
+  },
+  "rutgers university, new brunswick, nj, usa": {
+    "lat": 40.4976786,
+    "lng": -74.4460046,
+    "address": "Catholic Center at Rutgers University, 84, Somerset Street, New Brunswick, Middlesex County, New Jersey, 08901, United States"
+  },
+  "the pennsylvania state university, pa, usa": {
+    "lat": 40.8128971,
+    "lng": -77.8710571,
+    "address": "Pennsylvania State University, 201, West Park Avenue, College Heights, State College, Centre County, Pennsylvania, 16802, United States"
+  },
+  "the university of british columbia, canada": {
+    "lat": 49.2606,
+    "lng": -123.246,
+    "address": "The University of British Columbia, Vancouver, BC, Canada"
+  },
+  "university of southern california, ca, usa": {
+    "lat": 34.021869,
+    "lng": -118.2858579,
+    "address": "University of Southern California, G\u00fcney California \u00dcniversitesi, University Park, Exposition Park, Los Angeles, Los Angeles County, California, 90089, United States"
+  },
+  "california institute of technology, ca, usa": {
+    "lat": 34.1370138,
+    "lng": -118.1252883,
+    "address": "California Institute of Technology, South Wilson Avenue, Pasadena Council District 7, Pasadena, Los Angeles County, California, 91106, United States"
+  },
+  "the university of texas at el paso, tx, usa": {
+    "lat": 31.7760159,
+    "lng": -106.5079696,
+    "address": "The University of Texas at El Paso, Glory Road Roundabout, El Paso, El Paso County, Texas, 79968, United States"
+  },
+  "university of california, santa cruz, ca, usa": {
+    "lat": 37.0001245,
+    "lng": -122.0622122,
+    "address": "University of California, Santa Cruz, Highview Drive, University, Santa Cruz County, California, 95064, United States"
+  },
+  "university of maryland, college park, md, usa": {
+    "lat": 38.9904124,
+    "lng": -76.9438586,
+    "address": "University of Maryland, College Park, Campus Drive, Yarrow, College Park, Prince George's County, Maryland, 20742, United States"
+  },
+  "massachusetts institute of technology, ma, usa": {
+    "lat": 42.3582529,
+    "lng": -71.0966272,
+    "address": "Massachusetts Institute of Technology, Fowler Lane, Cambridge, Middlesex County, Massachusetts, 02142, United States"
+  },
+  "walter reed army institute of research, md, usa": {
+    "lat": 39.0057163,
+    "lng": -77.0528952,
+    "address": "Walter Reed Army Institute of Research, Robert Grant Avenue, Lyttonsville, Montgomery Hills, Chevy Chase, Montgomery County, Maryland, 20910, United States"
+  },
+  "university of california, san francisco, ca, usa": {
+    "lat": 37.7627257,
+    "lng": -122.4582568,
+    "address": "University of California, San Francisco, Medical Center Way, Forest Knolls, San Francisco, California, 94117, United States"
+  },
+  "university of north carolina at chapel hill, nc, usa": {
+    "lat": 35.9050354,
+    "lng": -79.0477533,
+    "address": "University of North Carolina at Chapel Hill, Ray Road, Dogwood Acres, Orange County, North Carolina, 27516, United States"
+  },
+  "institute for bioscience and biotechnology research, md, usa": {
+    "lat": 39.0936287,
+    "lng": -77.1994201,
+    "address": "Institute for Bioscience and Biotechnology Research, 9600, Gudelsky Drive, Hunting Hill, Rockville, Montgomery County, Maryland, 20850, United States"
+  },
+  "national institute of standards and technology (nist), md, usa": {
+    "lat": 39.1401788,
+    "lng": -77.218458,
+    "address": "National Institute of Standards and Technology Visitor's Center, 103, Bureau Drive, National Institute of Standards and Technology, Gaithersburg, Montgomery County, Maryland, 20899, United States"
+  },
+  "ixm labs inc., canada": {
+    "lat": 43.6481111,
+    "lng": -79.3796189,
+    "address": "Cerebras, 199, Bay Street, Commerce Court, Spadina\u2014Fort York, Toronto, Golden Horseshoe, Ontario, M5L 1G9, Canada"
+  },
+  "curia global, inc., ny, usa": {
+    "lat": 42.6315832,
+    "lng": -73.7498164,
+    "address": "33, Riverside Avenue, Albany Molecular Research Inc. (AMRI), City of Rensselaer, Rensselaer County, New York, 12144, United States"
+  },
+  "icaria life sciences, ny, usa": null,
+  "helix biostructures llc, in, usa": null,
+  "ichor therapeutics, inc., mi, usa": null,
+  "the hospital for sick children, , canada": {
+    "lat": 43.6567,
+    "lng": -79.3876,
+    "address": "The Hospital for Sick Children, Toronto, ON, Canada"
+  },
+  "the scripps research institute, ca, usa": {
+    "lat": 32.8869,
+    "lng": -117.2394,
+    "address": "The Scripps Research Institute, La Jolla, CA, USA"
+  },
+  "the university of texas at austin, tx, usa": {
+    "lat": 30.2849,
+    "lng": -97.7341,
+    "address": "The University of Texas at Austin, Austin, TX, USA"
+  },
+  "state university of new york, buffalo, ny, usa": {
+    "lat": 43.0008,
+    "lng": -78.789,
+    "address": "University at Buffalo, Buffalo, NY, USA"
+  },
+  "david geffen school of medicine at ucla, ca, usa": {
+    "lat": 34.066,
+    "lng": -118.4464,
+    "address": "David Geffen School of Medicine at UCLA, Los Angeles, CA, USA"
+  },
+  "hauptman-woodward medical research institute, inc., ny, usa": {
+    "lat": 42.8985,
+    "lng": -78.8677,
+    "address": "Hauptman-Woodward Medical Research Institute, Buffalo, NY, USA"
+  },
+  "howard hughes medical institute, janelia farm research campus, va, usa": {
+    "lat": 39.0743,
+    "lng": -77.462,
+    "address": "Janelia Research Campus, Ashburn, VA, USA"
+  },
+  "quebec, canada": {
+    "lat": 52.4760892,
+    "lng": -71.8258668,
+    "address": "Qu\u00e9bec, Canada"
+  },
+  "199 bay st., 5300 commerce court west, toronto, on m5l 1b9, canada": null,
+  "199 bay st., toronto, on m5l 1l5, canada": {
+    "lat": 43.6481111,
+    "lng": -79.3796189,
+    "address": "Cerebras, 199, Bay Street, Commerce Court, Spadina\u2014Fort York, Toronto, Golden Horseshoe, Ontario, M5L 1G9, Canada"
+  },
+  "33 riverside ave, rensselaer, ny 12144": {
+    "lat": 42.6315832,
+    "lng": -73.7498164,
+    "address": "33, Riverside Avenue, Albany Molecular Research Inc. (AMRI), City of Rensselaer, Rensselaer County, New York, 12144, United States"
+  }
+}

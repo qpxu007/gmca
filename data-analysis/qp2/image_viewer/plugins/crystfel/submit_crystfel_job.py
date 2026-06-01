@@ -193,8 +193,9 @@ class CrystfelProcessDatasetWorker(QRunnable):
                 job_name=job_name,
                 background=True,
                 processors=self.kwargs.get("nproc", 32),
-                walltime="06:00:00", # Increased from 04:00:00
+                walltime="06:00:00",
                 memory="32gb",
+                qos=self.kwargs.get("slurm_qos"),
             )
             
             self.signals.result.emit(

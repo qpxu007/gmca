@@ -72,11 +72,18 @@
 }
 
 .stats-metrics {
-    display: flex;
-    gap: 8px;
+    display: grid;
+    grid-template-columns: 7ch 1ch 7ch 1ch 4ch;
+    column-gap: 3px;
+    align-items: center;
     color: #666;
+}
+
+.stats-metrics > span:not(.separator) {
+    text-align: right;
 }
 
 .separator {
     color: #ddd;
+    text-align: center;
 }

@@ -6,9 +6,10 @@ from collections import defaultdict
 from typing import List, Dict, Optional
 
 REQUIRED_HEADERS = [
-    "Port", "CrystalID", "Protein", "Comment", "Directory",
+    "Port", "Puck", "CrystalID", "Protein", "Comment", "Directory",
     "FreezingCondition", "CrystalCondition", "Metal", "Spacegroup",
-    "ModelPath", "SequencePath", "Priority", "Person"
+    "ModelPath", "SequencePath", "Priority", "Person",
+    "DesiredResolution", "DesiredDosage"
 ]
 
 ROWS_PER_PUCK = 16
@@ -28,19 +29,24 @@ class Puck:
                 return False
         return True
 
-    def get_summary(self):
-        # Return a short summary string, e.g., "3 Crystals" or first crystal ID
+    def get_summary(self, slot_name=None):
         count = sum(1 for r in self.rows if r.get("CrystalID"))
-        first_id = next((r.get("CrystalID") for r in self.rows if r.get("CrystalID")), "Empty")
-        
-        summary_parts = [f"{count} Crystals\nFirst: {first_id}"]
-        
-        # Find the first row that has a CrystalID to extract additional info
+
+        first_id = "Empty"
         first_data_row = None
-        for row in self.rows:
-            if row.get("CrystalID"):
+        for i, row in enumerate(self.rows):
+            cid = row.get("CrystalID", "").strip()
+            if cid:
+                # Apply the same port→slot transform used at save time
+                if slot_name:
+                    old_port = row.get("Port", "").strip()
+                    if cid == old_port:
+                        cid = f"{slot_name}{i + 1}"
+                first_id = cid
                 first_data_row = row
                 break
+
+        summary_parts = [f"{count} Crystals\nFirst: {first_id}"]
         
         if first_data_row:
             if first_data_row.get("Protein"):
@@ -59,14 +65,43 @@ class SpreadsheetManager:
         self.errors = []
 
     def validate_headers(self, headers: List[str]) -> bool:
-        # Check if all required headers are present
-        missing = [h for h in REQUIRED_HEADERS if h not in headers]
+        # Optional headers that shouldn't fail validation if missing from older files
+        optional_headers = {"Puck", "DesiredResolution", "DesiredDosage"}
+        missing = [h for h in REQUIRED_HEADERS if h not in headers and h not in optional_headers]
         if missing:
             self.errors.append(f"Missing headers: {', '.join(missing)}")
             return False
         return True
 
-    def load_file(self, filepath: str) -> Dict[str, Puck]:
+    @staticmethod
+    def fix_duplicate_crystal_ids(rows: List[Dict[str, str]]) -> List[Dict[str, str]]:
+        """
+        Returns a new list of row dicts where duplicate CrystalIDs have been made
+        unique by appending a numbered suffix (_1, _2, …) to every occurrence of
+        each duplicated value.  Non-duplicated IDs are left untouched.
+        """
+        from collections import Counter
+
+        counts: Counter = Counter(
+            row.get("CrystalID", "").strip()
+            for row in rows
+            if row.get("CrystalID", "").strip()
+        )
+        duplicated = {cid for cid, n in counts.items() if n > 1}
+
+        seen: Dict[str, int] = {}
+        fixed = []
+        for row in rows:
+            row = row.copy()
+            cid = row.get("CrystalID", "").strip()
+            if cid in duplicated:
+                occurrence = seen.get(cid, 0) + 1
+                seen[cid] = occurrence
+                row["CrystalID"] = f"{cid}_{occurrence}"
+            fixed.append(row)
+        return fixed
+
+    def load_file(self, filepath: str, auto_fix_duplicates: bool = False) -> Dict[str, Puck]:
         self.errors = []
         self.pucks = {}
         
@@ -132,6 +167,9 @@ class SpreadsheetManager:
         for row in rows:
             if not row.get("CrystalID", "").strip():
                 row["CrystalID"] = row.get("Port", "").strip()
+
+        if auto_fix_duplicates:
+            rows = self.fix_duplicate_crystal_ids(rows)
 
         # Validate CrystalIDs
         crystal_ids = []
@@ -249,7 +287,13 @@ class SpreadsheetManager:
                     self.errors.append(f"Row {i+1}: Duplicate CrystalID '{cid}'.")
                 seen_crystal_ids.add(cid)
 
-            # 2. Directory Validation
+            # 2. Puck Validation (letters followed by optional spaces then numbers)
+            puck_val = row.get("Puck", "").strip()
+            if puck_val:
+                if not re.match(r"^[A-Za-z]+\s*\d+$", puck_val):
+                    self.errors.append(f"Row {i+1}: Puck '{puck_val}' has invalid format. Expected: letters followed by optional spaces and numbers (e.g. 'AB 123').")
+
+            # 3. Directory Validation
             directory = row.get("Directory", "").strip()
             if directory:
                 if not re.match(r"^[a-zA-Z0-9_/-]+$", directory):
@@ -323,34 +367,42 @@ class SpreadsheetManager:
         # 2. Write to file based on extension
         _, ext = os.path.splitext(filepath)
         ext = ext.lower()
-        
+
         try:
-            if ext in ['.xls', '.xlsx']:
+            if ext == '.xls':
+                # pandas 2.x dropped xlwt support; write directly with xlwt so the
+                # file is readable by xlrd 2.x (the only Excel engine available in
+                # the PyBluice server venv).
+                try:
+                    import xlwt
+                except ImportError:
+                    raise IOError("The 'xlwt' library is required to save .xls files.")
+                wb = xlwt.Workbook()
+                ws = wb.add_sheet('Sheet1')
+                for col_idx, header in enumerate(REQUIRED_HEADERS):
+                    ws.write(0, col_idx, header)
+                for row_idx, row_data in enumerate(all_output_rows, start=1):
+                    for col_idx, header in enumerate(REQUIRED_HEADERS):
+                        ws.write(row_idx, col_idx, str(row_data.get(header, '') or ''))
+                wb.save(filepath)
+            elif ext == '.xlsx':
                 try:
                     import pandas as pd
                 except ImportError:
-                    raise IOError("Pandas library is required to save Excel files.")
-                
-                # Check for xlwt if saving as .xls
-                if ext == '.xls':
-                    import importlib.util
-                    if not importlib.util.find_spec("xlwt"):
-                        raise IOError("Saving as legacy .xls format requires the 'xlwt' library, which is not installed. Please save as .xlsx instead.")
-
+                    raise IOError("Pandas library is required to save .xlsx files.")
                 try:
                     df = pd.DataFrame(all_output_rows, columns=REQUIRED_HEADERS)
-                    # For .xls (legacy), pandas usually uses xlwt (removed in new pandas) or similar.
-                    # For .xlsx, uses openpyxl.
-                    # We trust pandas to pick the engine or raise error if missing.
-                    df.to_excel(filepath, index=False)
+                    df.to_excel(filepath, index=False, engine='openpyxl')
                 except Exception as e:
                     raise IOError(f"Failed to save Excel file: {e}")
             else:
-                # CSV
+                # CSV (default)
                 with open(filepath, 'w', newline='', encoding='utf-8') as f:
                     writer = csv.DictWriter(f, fieldnames=REQUIRED_HEADERS)
                     writer.writeheader()
                     writer.writerows(all_output_rows)
-                        
+
+        except IOError:
+            raise
         except Exception as e:
             raise IOError(f"Failed to save file: {e}")

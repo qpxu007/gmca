@@ -47,7 +47,7 @@ from qp2.xio.user_group_manager import get_esaf_from_data_path
 from qp2.xio.db_manager import get_beamline_from_hostname
 from qp2.xio.redis_manager import RedisManager
 from qp2.utils.icon import generate_icon_with_text
-from qp2.utils.auxillary import sanitize_unit_cell, sanitize_space_group
+from qp2.utils.auxiliary import sanitize_unit_cell, sanitize_space_group
 
 # --- Plugin Worker Imports ---
 from qp2.image_viewer.plugins.xds.submit_xds_job import XDSProcessDatasetWorker

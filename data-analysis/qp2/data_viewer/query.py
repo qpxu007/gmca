@@ -14,7 +14,7 @@ except ImportError:
 
     logger = logging.getLogger(__name__)
 
-from qp2.data_viewer.models import (
+from qp2.db import (
     DatasetRun,
     PipelineStatus,
     DataProcessResults,

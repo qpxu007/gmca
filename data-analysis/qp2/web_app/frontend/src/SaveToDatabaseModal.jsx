@@ -10,11 +10,16 @@ const SaveToDatabaseModal = ({ isOpen, onClose, currentName, onSave }) => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (!esafId.toLowerCase().startsWith("esaf") || isNaN(esafId.substring(4))) {
-            alert("ESAF ID must start with 'esaf' followed by digits (e.g., esaf12345)");
+        // Accept plain digits or esaf+digits, normalize to plain digits
+        let normalized = esafId.trim();
+        if (normalized.toLowerCase().startsWith("esaf")) {
+            normalized = normalized.substring(4);
+        }
+        if (!normalized || isNaN(normalized)) {
+            alert("ESAF ID must be digits (e.g., 12345)");
             return;
         }
-        onSave(name, esafId);
+        onSave(name, normalized);
     };
 
     return (
@@ -38,12 +43,12 @@ const SaveToDatabaseModal = ({ isOpen, onClose, currentName, onSave }) => {
                     />
                 </div>
                 <div className="form-group">
-                    <label>ESAF ID (e.g., esaf12345):</label>
-                    <input 
-                        type="text" 
-                        value={esafId} 
-                        onChange={(e) => setEsafId(e.target.value)} 
-                        placeholder="esaf..."
+                    <label>ESAF ID (e.g., 12345):</label>
+                    <input
+                        type="text"
+                        value={esafId}
+                        onChange={(e) => setEsafId(e.target.value)}
+                        placeholder="12345"
                         required
                     />
                 </div>

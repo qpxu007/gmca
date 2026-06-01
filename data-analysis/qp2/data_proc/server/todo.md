@@ -3,12 +3,12 @@
 This document outlines the architectural improvement plan for the `data_proc/server` directory based on the deep analysis of the current state.
 
 ## 1. Standardize Modern and Legacy Pipelines
-Currently, there is a deep rift between the "modern" pipelines (managed by `worker` classes in `AnalysisManager`) and the "legacy" pipelines (managed by `xprocess.py` and `script.py`). `AnalysisManager` has dedicated duplicated logic paths for legacy tools that bypass the `QRunnable` worker abstraction entirely, instantiating raw subprocesses via the `xprocess` / `Script` helpers.
-**Recommendation**: Create `LegacyGmcaProcWorker`, `LegacyAutoprocWorker` wrapper classes that inherit from the same base class as the modern workers. Move the logic from `xprocess.py` into these workers. This collapses the duplicate dispatch logic in `AnalysisManager` into single, clean pathways.
+~~Currently, there is a deep rift between the "modern" pipelines (managed by `worker` classes in `AnalysisManager`) and the "legacy" pipelines (managed by `xprocess.py` and `script.py`). `AnalysisManager` has dedicated duplicated logic paths for legacy tools that bypass the `QRunnable` worker abstraction entirely, instantiating raw subprocesses via the `xprocess` / `Script` helpers.~~
+**DONE**: The legacy `xprocess.py` support and all its fallback routes have been completely removed. Modern plugin workers are now the exclusive path.
 
 ## 2. Consolidate Configuration Management
-Configuration parameters are scattered across multiple sources: `data_processing_server.py`, `analysis_config.json`, `xprocess.py` (which has hardcoded absolute paths like `"/mnt/software/px/miniconda3/envs/data-analysis/bin"`), and `xls_reader.py`.
-**Recommendation**: Consolidate into a single, strongly-typed `pydantic` settings class for the server, initialized once and passed down. Remove hardcoded absolute paths from modules like `xprocess.py` and enforce they come from the central config or environment variables.
+Configuration parameters are scattered across multiple sources: `data_processing_server.py`, `analysis_config.json`, and `xls_reader.py`.
+**Recommendation**: Consolidate into a single, strongly-typed `pydantic` settings class for the server, initialized once and passed down.
 
 ## 3. Extract Tracking State from `ProcessingServer`
 The `ProcessingServer` class is handling too many responsibilities: Redis connection management, state tracking for milestones (25%, 50%, 100%), HDF5 dataset monitoring (`run_hdf5_readers`), HTTP Server delegation, and WebSocket Server delegation.

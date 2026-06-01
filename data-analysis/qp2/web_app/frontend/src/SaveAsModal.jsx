@@ -1,22 +1,15 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Modal from 'react-modal';
 
 Modal.setAppElement('#root');
 
 export default function SaveAsModal({ isOpen, onClose, currentFilename, onSave }) {
-    const [filename, setFilename] = useState("");
-
-    useEffect(() => {
-        if (isOpen) {
-            // Pre-fill with current filename or default
-            let name = currentFilename;
-            if (name === "No file loaded." || name === "New Spreadsheet") {
-                name = "spreadsheet_export.xlsx"; // Default to modern Excel
-            }
-            setFilename(name);
-        }
-    }, [isOpen, currentFilename]);
+    // Derive initial state from props
+    const defaultName = (!currentFilename || currentFilename === "No file loaded." || currentFilename === "New Spreadsheet")
+        ? "spreadsheet_export.xlsx"
+        : currentFilename;
+    const [filename, setFilename] = useState(defaultName);
 
     const handleSave = () => {
         if (!filename.trim()) {

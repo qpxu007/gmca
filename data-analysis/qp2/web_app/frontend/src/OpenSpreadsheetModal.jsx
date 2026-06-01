@@ -38,20 +38,18 @@ const OpenSpreadsheetModal = ({ isOpen, onClose, onLoad }) => {
             const data = await api.getSpreadsheet(id);
             onLoad(data);
             onClose();
-        } catch (err) {
+        } catch {
             alert("Failed to load spreadsheet details.");
         }
     };
 
     const handleDelete = async (e, id) => {
         e.stopPropagation(); // Prevent triggering row click
-        if (window.confirm("Are you sure you want to delete this spreadsheet?")) {
-            try {
-                await api.deleteSpreadsheet(id);
-                fetchSpreadsheets(); // Refresh list
-            } catch (err) {
-                alert("Failed to delete spreadsheet.");
-            }
+        try {
+            await api.deleteSpreadsheet(id);
+            fetchSpreadsheets();
+        } catch {
+            alert("Failed to delete spreadsheet.");
         }
     };
 

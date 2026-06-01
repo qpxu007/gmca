@@ -3,6 +3,10 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=20.19.0",
+    "npm": ">=10.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -14,12 +18,16 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@h5web/app": "^16.0.1",
-    "axios": "^1.13.2",
+    "@react-three/fiber": "^8.18.0",
+    "axios": "^1.15.0",
     "lucide-react": "^0.561.0",
+    "molstar": "^5.8.0",
+    "moorhen": "^0.22.7",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-modal": "^3.16.3",
-    "react-router-dom": "^7.10.1"
+    "react-router-dom": "^7.10.1",
+    "three": "^0.181.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

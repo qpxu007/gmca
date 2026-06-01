@@ -4,7 +4,7 @@ import logging
 import os
 
 from qp2.pipelines.gmcaproc.symmetry import Symmetry
-from qp2.utils.auxillary import getNumbers
+from qp2.utils.auxiliary import getNumbers
 
 logger = logging.getLogger(__name__)
 

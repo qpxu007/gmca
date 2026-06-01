@@ -7,7 +7,7 @@ from typing import List, Dict
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 # Import the ORM model and the low-level DBManager
-from qp2.data_viewer.models import DatasetRun
+from qp2.db import DatasetRun
 from qp2.log.logging_config import get_logger
 from qp2.xio.db_manager import DBManager
 
@@ -81,6 +81,7 @@ def create_dataset_run(
         headers=metadata_headers_json,
         mounted=mounted,
         meta_user=meta_user,
+        beamline=db_manager.beamline,
         created_at=datetime.now(),
     )
 

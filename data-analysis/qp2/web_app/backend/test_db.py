@@ -11,8 +11,8 @@ sys.path.append(str(project_root))
 print(f"Project root: {project_root}")
 
 try:
-    from xio.db_manager import DBManager
-    from qp2.data_viewer.models import Spreadsheet
+    from qp2.xio.db_manager import DBManager
+    from qp2.db import Spreadsheet
     print("Successfully imported DBManager and Spreadsheet model.")
 except ImportError as e:
     print(f"ImportError: {e}")

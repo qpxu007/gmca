@@ -10,7 +10,7 @@ from PyQt5.QtCore import QRunnable, pyqtSignal, QObject
 
 from qp2.image_viewer.utils.run_job import run_command, is_sbatch_available
 from qp2.log.logging_config import get_logger
-from qp2.utils.auxillary import sanitize_unit_cell
+from qp2.utils.auxiliary import sanitize_unit_cell
 from qp2.xio.proc_utils import determine_proc_base_dir
 from qp2.xio.db_manager import get_beamline_from_hostname
 from qp2.config.programs import ProgramConfig
@@ -217,6 +217,7 @@ class NXDSProcessDatasetWorker(QRunnable):
                 nodes=None,
                 walltime="02:00:00",
                 memory="16gb",
+                qos=self.kwargs.get("slurm_qos"),
             )
             self.signals.result.emit(
                 "SUBMITTED", f"Submitted nXDS job '{job_name}'", self.master_file

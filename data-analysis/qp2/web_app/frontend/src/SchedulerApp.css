@@ -2,17 +2,18 @@
     display: flex;
     flex-direction: column;
     height: 100vh;
-    background-color: #f8f9fa;
+    background-color: #f0f2f5;
 }
 
 .toolbar {
     display: flex;
     align-items: center;
-    padding: 10px 20px;
-    background-color: white;
-    border-bottom: 1px solid #e0e0e0;
+    flex-wrap: wrap;
+    padding: 12px 20px;
+    background: linear-gradient(90deg, #1B262C 0%, #0F4C75 100%);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
     gap: 15px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    color: #e0e0e0;
 }
 
 .toolbar-title {
@@ -21,19 +22,26 @@
     display: flex;
     align-items: center;
     margin-right: 1rem;
+    color: #fff;
 }
 
 .run-selector {
     display: flex;
     align-items: center;
     gap: 10px;
+    color: #a0b4cc;
+}
+
+.run-selector label {
+    color: #a0b4cc;
 }
 
 .run-selector select {
     padding: 6px;
     border-radius: 4px;
-    border: 1px solid #ccc;
-    background-color: white;
+    border: 1px solid rgba(255,255,255,0.15);
+    background-color: rgba(255,255,255,0.06);
+    color: #e0e0e0;
     font-size: 14px;
 }
 
@@ -44,9 +52,9 @@
 }
 
 .secondary-btn {
-    background-color: #fff;
-    color: #2c3e50;
-    border: 1px solid #bdc3c7;
+    background-color: rgba(255,255,255,0.06);
+    color: #e0e0e0;
+    border: 1px solid rgba(255,255,255,0.15);
     padding: 6px 12px;
     border-radius: 4px;
     cursor: pointer;

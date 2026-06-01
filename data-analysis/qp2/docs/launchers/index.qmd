@@ -466,7 +466,7 @@ For the four most-used tools, start with these detailed pages:
 | `raster3d` | Raster-volume helper | Build raster-derived 3D workflows |
 | `crystfel_geometry` | Geometry helper | Generate or inspect CrystFEL geometry |
 | `dps` | Processing shortcut | Open a secondary processing entrypoint |
-| `xprocess` | Processing helper | Run pipeline or processing utility workflows |
+
 | `qp2-pipeline` | Pipeline runner | Execute a pipeline directly |
 
 ## Utility and support launchers

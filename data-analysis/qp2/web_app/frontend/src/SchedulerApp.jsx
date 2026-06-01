@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Calendar, Settings, Edit, Sparkles, Download, ChevronDown } from 'lucide-react';
+import { Calendar, ChevronDown, Download, Edit, Home, Settings, Sparkles } from 'lucide-react';
 import { api } from './api';
 import SchedulerGrid from './SchedulerGrid';
 import ConfigModal from './ConfigModal';
@@ -11,6 +11,7 @@ import './SchedulerApp.css';
 const SchedulerApp = () => {
     const [runs, setRuns] = useState([]);
     const [selectedRunId, setSelectedRunId] = useState(null);
+    const [selectedMonth, setSelectedMonth] = useState("");
     const [schedule, setSchedule] = useState([]);
     const [quotas, setQuotas] = useState([]); // State for quotas
     const [loading, setLoading] = useState(false);
@@ -28,17 +29,6 @@ const SchedulerApp = () => {
         message: "",
         onConfirm: null
     });
-
-    useEffect(() => {
-        fetchInitialData();
-    }, [configModalOpen]); // Re-fetch when config closes to update lists
-
-    useEffect(() => {
-        if (selectedRunId) {
-            fetchSchedule(selectedRunId);
-            fetchQuotas(selectedRunId); // Fetch quotas
-        }
-    }, [selectedRunId]);
 
     const fetchInitialData = async () => {
         try {
@@ -66,15 +56,15 @@ const SchedulerApp = () => {
         }
     };
 
-    const fetchSchedule = async (runId) => {
-        setLoading(true);
+    const fetchSchedule = async (runId, showLoading = true) => {
+        if (showLoading) setLoading(true);
         try {
             const data = await api.getSchedule(runId);
             setSchedule(data);
         } catch (e) {
             console.error("Failed to fetch schedule", e);
         } finally {
-            setLoading(false);
+            if (showLoading) setLoading(false);
         }
     };
 
@@ -87,15 +77,26 @@ const SchedulerApp = () => {
         }
     };
 
+    useEffect(() => {
+        fetchInitialData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [configModalOpen]); // Re-fetch when config closes to update lists
+
+    useEffect(() => {
+        if (selectedRunId) {
+            fetchSchedule(selectedRunId);
+            fetchQuotas(selectedRunId); // Fetch quotas
+        }
+    }, [selectedRunId]);
+
     const handleInitDefaults = async () => {
-        if (window.confirm("Initialize default Beamlines and Day Types?")) {
-            try {
-                await api.initDefaults();
-                alert("Defaults initialized!");
-                fetchInitialData(); 
-            } catch (e) {
-                alert("Failed to init defaults");
-            }
+        try {
+            const res = await api.initDefaults();
+            alert(res.message || "Defaults initialized!");
+            fetchInitialData();
+        } catch (_e) {
+            console.error("Init defaults failed:", _e);
+            alert("Failed to init defaults: " + (_e.response?.data?.detail || _e.message));
         }
     };
 
@@ -103,10 +104,10 @@ const SchedulerApp = () => {
         try {
             await api.updateScheduleDay(updatedData);
             if (selectedRunId) {
-                fetchSchedule(selectedRunId);
+                fetchSchedule(selectedRunId, false);
             }
-        } catch (e) {
-            alert("Failed to update schedule day: " + e.message);
+        } catch (_e) {
+            alert("Failed to update schedule day: " + _e.message);
         }
     };
 
@@ -115,9 +116,9 @@ const SchedulerApp = () => {
         try {
             const res = await api.autoAssign(selectedRunId, overwrite);
             alert(res.message);
-            fetchSchedule(selectedRunId);
-        } catch (e) {
-            alert("Auto-assign failed: " + e.message);
+            fetchSchedule(selectedRunId, false);
+        } catch (_e) {
+            alert("Auto-assign failed: " + _e.message);
         } finally {
             setLoading(false);
             setConfirmModal({ ...confirmModal, isOpen: false });
@@ -157,8 +158,7 @@ const SchedulerApp = () => {
                 // So the MAIN goal is to prevent accidental clicks. 
                 // The current modal serves that purpose.
                 
-                const overwrite = window.confirm("Do you want to overwrite EXISTING assignments? Click Cancel to only fill EMPTY slots.");
-                executeAutoAssign(overwrite);
+                executeAutoAssign(false);
             }
         });
     };
@@ -186,8 +186,8 @@ const SchedulerApp = () => {
             document.body.appendChild(link);
             link.click();
             link.remove();
-        } catch (e) {
-            alert("Failed to export schedule: " + e.message);
+        } catch (_e) {
+            alert("Failed to export schedule: " + _e.message);
         }
     };
 
@@ -197,16 +197,46 @@ const SchedulerApp = () => {
         return dt ? dt.name : "Unknown";
     };
 
+    const activeRun = runs.find(r => r.id === selectedRunId);
+    
+    const availableMonths = React.useMemo(() => {
+        if (!activeRun) return [];
+        const months = [];
+        let currentDate = new Date(activeRun.start_date);
+        const endDate = new Date(activeRun.end_date);
+        
+        while (currentDate <= endDate) {
+            const monthStr = currentDate.toISOString().split('T')[0].substring(0, 7); // YYYY-MM
+            if (!months.includes(monthStr)) {
+                months.push(monthStr);
+            }
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+        return months;
+    }, [activeRun]);
+
+    useEffect(() => {
+        if (availableMonths.length > 0 && (!selectedMonth || (!availableMonths.includes(selectedMonth) && selectedMonth !== 'ALL'))) {
+            setSelectedMonth('ALL');
+        }
+    }, [availableMonths, selectedMonth]);
+
+    const formatMonth = (yyyyMm) => {
+        if (!yyyyMm) return "";
+        const [y, m] = yyyyMm.split('-');
+        const date = new Date(y, parseInt(m) - 1, 1);
+        return date.toLocaleDateString('default', { month: 'short', year: 'numeric' });
+    };
+
     return (
         <div className="scheduler-container">
             <div className="toolbar">
-                <Link to="/dashboard" className="back-link" style={{ display: 'flex', alignItems: 'center', color: 'inherit', textDecoration: 'none', marginRight: '1rem' }}>
-                    <ArrowLeft size={20} style={{ marginRight: '5px' }} />
-                    Dashboard
+                <Link to="/dashboard" style={{ display: 'flex', alignItems: 'center', color: '#BBE1FA', textDecoration: 'none', marginRight: '10px' }}>
+                    <Home size={20} />
                 </Link>
                 <div className="toolbar-title">
                     <Calendar size={20} style={{ marginRight: '8px' }} />
-                    Beamtime Scheduler
+                    BL Support Scheduler
                 </div>
                 
                 <div className="run-selector">
@@ -224,7 +254,22 @@ const SchedulerApp = () => {
                     </select>
                 </div>
 
-                <div className="paint-palette-container">
+                {availableMonths.length > 0 && (
+                    <div className="run-selector" style={{marginLeft: '5px'}}>
+                        <label>Month:</label>
+                        <select 
+                            value={selectedMonth} 
+                            onChange={(e) => setSelectedMonth(e.target.value)}
+                        >
+                            <option value="ALL">All Months</option>
+                            {availableMonths.map(m => (
+                                <option key={m} value={m}>{formatMonth(m)}</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
+
+                <div className="paint-palette-container" style={{marginLeft: '15px'}}>
                     <button 
                         className="secondary-btn" 
                         onClick={() => setShowPaintPalette(!showPaintPalette)}
@@ -293,7 +338,8 @@ const SchedulerApp = () => {
                     selectedRunId && allBeamlines.length > 0 && allDayTypes.length > 0 ? (
                         <SchedulerGrid 
                             schedule={schedule}
-                            selectedRun={runs.find(r => r.id === selectedRunId)}
+                            selectedRun={activeRun}
+                            selectedMonth={selectedMonth}
                             allBeamlines={allBeamlines}
                             allDayTypes={allDayTypes}
                             allStaff={allStaff}

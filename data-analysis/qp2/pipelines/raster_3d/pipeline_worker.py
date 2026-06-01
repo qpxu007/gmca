@@ -741,13 +741,21 @@ class Raster3DPipelineWorker(QRunnable):
         All thresholds are optional — omitted checks are skipped.
         """
         gate_cfg = self.config.get("quality_gate", {})
-        if not gate_cfg:
+        pp = self.pipeline_params or {}
+
+        if not gate_cfg and not pp.get("desired_resolution_A"):
             return {"pass": True, "reason": "no quality gate configured"}
 
         min_max_score = gate_cfg.get("min_max_score")
         min_resolution = gate_cfg.get("min_resolution_A")
         min_strong_frames = gate_cfg.get("min_strong_frames")
         score_threshold = gate_cfg.get("score_threshold", 5.0)
+
+        # Pre-validated per-crystal override from spreadsheet
+        desired_res = pp.get("desired_resolution_A")
+        if desired_res is not None:
+            min_resolution = float(desired_res)
+            logger.info(f"Using per-crystal DesiredResolution={min_resolution}A from spreadsheet")
 
         all_files = self.run1_master_files + self.run2_master_files
         metric = self.source_cfg["metric"]
@@ -1192,7 +1200,7 @@ class Raster3DPipelineWorker(QRunnable):
         from qp2.pipelines.strategy.mosflm.mosflm_strategy import (
             run_strategy as run_mosflm_strategy,
         )
-        from qp2.utils.tempdirectory import temporary_directory
+        from qp2.xio.proc_utils import determine_proc_base_dir, extract_master_prefix
 
         import concurrent.futures
 
@@ -1202,13 +1210,19 @@ class Raster3DPipelineWorker(QRunnable):
 
         def _run_single(program, runner, mapping, label):
             """Run one strategy program. Returns (program, label, result) or raises."""
-            with temporary_directory(prefix=f"raster3d_strategy_{program}_") as wdir:
-                logger.info(f"Running {program} strategy ({label}) in {wdir}")
-                r = runner(mapping, workdir=wdir, pipeline_params=self.pipeline_params)
-                if r:
-                    logger.info(f"{program} strategy completed ({label})")
-                    return program, label, r
-                raise RuntimeError(f"{program} returned no result")
+            master_file = next(iter(mapping.keys()))
+            prefix = extract_master_prefix(master_file)
+            user_root = self.pipeline_params.get("processing_common_proc_dir_root")
+            base = determine_proc_base_dir(user_root, master_file)
+            wdir = base / f"raster3d_{program}_strategy" / prefix
+            wdir.mkdir(parents=True, exist_ok=True)
+            wdir = str(wdir)
+            logger.info(f"Running {program} strategy ({label}) in {wdir}")
+            r = runner(mapping, workdir=wdir, pipeline_params=self.pipeline_params)
+            if r:
+                logger.info(f"{program} strategy completed ({label})")
+                return program, label, r
+            raise RuntimeError(f"{program} returned no result")
 
         # --- Experimental: dual-orientation strategy ---
         # When enabled, merges both XY and XZ frames into one mapping
@@ -1978,14 +1992,34 @@ class Raster3DPipelineWorker(QRunnable):
         rec["osc_width"] = round(osc_width, 4)
 
         # --- Target dose ---
-        user_dose = self.config.get("target_dose_mgy")
-        if user_dose is not None:
-            target_dose = float(user_dose)
-            dose_source = "user_config"
-        elif best_resolution is not None and best_resolution > 0:
-            target_dose = best_resolution * 10.0
-            dose_source = f"resolution({best_resolution:.1f}A/{resolution_source}) * 10"
-        else:
+        # Priority: spreadsheet DesiredDosage (pre-validated) > config
+        #           target_dose_mgy > resolution-based > default 30 MGy
+        target_dose = None
+        dose_source = None
+        pp = self.pipeline_params or {}
+
+        # 1. Pre-validated per-crystal override from spreadsheet
+        desired_dose = pp.get("desired_dosage_mgy")
+        if desired_dose is not None:
+            target_dose = float(desired_dose)
+            dose_source = "spreadsheet"
+            logger.info(f"Using per-crystal DesiredDosage={target_dose} MGy from spreadsheet")
+
+        # 2. Config override
+        if target_dose is None:
+            user_dose = self.config.get("target_dose_mgy")
+            if user_dose is not None:
+                target_dose = float(user_dose)
+                dose_source = "user_config"
+
+        # 3. Resolution-based estimate
+        if target_dose is None:
+            if best_resolution is not None and best_resolution > 0:
+                target_dose = best_resolution * 10.0
+                dose_source = f"resolution({best_resolution:.1f}A/{resolution_source}) * 10"
+
+        # 4. Default
+        if target_dose is None:
             target_dose = 30.0
             dose_source = "default"
 

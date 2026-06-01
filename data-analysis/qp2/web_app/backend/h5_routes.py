@@ -6,13 +6,13 @@ import os
 
 # Import models
 try:
-    from qp2.data_viewer.models import DatasetRun
+    from qp2.db import DatasetRun
 except ImportError:
     DatasetRun = None
 
 try:
-    from auth import is_staff_member
-    from security import verify_token
+    from qp2.web_app.backend.auth import is_staff_member
+    from qp2.web_app.backend.security import verify_token
 except ImportError:
     def is_staff_member(u): return False
     def verify_token(): return "user"
@@ -36,7 +36,7 @@ async def verify_h5_access(
     # Check strict ownership of the master file
     # Note: This prevents accessing external links if they are not also registered as master files
     # or if we don't implement directory-based checks.
-    dataset = session.query(DatasetRun).filter(DatasetRun.master_files == file).first()
+    dataset = session.query(DatasetRun).filter(DatasetRun.master_files.contains(file)).first()
     
     if not dataset:
         # Check if file is in a directory owned by user?
@@ -44,7 +44,16 @@ async def verify_h5_access(
         raise HTTPException(status_code=403, detail="File not found in database or access denied")
         
     if dataset.username != user:
-        raise HTTPException(status_code=403, detail="Access denied")
+        # Check group-based access (consistent with dataset_routes)
+        try:
+            from qp2.xio.user_group_manager import UserGroupManager
+            ugm = UserGroupManager()
+            groups = ugm.groupnames_from_username(user)
+            allowed = [user] + [g['group_name'] for g in groups] if groups else [user]
+            if dataset.username not in allowed:
+                raise HTTPException(status_code=403, detail="Access denied")
+        except ImportError:
+            raise HTTPException(status_code=403, detail="Access denied")
 
 # Define a wrapper router that includes the h5grove router with security
 router = APIRouter()

@@ -180,7 +180,9 @@ async def stream(room: str = Query(default=_default_room)):
 @app.get("/api/users")
 def get_active_users(room: str = Query(default=_default_room)):
     keys = _keys(room)
-    users = list(_redis_client.smembers(keys["presence"]))
+    prefix = f"{keys['presence']}:"
+    user_keys = _redis_client.keys(f"{prefix}*")
+    users = [k.replace(prefix, "") for k in user_keys]
     return {"users": users, "room": room}
 
 

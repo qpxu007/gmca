@@ -9,3 +9,10 @@ __pycache__/
 *.pyc
 qp2_environment.tar.gz
 qp2_env/
+
+# Secrets
+.jwt_secret
+
+# Dev tool state (oh-my-claudecode, Claude Code)
+.omc/
+.claude/

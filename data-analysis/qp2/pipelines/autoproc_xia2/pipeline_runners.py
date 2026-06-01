@@ -137,6 +137,7 @@ class BaseRunner:
                 nodes=slurm_nodes,
                 processors=slurm_processors,
                 job_name=f"run_{self.pipeline_name}_{os.path.basename(self.work_dir)}",
+                qos=self.kwargs.get("slurm_qos"),
             )
 
             logger.info("Command finished. Parsing results...")
@@ -614,12 +615,13 @@ class DimpleRunner:
 
             run_command(
                 command,
-                pre_command=ccp4_setup,  # Use the dedicated pre_command argument
+                pre_command=ccp4_setup,
                 cwd=self.work_dir,
                 method=runner_type,
                 processors=1,
                 nodes=1,
                 job_name=f"dimple_{os.path.basename(self.work_dir)}",
+                qos=self.kwargs.get("slurm_qos"),
             )
 
             logger.info("Dimple command finished. Parsing results...")

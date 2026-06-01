@@ -1076,14 +1076,14 @@ class CrystalLifetimeGUI(QWidget):
             if self.translation_fix_check.isChecked():
                 fixed_translation = float(self.translation_edit.text())
                 for y, z in self.BEAM_SIZES:
-                    max_trans = crystal_dims[2] - z
+                    max_trans = crystal_dims[0] - y
                     if fixed_translation >= 0 and fixed_translation <= max_trans:
                         translations_to_search[f"{y}x{z}"] = [fixed_translation]
                     else:
                         translations_to_search[f"{y}x{z}"] = []
             else:
                 for y, z in self.BEAM_SIZES:
-                    max_trans = crystal_dims[2] - z
+                    max_trans = crystal_dims[0] - y
                     translations_to_search[f"{y}x{z}"] = (
                         np.linspace(0, max_trans, 10) if max_trans > 0 else [0]
                     )

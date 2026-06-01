@@ -3,7 +3,7 @@
 This document explains the mechanism by which the GMCA Web Apps identify and display datasets belonging to a specific user.
 
 ## 1. User Identification
-When a user logs in, they receive a **JSON Web Token (JWT)**. This token contains their `username`. For every subsequent request to the API (like fetching the dataset list), this token is sent in the `Authorization` header.
+When a user logs in, the backend issues a **JSON Web Token (JWT)** stored as an `HttpOnly` cookie. This token contains their `username`. For every subsequent request to the API (like fetching the dataset list), the browser automatically sends this cookie.
 
 The backend extracts and verifies this token to identify the **current user**.
 

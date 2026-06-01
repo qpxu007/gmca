@@ -25,7 +25,7 @@ from collections import namedtuple, OrderedDict
 from pathlib import Path
 from typing import Optional, Dict, List, Union
 
-from qp2.data_viewer.models import ScreenStrategyResults
+from qp2.db import ScreenStrategyResults
 
 from qp2.pipelines.utils.image_set import get_image_set_string
 

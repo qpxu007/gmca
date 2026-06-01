@@ -130,7 +130,7 @@ class LivePeakFindingManager(QObject):
             lambda idx, peaks, w=worker: self.main_window._on_worker_finished(w)
         )
         worker.signals.error.connect(
-            lambda err_msg, w=worker: self.main_window._on_worker_finished(w)
+            lambda fp, err_msg, w=worker: self.main_window._on_worker_finished(w)
         )
 
         self.main_window.threadpool.start(worker)
@@ -155,8 +155,8 @@ class LivePeakFindingManager(QObject):
                 self.main_window.playback_manager.play()
         self.ui_manager.clear_status_message_if("Running peak finding")
 
-    @pyqtSlot(str)
-    def _on_error(self, error_msg: str):
+    @pyqtSlot(str, str)
+    def _on_error(self, file_path: str, error_msg: str):
         self.ui_manager.show_status_message(f"Peak finding failed: {error_msg}", 5000)
         self.graphics_manager.clear_peaks()
         if self.main_window.waiting_for_peaks:

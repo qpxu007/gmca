@@ -429,13 +429,13 @@ class RedisStreamManager(QtCore.QObject):
         self.status_update.emit("Starting Redis stream monitoring...")
         
         # Instantiate or recreate the executor. A shut down executor cannot be reused.
-        if self.io_executor is None or self.io_executor._shutdown:
+        if self.io_executor is None or getattr(self.io_executor, '_shutdown', True):
             self.io_executor = concurrent.futures.ThreadPoolExecutor(max_workers=8)
             
         self._monitoring_active = True
         self._last_stream_id = "$"
-        self.active_runs.clear()
-        self.seen_series_ids.clear()
+        self.active_runs = {}
+        self.seen_series_ids = set()
         with self.pending_series_lock:
             self.pending_series.clear()
 
@@ -986,6 +986,7 @@ class RedisStreamManager(QtCore.QObject):
                     f"Files found in Redis but inaccessible (check permissions?):\n"
                     f"Master: {series['h5_master_file']}"
                 )
+                logger.error(msg)
                 self.status_update.emit(msg)
                 # Escalate to connection_error to trigger a visible UI dialog
                 self.connection_error.emit(msg)

@@ -784,7 +784,7 @@ class DatasetContextMenuManager:
             quoted_sg = f"'{space_group}'"
             cmd_str += f" space_group={quoted_sg}"
         if unit_cell:
-            from qp2.utils.auxillary import sanitize_unit_cell
+            from qp2.utils.auxiliary import sanitize_unit_cell
             quoted_uc = f"'{sanitize_unit_cell(unit_cell)}'"
             cmd_str += f" unit_cell={quoted_uc}"
             
@@ -984,12 +984,12 @@ class DatasetContextMenuManager:
             if stored_data:
                 # Update current_settings with the fetched data
                 if "space_group" in stored_data:
-                    from qp2.utils.auxillary import sanitize_space_group
+                    from qp2.utils.auxiliary import sanitize_space_group
                     current_settings[f"{settings_prefix}space_group"] = sanitize_space_group(stored_data[
                         "space_group"
                     ]) or ""
                 if "unit_cell" in stored_data:
-                    from qp2.utils.auxillary import sanitize_unit_cell
+                    from qp2.utils.auxiliary import sanitize_unit_cell
                     current_settings[f"{settings_prefix}unit_cell"] = sanitize_unit_cell(stored_data[
                         "unit_cell"
                     ]) or ""

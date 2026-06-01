@@ -1,17 +1,12 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Modal from 'react-modal';
 
 Modal.setAppElement('#root');
 
 export default function ConfigurePucksModal({ isOpen, onClose, currentNames, onSave }) {
-    const [text, setText] = useState("");
-
-    useEffect(() => {
-        if (isOpen && currentNames) {
-            setText(currentNames.join(", "));
-        }
-    }, [currentNames, isOpen]);
+    // Derive initial state from props — component should be re-keyed on open
+    const [text, setText] = useState(currentNames ? currentNames.join(", ") : "");
 
     const handleSave = () => {
         const names = text.split(",").map(s => s.trim()).filter(Boolean);

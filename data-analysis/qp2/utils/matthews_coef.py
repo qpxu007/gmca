@@ -253,7 +253,7 @@ def run_matthews_coef(
         molsize = int(molw / 110)  # assume protein
 
     if molsize is None:
-        molsize = molsize if molsize is not None else 25
+        molsize = 25
 
     with temporary_directory(delete=not debug) as tmpdir:
         logger.info(f"Created temporary directory: {tmpdir}")

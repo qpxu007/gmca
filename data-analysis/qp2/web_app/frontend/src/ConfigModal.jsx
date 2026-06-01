@@ -17,7 +17,7 @@ const ConfigModal = ({ isOpen, onClose }) => {
             isOpen={isOpen}
             onRequestClose={onClose}
             contentLabel="Configuration"
-            className="modal-content large-modal"
+            className="modal-content large-modal config-modal"
             overlayClassName="modal-overlay"
         >
             <div className="config-header">

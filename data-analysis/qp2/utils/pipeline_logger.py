@@ -10,7 +10,7 @@ from typing import Optional, Dict, Any
 import redis
 from sqlalchemy import desc
 
-from qp2.data_viewer.models import PipelineStatus, DataProcessResults, DatasetRun
+from qp2.db import PipelineStatus, DataProcessResults, DatasetRun
 from qp2.xio.db_manager import DBManager
 from qp2.config.servers import ServerConfig
 
@@ -86,7 +86,7 @@ class PipelineLogger:
             return
 
         with self.db_manager.get_session() as session:
-            status = session.query(PipelineStatus).get(self.pipeline_status_id)
+            status = session.get(PipelineStatus, self.pipeline_status_id)
             if status:
                 status.state = state
                 if message:

@@ -1,8 +1,10 @@
 
 [Unit]
 Description=Data Processing Server (image_viewer module)
-Requires=mnt-beegfs.mount
-After=network.target mnt-beegfs.mount mnt-nvme.mount
+Requires=mnt-beegfs.mount mnt-nvme.mount
+After=network-online.target remote-fs.target mnt-beegfs.mount mnt-nvme.mount
+Wants=network-online.target
+
 
 
 [Service]

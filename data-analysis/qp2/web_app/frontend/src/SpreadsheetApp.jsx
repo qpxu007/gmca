@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DndContext, closestCenter, MouseSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { Grid, Home } from 'lucide-react';
 import { api } from './api';
 import PuckGrid from './PuckGrid';
 import PuckEditorModal from './PuckEditorModal';
@@ -9,7 +9,7 @@ import ConfigurePucksModal from './ConfigurePucksModal';
 import SaveAsModal from './SaveAsModal';
 import SaveToDatabaseModal from './SaveToDatabaseModal';
 import OpenSpreadsheetModal from './OpenSpreadsheetModal';
-import './App.css'; // Make sure this exists or use index.css
+import PuckAssignmentModal from './PuckAssignmentModal';
 
 const DEFAULT_PUCK_NAMES = "ABCDEFGHIJKLMNOPQR".split("");
 
@@ -26,6 +26,7 @@ function SpreadsheetApp() {
     const [saveModalOpen, setSaveModalOpen] = useState(false);
     const [dbSaveModalOpen, setDbSaveModalOpen] = useState(false);
     const [openModalOpen, setOpenModalOpen] = useState(false);
+    const [puckAssignOpen, setPuckAssignOpen] = useState(false);
     const [editingPuck, setEditingPuck] = useState(null);
     const [editingSlot, setEditingSlot] = useState(null);
 
@@ -46,7 +47,6 @@ function SpreadsheetApp() {
         
         if (!over) return;
 
-        const sourceId = active.id; // "puck-X"
         const sourcePuck = active.data.current.puckData;
         
         // Find source slot (where this puck was)
@@ -187,33 +187,37 @@ function SpreadsheetApp() {
         }
     };
 
-    const handleSendToHttp = async () => {
+    const [sendDialog, setSendDialog] = useState(null); // {beamline, url, payload}
+
+    const BEAMLINE_RPC = {
+        "23-ID-D (BL1)": "http://bl1ws3-40g:8008/rpc",
+        "23-ID-B (BL2)": "http://bl2ws3-40g:8008/rpc",
+    };
+
+    const handleSendToHttp = () => {
         const orderedSlots = puckNames.map(name => slotsMap[name] || null);
-        const payload = {
-            puck_names: puckNames,
-            slots: orderedSlots,
-            filename: filename
-        };
+        const filledCount = orderedSlots.filter(s => s !== null).length;
+        setSendDialog({
+            payload: { puck_names: puckNames, slots: orderedSlots, filename },
+            filledCount,
+            selectedBeamline: Object.keys(BEAMLINE_RPC)[0],
+        });
+    };
 
+    const confirmSend = async () => {
+        if (!sendDialog) return;
+        const url = BEAMLINE_RPC[sendDialog.selectedBeamline];
+        const payload = { ...sendDialog.payload, rpc_url: url };
+        setSendDialog(null);
         try {
-            let res = await api.sendToHttp(payload);
-            
-            if (!res.success && res.error_code === 'URL_REQUIRED') {
-                const url = window.prompt("Enter RPC URL:", "http://bl1ws3-40g:8001/rpc");
-                if (url) {
-                    res = await api.sendToHttp({ ...payload, rpc_url: url });
-                } else {
-                    return; // User cancelled
-                }
-            }
-
+            const res = await api.sendToHttp(payload);
             if (res.success) {
                 alert("Success: " + res.message);
             } else {
                 alert("Error: " + res.message);
             }
         } catch (e) {
-            alert("Send failed: " + e.message);
+            alert("Send failed: " + (e.response?.data?.detail || e.message));
         }
     };
 
@@ -232,6 +236,21 @@ function SpreadsheetApp() {
         setModalOpen(true);
     };
 
+    const handlePuckAssignSave = (assignments) => {
+        setSlotsMap(prev => {
+            const updated = { ...prev };
+            for (const [slot, puckName] of Object.entries(assignments)) {
+                if (updated[slot]) {
+                    updated[slot] = {
+                        ...updated[slot],
+                        rows: updated[slot].rows.map(row => ({ ...row, Puck: puckName }))
+                    };
+                }
+            }
+            return updated;
+        });
+    };
+
     const handleModalSave = (newRows) => {
         if (editingPuck && editingSlot) {
             const updatedPuck = { ...editingPuck, rows: newRows };
@@ -245,15 +264,15 @@ function SpreadsheetApp() {
     return (
         <>
             <div className="toolbar">
-                <Link to="/dashboard" className="back-link" style={{ display: 'flex', alignItems: 'center', color: 'inherit', textDecoration: 'none', marginRight: '1rem' }}>
-                    <ArrowLeft size={20} style={{ marginRight: '5px' }} />
-                    Dashboard
+                <Link to="/dashboard" style={{ display: 'flex', alignItems: 'center', color: '#BBE1FA', textDecoration: 'none', marginRight: '10px' }}>
+                    <Home size={20} />
                 </Link>
                 <button onClick={handleNew}>New</button>
                 <button onClick={handleOpenClick}>Open</button>
                 <button onClick={handleSaveClick} disabled={!isSaveEnabled}>Save</button>
                 <button onClick={handleLoad}>Import</button>
                 <button onClick={handleExportClick} disabled={!isSaveEnabled}>Export</button>
+                <button onClick={() => setPuckAssignOpen(true)} disabled={!isSaveEnabled}>Puck Assignment</button>
                 {isAdmin && (
                     <button onClick={handleSendToHttp} disabled={!isSaveEnabled}>Send to pyBluice</button>
                 )}
@@ -278,6 +297,7 @@ function SpreadsheetApp() {
             </div>
 
             <PuckEditorModal 
+                key={editingPuck?.original_label}
                 isOpen={modalOpen} 
                 onClose={() => setModalOpen(false)} 
                 puck={editingPuck}
@@ -286,6 +306,7 @@ function SpreadsheetApp() {
             />
 
             <ConfigurePucksModal
+                key={configModalOpen ? 'config-open' : 'config-closed'}
                 isOpen={configModalOpen}
                 onClose={() => setConfigModalOpen(false)}
                 currentNames={puckNames}
@@ -293,6 +314,7 @@ function SpreadsheetApp() {
             />
 
             <SaveAsModal
+                key={saveModalOpen ? filename : 'save-closed'}
                 isOpen={saveModalOpen}
                 onClose={() => setSaveModalOpen(false)}
                 currentFilename={filename}
@@ -306,11 +328,73 @@ function SpreadsheetApp() {
                 onSave={handlePerformDbSave}
             />
 
+            <PuckAssignmentModal
+                key={puckAssignOpen ? 'assign-open' : 'assign-closed'}
+                isOpen={puckAssignOpen}
+                onClose={() => setPuckAssignOpen(false)}
+                puckNames={puckNames}
+                slotsMap={slotsMap}
+                onSave={handlePuckAssignSave}
+            />
+
             <OpenSpreadsheetModal
                 isOpen={openModalOpen}
                 onClose={() => setOpenModalOpen(false)}
                 onLoad={handlePerformOpen}
             />
+
+            {sendDialog && (
+                <div style={{
+                    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000
+                }}>
+                    <div style={{
+                        background: 'white', borderRadius: '8px', padding: '24px',
+                        width: '400px', boxShadow: '0 8px 32px rgba(0,0,0,0.3)'
+                    }}>
+                        <h3 style={{ margin: '0 0 16px 0' }}>Send to pyBluice</h3>
+                        <p style={{ margin: '0 0 12px 0', color: '#555' }}>
+                            Send <strong>{sendDialog.filledCount}</strong> puck(s) from <strong>{filename}</strong> to:
+                        </p>
+                        <div style={{ margin: '0 0 16px 0' }}>
+                            {Object.keys(BEAMLINE_RPC).map(bl => (
+                                <label key={bl} style={{
+                                    display: 'flex', alignItems: 'center', gap: '8px',
+                                    padding: '8px 12px', borderRadius: '6px', cursor: 'pointer',
+                                    background: sendDialog.selectedBeamline === bl ? '#e6f7ff' : 'transparent',
+                                    border: sendDialog.selectedBeamline === bl ? '2px solid #3282B8' : '2px solid transparent',
+                                    marginBottom: '6px',
+                                }}>
+                                    <input
+                                        type="radio"
+                                        name="beamline"
+                                        checked={sendDialog.selectedBeamline === bl}
+                                        onChange={() => setSendDialog({ ...sendDialog, selectedBeamline: bl })}
+                                    />
+                                    <span style={{ fontWeight: 500 }}>{bl}</span>
+                                    <span style={{ color: '#888', fontSize: '0.8rem', marginLeft: 'auto' }}>
+                                        {BEAMLINE_RPC[bl]}
+                                    </span>
+                                </label>
+                            ))}
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                            <button
+                                onClick={() => setSendDialog(null)}
+                                style={{ padding: '8px 16px', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer', background: 'white' }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmSend}
+                                style={{ padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer', background: '#3282B8', color: 'white', fontWeight: 600 }}
+                            >
+                                Send
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 }

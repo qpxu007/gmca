@@ -72,9 +72,13 @@ def similar_cell(cell1, cell2, epsilon=0.015):
 
     cell1 = [float(e) for e in cell1]
     cell2 = [float(e) for e in cell2]
-    return all(
-        abs(cell1[i] - cell2[i]) / min(cell1[i], cell2[i]) <= epsilon for i in range(6)
-    )
+    for i in range(6):
+        min_val = min(cell1[i], cell2[i])
+        if min_val == 0:
+            return False
+        if abs(cell1[i] - cell2[i]) / min_val > epsilon:
+            return False
+    return True
 
 
 # Exported lightweight container compatible with existing code expectations
@@ -149,7 +153,7 @@ def _calculate_edge_and_corner_res(params: dict) -> dict:
 def _calculate_distance_for_res(
     params: dict, max_res: float, default_distance: float = 350.0, use_edge=True
 ) -> float:
-    wl_a = float(params.get("wavelength", 1.0e-10))  # m -> Å
+    wl_a = float(params.get("wavelength", 1.0))  # Å
     px_size_mm = float(params.get("pixel_size", 0.075))
     nx = int(params.get("nx", 1024))
     ny = int(params.get("ny", 1024))

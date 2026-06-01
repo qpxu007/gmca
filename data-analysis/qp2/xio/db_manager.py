@@ -5,7 +5,7 @@ from threading import Lock
 from typing import List, Any, Optional
 from typing import Type, TypeVar
 
-from sqlalchemy import Table, MetaData
+from sqlalchemy import Table, MetaData, inspect, text
 from sqlalchemy import (
     create_engine,
 )
@@ -13,7 +13,7 @@ from sqlalchemy.engine.url import make_url
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from sqlalchemy.orm import sessionmaker
 
-from qp2.data_viewer.models import Base
+from qp2.db import Base
 from qp2.log.logging_config import get_logger
 
 from qp2.config.servers import ServerConfig
@@ -99,7 +99,7 @@ class DBManager:
         logger.debug(f"beamline {beamline}")
         
         # --- Feature Switch: Allow forcing database type via QP2_DB_ENGINE env var ---
-        db_engine_override = os.environ.get("QP2_DB_ENGINE", "").lower()
+        db_engine_override = ServerConfig.DB_ENGINE
         
         if db_engine_override == "postgresql":
             self.db_url = ServerConfig.get_postgres_url()
@@ -111,7 +111,7 @@ class DBManager:
             if not "psycopg2" in self.db_url and "postgresql" in self.db_url:
                  self.db_url = self.db_url.replace("postgresql://", "postgresql+psycopg2://")
 
-            self._emit_status(f"DB: Forced to PostgreSQL via QP2_DB_ENGINE. URL: {self.db_url}")
+            self._emit_status(f"DB: Using PostgreSQL via DB_ENGINE config. URL: {self.db_url}")
             return # Exit after setting the URL
 
         # --- Existing Logic (MySQL / Fallback if no override) ---
@@ -172,6 +172,8 @@ class DBManager:
 
                 # This actively checks connectivity
                 Base.metadata.create_all(self.engine, checkfirst=True)
+                self._migrate_db()
+                self._create_pg_indexes()
 
                 # If successful, update self.db_url to what actually worked
                 self.db_url = current_url
@@ -190,6 +192,120 @@ class DBManager:
                 else:
                     self._emit_status(f"{msg}. Attempting fallback...")
 
+
+
+    def _migrate_db(self):
+        """Add columns introduced after initial schema creation."""
+        inspector = inspect(self.engine)
+        migrations = {
+            "dataset_runs": [
+                ("mounted", "VARCHAR(255)"),
+                ("meta_user", "TEXT"),
+                ("beamline", "VARCHAR(20)"),
+            ],
+            "pipelinestatus": [
+                ("run_prefix", "VARCHAR(255)"),
+                ("dataset_run_id", "INTEGER"),
+            ],
+            "screenstrategyresults": [
+                ("directory", "VARCHAR(250)"),
+                ("images", "VARCHAR(250)"),
+                ("software", "VARCHAR(255)"),
+                ("ice_rings", "VARCHAR(50)"),
+                ("n_spots_ice", "VARCHAR(30)"),
+                ("n_ice_rings", "VARCHAR(30)"),
+                ("avg_spotsize", "VARCHAR(20)"),
+                ("solution_number", "VARCHAR(30)"),
+                ("penalty", "VARCHAR(30)"),
+                ("resolution_from_integ", "VARCHAR(30)"),
+                ("warning", "TEXT"),
+                ("completeness_referencedata", "VARCHAR(30)"),
+                ("detectorwarning", "VARCHAR(512)"),
+                ("displaytext", "VARCHAR(250)"),
+                ("strategy", "TEXT"),
+                ("reprocess", "INTEGER"),
+            ],
+            "experiment_forms": [
+                ("contact_phone", "VARCHAR(30)"),
+            ],
+        }
+        with self.engine.connect() as conn:
+            for table, columns in migrations.items():
+                if not inspector.has_table(table):
+                    continue
+                existing = {col["name"] for col in inspector.get_columns(table)}
+                for col_name, col_type in columns:
+                    if col_name not in existing:
+                        conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col_name} {col_type}"))
+                        logger.info(f"Migration: added column '{col_name}' to '{table}'")
+            conn.commit()
+
+    def _create_pg_indexes(self):
+        """Create PostgreSQL-specific indexes on existing tables.
+
+        Runs only on PostgreSQL. Safe to call on every startup — all statements
+        use IF NOT EXISTS so they are no-ops when the index already exists.
+        Includes trigram (GIN) indexes for fast LIKE/ILIKE substring searches.
+        """
+        if not self.engine or not self.engine.dialect.name == "postgresql":
+            return
+
+        plain_indexes = [
+            # Covers: WHERE username IN (...) ORDER BY created_at DESC
+            "CREATE INDEX IF NOT EXISTS ix_dr_username_created_at "
+            "ON dataset_runs (username, created_at DESC)",
+
+            "CREATE INDEX IF NOT EXISTS ix_dr_beamline "
+            "ON dataset_runs (beamline)",
+
+            # Covers: WHERE username = ? AND starttime >= ?
+            "CREATE INDEX IF NOT EXISTS ix_ps_username_starttime "
+            "ON pipelinestatus (username, starttime)",
+
+            "CREATE INDEX IF NOT EXISTS ix_ps_beamline_username "
+            "ON pipelinestatus (beamline, username)",
+
+            "CREATE INDEX IF NOT EXISTS ix_ps_starttime "
+            "ON pipelinestatus (starttime)",
+        ]
+
+        trigram_indexes = [
+            # Fast LIKE '%text%' on commonly searched text columns
+            'CREATE INDEX IF NOT EXISTS ix_dr_run_prefix_trgm '
+            'ON dataset_runs USING gin (run_prefix gin_trgm_ops)',
+
+            'CREATE INDEX IF NOT EXISTS ix_ps_samplename_trgm '
+            'ON pipelinestatus USING gin ("sampleName" gin_trgm_ops)',
+
+            'CREATE INDEX IF NOT EXISTS ix_ps_imagedir_trgm '
+            'ON pipelinestatus USING gin (imagedir gin_trgm_ops)',
+        ]
+
+        # AUTOCOMMIT: each DDL is its own transaction, so a single failure
+        # (e.g. InsufficientPrivilege on a table we don't own) does not
+        # poison the connection and cascade InFailedSqlTransaction into
+        # every later CREATE INDEX.
+        with self.engine.connect().execution_options(
+            isolation_level="AUTOCOMMIT"
+        ) as conn:
+            for sql in plain_indexes:
+                try:
+                    conn.execute(text(sql))
+                except Exception as e:
+                    logger.warning(f"Index creation skipped: {e}")
+
+            # pg_trgm requires the extension; skip gracefully if unavailable
+            try:
+                conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
+            except Exception as e:
+                logger.warning(f"pg_trgm extension unavailable, skipping trigram indexes: {e}")
+                return
+
+            for sql in trigram_indexes:
+                try:
+                    conn.execute(text(sql))
+                except Exception as e:
+                    logger.warning(f"Trigram index creation skipped: {e}")
 
 
     @contextmanager
@@ -334,7 +450,7 @@ class DBManager:
         # In pipeline_tracker.py (or any other module)
 
         # Import the model you want to update
-        from qp2.data_viewer.models import PipelineStatus
+        from qp2.db import PipelineStatus
         from db_manager import DBManager
         from datetime import datetime
 
@@ -532,8 +648,8 @@ class DBManager:
             with self.get_session() as session:
                 # The object must be "attached" to the session to be deleted.
                 # If it came from another session, merge it into the current one first.
-                session.merge(orm_object)
-                session.delete(orm_object)
+                merged = session.merge(orm_object)
+                session.delete(merged)
             self._emit_status(
                 f"DB: Successfully deleted object of type {type(orm_object).__name__}."
             )

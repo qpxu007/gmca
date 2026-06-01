@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Any, Union
 
 from qp2.pipelines.utils.pipeline_tracker import PipelineTracker
-from qp2.data_viewer.models import DataProcessResults, ScreenStrategyResults
+from qp2.db import DataProcessResults, ScreenStrategyResults
 from qp2.xio.db_manager import get_beamline_from_hostname
 from qp2.log.logging_config import get_logger, setup_logging
 from qp2.config.servers import ServerConfig
